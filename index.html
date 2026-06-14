@@ -52,7 +52,8 @@ html, body {
 }
 
 .app { display: none; height: 100vh; }
-.access-gate { position: fixed; inset: 0; background: var(--warm-cream); z-index: 9999; }
+.access-gate { position: fixed; inset: 0; background: var(--warm-cream); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.login-card { background: var(--cream-card); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 2rem 1.75rem; width: 380px; max-width: 100%; box-shadow: 0 8px 30px rgba(26,122,122,0.15); }
 
 /* SIDEBAR */
 .sidebar { width: 230px; min-width: 230px; background: var(--cream-sidebar); border-right: 0.5px solid var(--border); display: flex; flex-direction: column; }
@@ -271,7 +272,17 @@ html, body {
 </style>
 </head>
 <body>
-<div id="access-gate" class="access-gate"></div>
+<div id="access-gate" class="access-gate">
+  <div class="login-card">
+    <div class="sidebar-logo-name" style="font-size:24px;text-align:center;margin-bottom:1.25rem">Suivi de l'Être</div>
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <div class="form-row"><label>Email</label><input type="email" id="login-email" autocomplete="username" required></div>
+      <div class="form-row"><label>Mot de passe</label><input type="password" id="login-password" autocomplete="current-password" required></div>
+      <div id="login-error" style="display:none;color:var(--danger);font-size:12px;margin-bottom:0.75rem"></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center" id="login-btn">Se connecter</button>
+    </form>
+  </div>
+</div>
 
 <div class="app">
   <nav class="sidebar">
@@ -320,6 +331,9 @@ html, body {
         <i class="ti ti-upload" style="font-size:15px"></i> Importer des données
         <input type="file" accept=".json" onchange="importData(event)" style="display:none">
       </label>
+      <button class="btn" onclick="sbLogout()" style="width:100%;justify-content:center;margin-top:6px;font-size:11px;padding:0.3rem 0.5rem;color:var(--danger)">
+        <i class="ti ti-logout"></i> Se déconnecter
+      </button>
     </div>
   </nav>
 
@@ -719,23 +733,6 @@ html, body {
 </nav>
 
 <script>
-// ---- ACCESS GATE ----
-const ACCESS_KEY = 'ffa64ec7a3ed40b88ae7c60bec6c4ec1';
-(function() {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('key') === ACCESS_KEY) {
-    localStorage.setItem('mac_access', 'granted');
-    const url = new URL(window.location.href);
-    url.searchParams.delete('key');
-    window.history.replaceState({}, '', url.toString());
-  }
-})();
-const ACCESS_GRANTED = localStorage.getItem('mac_access') === 'granted';
-if (ACCESS_GRANTED) {
-  document.getElementById('access-gate').style.display = 'none';
-  document.querySelector('.app').style.display = 'flex';
-}
-
 const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const DAYS_SHORT = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const today = new Date();
@@ -1574,16 +1571,90 @@ function sbStatus(text, color) {
 }
 
 async function sbFetch(path, opts={}) {
+  const token = await sbGetValidToken();
   return fetch(`${SB_URL}/rest/v1/${path}`, {
     ...opts,
     headers: {
       'apikey': SB_KEY,
-      'Authorization': `Bearer ${SB_KEY}`,
+      'Authorization': `Bearer ${token || SB_KEY}`,
       'Content-Type': 'application/json',
       'Prefer': 'return=minimal',
       ...(opts.headers || {})
     }
   });
+}
+
+// ---- AUTHENTIFICATION (Supabase Auth) ----
+async function sbAuthLogin(email, password) {
+  const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  if (!res.ok) throw new Error('invalid_credentials');
+  const data = await res.json();
+  localStorage.setItem('sb_access_token', data.access_token);
+  localStorage.setItem('sb_refresh_token', data.refresh_token);
+  localStorage.setItem('sb_expires_at', String(Date.now() + data.expires_in * 1000));
+}
+
+async function sbRefreshToken() {
+  const refresh = localStorage.getItem('sb_refresh_token');
+  if (!refresh) return null;
+  try {
+    const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refresh })
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    localStorage.setItem('sb_access_token', data.access_token);
+    localStorage.setItem('sb_refresh_token', data.refresh_token);
+    localStorage.setItem('sb_expires_at', String(Date.now() + data.expires_in * 1000));
+    return data.access_token;
+  } catch(e) { return null; }
+}
+
+async function sbGetValidToken() {
+  const token = localStorage.getItem('sb_access_token');
+  const expiresAt = parseInt(localStorage.getItem('sb_expires_at') || '0');
+  if (token && Date.now() < expiresAt - 60000) return token;
+  return await sbRefreshToken();
+}
+
+function sbLogout() {
+  localStorage.removeItem('sb_access_token');
+  localStorage.removeItem('sb_refresh_token');
+  localStorage.removeItem('sb_expires_at');
+  location.reload();
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  errEl.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Connexion...';
+  try {
+    await sbAuthLogin(email, password);
+    showApp();
+  } catch(err) {
+    errEl.textContent = 'Email ou mot de passe incorrect.';
+    errEl.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Se connecter';
+}
+
+function showApp() {
+  document.getElementById('access-gate').style.display = 'none';
+  document.querySelector('.app').style.display = 'flex';
+  renderDashboard();
+  renderCalendar();
+  sbStatus('Connexion...', 'var(--teal)');
+  sbPull();
 }
 
 async function sbPull() {
@@ -1630,19 +1701,14 @@ function persistAndSync() {
   window._sbPushTimer = setTimeout(sbPush, 1500);
 }
 
-// Init Supabase au chargement
-window.addEventListener('load', () => {
-  if (!ACCESS_GRANTED) return;
-  sbStatus('Connexion...', 'var(--teal)');
-  sbPull();
-});
-
-
-// Init
-if (ACCESS_GRANTED) {
-  renderDashboard();
-  renderCalendar();
-}
+// Init : on vérifie si une session valide existe déjà
+(async function initAccess() {
+  const token = await sbGetValidToken();
+  if (token) {
+    showApp();
+  }
+  // Sinon, le formulaire de connexion (#access-gate) reste affiché
+})();
 </script>
 </body>
 </html>
