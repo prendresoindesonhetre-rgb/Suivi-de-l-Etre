@@ -442,7 +442,7 @@ html, body {
           <div class="form-row"><label>Nom <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="text" id="rdv-nc-nom" placeholder="Nom"></div>
         </div>
         <div class="form-grid form-grid-2">
-          <div class="form-row"><label>Téléphone <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="text" id="rdv-nc-tel" placeholder="06 xx xx xx xx"></div>
+          <div class="form-row"><label>Téléphone <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="tel" id="rdv-nc-tel" inputmode="tel" placeholder="06 xx xx xx xx"></div>
           <div class="form-row"><label>Profil</label>
             <select id="rdv-nc-profil">
               <option value="adulte">Adulte</option>
@@ -536,7 +536,7 @@ html, body {
           <option value="structure">Structure</option>
         </select>
       </div>
-      <div class="form-row"><label>Téléphone <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="text" id="cl-tel" placeholder="06 xx xx xx xx"></div>
+      <div class="form-row"><label>Téléphone <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="tel" id="cl-tel" inputmode="tel" placeholder="06 xx xx xx xx"></div>
     </div>
 
     <!-- Champs enfant (masqués par défaut) -->
@@ -558,7 +558,7 @@ html, body {
           <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin-bottom:0.5rem">Parent / Responsable 1</div>
           <div class="form-row"><label>Nom & prénom</label><input type="text" id="cl-resp1" placeholder="Ex: Dupont Jean (Père)"></div>
           <div class="form-grid form-grid-2">
-            <div class="form-row"><label>Téléphone</label><input type="text" id="cl-resp1-tel" placeholder="06 xx xx xx xx"></div>
+            <div class="form-row"><label>Téléphone</label><input type="tel" id="cl-resp1-tel" inputmode="tel" placeholder="06 xx xx xx xx"></div>
             <div class="form-row"><label>Email</label><input type="email" id="cl-resp1-email" placeholder="email@exemple.fr"></div>
           </div>
         </div>
@@ -567,7 +567,7 @@ html, body {
           <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin-bottom:0.5rem">Parent / Responsable 2</div>
           <div class="form-row"><label>Nom & prénom</label><input type="text" id="cl-resp2" placeholder="Ex: Dupont Sophie (Mère)"></div>
           <div class="form-grid form-grid-2">
-            <div class="form-row"><label>Téléphone</label><input type="text" id="cl-resp2-tel" placeholder="06 xx xx xx xx"></div>
+            <div class="form-row"><label>Téléphone</label><input type="tel" id="cl-resp2-tel" inputmode="tel" placeholder="06 xx xx xx xx"></div>
             <div class="form-row"><label>Email</label><input type="email" id="cl-resp2-email" placeholder="email@exemple.fr"></div>
           </div>
         </div>
@@ -580,7 +580,7 @@ html, body {
         <div class="form-row"><label>Nom de la structure</label><input type="text" id="cl-structure" placeholder="Ex: IME Les Pins, École Jules Ferry..."></div>
         <div class="form-row"><label>Nom du responsable / référent de suivi</label><input type="text" id="cl-structure-resp" placeholder="Ex: Mme Martin — Éducatrice spécialisée"></div>
         <div class="form-grid form-grid-2">
-          <div class="form-row"><label>Téléphone du référent</label><input type="text" id="cl-structure-tel" placeholder="06 xx xx xx xx"></div>
+          <div class="form-row"><label>Téléphone du référent</label><input type="tel" id="cl-structure-tel" inputmode="tel" placeholder="06 xx xx xx xx"></div>
           <div class="form-row"><label>Email du référent</label><input type="email" id="cl-structure-email" placeholder="email@structure.fr"></div>
         </div>
       </div>
@@ -602,7 +602,7 @@ html, body {
           <div class="form-row"><label>Fonction</label><input type="text" id="cl-structure-fonction" placeholder="Directeur, Éducateur..."></div>
         </div>
         <div class="form-grid form-grid-2">
-          <div class="form-row"><label>Téléphone</label><input type="text" id="cl-structure-tel" placeholder="06 xx xx xx xx"></div>
+          <div class="form-row"><label>Téléphone</label><input type="tel" id="cl-structure-tel" inputmode="tel" placeholder="06 xx xx xx xx"></div>
           <div class="form-row"><label>Email</label><input type="email" id="cl-structure-email" placeholder="email@structure.fr"></div>
         </div>
         <div style="font-size:12px;font-weight:600;color:var(--amber);margin:0.6rem 0 0.4rem">Participants</div>
