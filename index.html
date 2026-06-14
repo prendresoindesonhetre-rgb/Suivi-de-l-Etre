@@ -51,7 +51,8 @@ html, body {
   font-size: 14px;
 }
 
-.app { display: flex; height: 100vh; }
+.app { display: none; height: 100vh; }
+.access-gate { position: fixed; inset: 0; background: var(--warm-cream); z-index: 9999; }
 
 /* SIDEBAR */
 .sidebar { width: 230px; min-width: 230px; background: var(--cream-sidebar); border-right: 0.5px solid var(--border); display: flex; flex-direction: column; }
@@ -270,6 +271,7 @@ html, body {
 </style>
 </head>
 <body>
+<div id="access-gate" class="access-gate"></div>
 
 <div class="app">
   <nav class="sidebar">
@@ -717,6 +719,23 @@ html, body {
 </nav>
 
 <script>
+// ---- ACCESS GATE ----
+const ACCESS_KEY = 'ffa64ec7a3ed40b88ae7c60bec6c4ec1';
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('key') === ACCESS_KEY) {
+    localStorage.setItem('mac_access', 'granted');
+    const url = new URL(window.location.href);
+    url.searchParams.delete('key');
+    window.history.replaceState({}, '', url.toString());
+  }
+})();
+const ACCESS_GRANTED = localStorage.getItem('mac_access') === 'granted';
+if (ACCESS_GRANTED) {
+  document.getElementById('access-gate').style.display = 'none';
+  document.querySelector('.app').style.display = 'flex';
+}
+
 const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const DAYS_SHORT = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const today = new Date();
@@ -1613,14 +1632,17 @@ function persistAndSync() {
 
 // Init Supabase au chargement
 window.addEventListener('load', () => {
+  if (!ACCESS_GRANTED) return;
   sbStatus('Connexion...', 'var(--teal)');
   sbPull();
 });
 
 
 // Init
-renderDashboard();
-renderCalendar();
+if (ACCESS_GRANTED) {
+  renderDashboard();
+  renderCalendar();
+}
 </script>
 </body>
 </html>
