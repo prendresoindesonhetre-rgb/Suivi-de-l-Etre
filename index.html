@@ -531,13 +531,13 @@ html, body {
             <div class="form-row"><label>Date de naissance <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="date" id="rdv-nc-naissance" onchange="updateRdvNcAge()"></div>
             <div class="form-row"><label>Âge</label><input type="text" id="rdv-nc-age" placeholder="calculé auto" readonly style="background:var(--lavender-light);color:var(--lavender-dark);font-weight:600"></div>
           </div>
-          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.5rem 0 0.4rem">Mère <span style="color:var(--text-hint);font-weight:400;text-transform:none">(optionnel)</span></div>
+          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.5rem 0 0.4rem">Père <span style="color:var(--text-hint);font-weight:400;text-transform:none">(optionnel)</span></div>
           <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-resp1" placeholder="Ex: Dupont Sophie"></div>
           <div class="form-grid form-grid-2">
             <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-resp1-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
             <div class="form-row"><label>Email</label><input type="email" id="rdv-nc-resp1-email" placeholder="email@exemple.fr"></div>
           </div>
-          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.5rem 0 0.4rem">Père <span style="color:var(--text-hint);font-weight:400;text-transform:none">(optionnel)</span></div>
+          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.5rem 0 0.4rem">Mère <span style="color:var(--text-hint);font-weight:400;text-transform:none">(optionnel)</span></div>
           <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-resp2" placeholder="Ex: Dupont Jean"></div>
           <div class="form-grid form-grid-2">
             <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-resp2-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
@@ -662,7 +662,7 @@ html, body {
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:0.6rem;font-style:italic">Tous les champs sont optionnels</div>
 
         <div style="background:white;border-radius:6px;padding:0.6rem 0.75rem;margin-bottom:0.6rem;border:0.5px solid var(--border)">
-          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin-bottom:0.5rem">Mère</div>
+          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin-bottom:0.5rem">Père</div>
           <div class="form-row"><label>Nom & prénom</label><input type="text" id="cl-resp1" placeholder="Ex: Dupont Sophie"></div>
           <div class="form-grid form-grid-2">
             <div class="form-row"><label>Téléphone</label><input type="tel" id="cl-resp1-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
@@ -671,7 +671,7 @@ html, body {
         </div>
 
         <div style="background:white;border-radius:6px;padding:0.6rem 0.75rem;border:0.5px solid var(--border)">
-          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin-bottom:0.5rem">Père</div>
+          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin-bottom:0.5rem">Mère</div>
           <div class="form-row"><label>Nom & prénom</label><input type="text" id="cl-resp2" placeholder="Ex: Dupont Jean"></div>
           <div class="form-grid form-grid-2">
             <div class="form-row"><label>Téléphone</label><input type="tel" id="cl-resp2-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
@@ -1781,8 +1781,8 @@ function onDevisClientChange() {
   if (c.tel) lines.push(`<i class="ti ti-phone"></i> ${c.tel}`);
   if (c.email) lines.push(`<i class="ti ti-mail"></i> ${c.email}`);
   if (c.profil === 'enfant') {
-    if (c.resp1) lines.push(`<i class="ti ti-user"></i> Mère : ${c.resp1}${c.resp1Tel ? ' · '+c.resp1Tel : ''}`);
-    if (c.resp2) lines.push(`<i class="ti ti-user"></i> Père : ${c.resp2}${c.resp2Tel ? ' · '+c.resp2Tel : ''}`);
+    if (c.resp1) lines.push(`<i class="ti ti-user"></i> Père : ${c.resp1}${c.resp1Tel ? ' · '+c.resp1Tel : ''}`);
+    if (c.resp2) lines.push(`<i class="ti ti-user"></i> Mère : ${c.resp2}${c.resp2Tel ? ' · '+c.resp2Tel : ''}`);
     if (c.structure) lines.push(`<i class="ti ti-building"></i> ${c.structure}${c.structureResp ? ' — '+c.structureResp : ''}`);
   }
   infoEl.innerHTML = lines.join('<br>');
@@ -1793,34 +1793,28 @@ function onDevisClientChange() {
 function editClientFromDevis() {
   const id = parseInt(document.getElementById('devis-client').value);
   if (!id) return;
-  // Fermer le modal devis temporairement et ouvrir la fiche client
   closeModal('devis');
-  // Stocker l'id du devis pour retrouver où on en était
   window._devisRetourClientId = id;
   showFiche(id);
-  // Ajouter un bouton "Retour au devis" dans la fiche
   setTimeout(() => {
-    const topbar = document.getElementById('topbar-title');
-    if (topbar) {
-      const existingBtn = document.getElementById('retour-devis-btn');
-      if (!existingBtn) {
-        const btn = document.createElement('button');
-        btn.id = 'retour-devis-btn';
-        btn.className = 'btn';
-        btn.style.cssText = 'font-size:11px;padding:0.25rem 0.75rem;margin-left:12px';
-        btn.innerHTML = '<i class="ti ti-arrow-left"></i> Retour au devis';
-        btn.onclick = () => {
-          btn.remove();
-          openModal('devis');
-          setTimeout(() => {
-            if (window._devisRetourClientId) {
-              document.getElementById('devis-client').value = window._devisRetourClientId;
-              onDevisClientChange();
-            }
-          }, 100);
-        };
-        topbar.parentNode.insertBefore(btn, topbar.nextSibling);
-      }
+    const actions = document.querySelector('.topbar-actions');
+    if (actions && !document.getElementById('retour-devis-btn')) {
+      const btn = document.createElement('button');
+      btn.id = 'retour-devis-btn';
+      btn.className = 'btn';
+      btn.style.cssText = 'font-size:12px;border-color:var(--amber);color:var(--amber)';
+      btn.innerHTML = '<i class="ti ti-arrow-left"></i> Retour au devis';
+      btn.onclick = () => {
+        btn.remove();
+        openModal('devis');
+        setTimeout(() => {
+          if (window._devisRetourClientId) {
+            document.getElementById('devis-client').value = window._devisRetourClientId;
+            onDevisClientChange();
+          }
+        }, 100);
+      };
+      actions.insertBefore(btn, actions.firstChild);
     }
   }, 100);
 }
@@ -2017,8 +2011,8 @@ function genDevisPDFFromData(d) {
   let clientAddr = [c.prenom+' '+c.nom];
   if (c.adresse) clientAddr.push(c.adresse);
   if (c.profil === 'enfant') {
-    if (c.resp1) clientAddr.push(`Mère : ${c.resp1}${c.resp1Tel ? ' · '+c.resp1Tel : ''}`);
-    if (c.resp2) clientAddr.push(`Père : ${c.resp2}${c.resp2Tel ? ' · '+c.resp2Tel : ''}`);
+    if (c.resp1) clientAddr.push(`Père : ${c.resp1}${c.resp1Tel ? ' · '+c.resp1Tel : ''}`);
+    if (c.resp2) clientAddr.push(`Mère : ${c.resp2}${c.resp2Tel ? ' · '+c.resp2Tel : ''}`);
     if (c.structure) clientAddr.push(`Structure : ${c.structure}`);
     if (c.structureResp) clientAddr.push(`Référent : ${c.structureResp}${c.structureTel ? ' · '+c.structureTel : ''}`);
   } else {
