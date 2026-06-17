@@ -404,7 +404,10 @@ html, body {
 
       <!-- FICHE CLIENT -->
       <div class="view" id="view-fiche">
-        <button class="back-btn" onclick="showView('clients')"><i class="ti ti-arrow-left"></i> Retour</button>
+        <div style="display:flex;gap:8px;margin-bottom:0.5rem">
+          <button class="back-btn" onclick="showView('clients')" style="margin-bottom:0"><i class="ti ti-arrow-left"></i> Retour aux clients</button>
+          <button class="btn" id="retour-devis-btn" style="display:none;font-size:12px;border-color:var(--amber);color:var(--amber)" onclick="retourAuDevis()"><i class="ti ti-file-invoice"></i> Retour au devis</button>
+        </div>
         <div id="fiche-header"></div>
         <div class="section-title">Historique des séances</div>
         <div class="seances-list" id="seances-list"></div>
@@ -1790,33 +1793,24 @@ function onDevisClientChange() {
   editBtn.style.display = 'block';
 }
 
+function retourAuDevis() {
+  document.getElementById('retour-devis-btn').style.display = 'none';
+  openModal('devis');
+  setTimeout(() => {
+    if (window._devisRetourClientId) {
+      document.getElementById('devis-client').value = window._devisRetourClientId;
+      onDevisClientChange();
+    }
+  }, 100);
+}
+
 function editClientFromDevis() {
   const id = parseInt(document.getElementById('devis-client').value);
   if (!id) return;
   closeModal('devis');
   window._devisRetourClientId = id;
   showFiche(id);
-  setTimeout(() => {
-    const actions = document.querySelector('.topbar-actions');
-    if (actions && !document.getElementById('retour-devis-btn')) {
-      const btn = document.createElement('button');
-      btn.id = 'retour-devis-btn';
-      btn.className = 'btn';
-      btn.style.cssText = 'font-size:12px;border-color:var(--amber);color:var(--amber)';
-      btn.innerHTML = '<i class="ti ti-arrow-left"></i> Retour au devis';
-      btn.onclick = () => {
-        btn.remove();
-        openModal('devis');
-        setTimeout(() => {
-          if (window._devisRetourClientId) {
-            document.getElementById('devis-client').value = window._devisRetourClientId;
-            onDevisClientChange();
-          }
-        }, 100);
-      };
-      actions.insertBefore(btn, actions.firstChild);
-    }
-  }, 100);
+  document.getElementById('retour-devis-btn').style.display = '';
 }
 
 let devisPrestationIdx = 0;
