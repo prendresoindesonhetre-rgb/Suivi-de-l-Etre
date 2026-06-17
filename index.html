@@ -2067,7 +2067,7 @@ function renderDevisList() {
           <div class="rdv-meta">${nom} · ${fmtDate(d.date)} · <strong>${d.total.toFixed(2)} €</strong></div>
         </div>
         <div class="rdv-actions" style="flex-shrink:0">
-          ${!locked ? `<button class="icon-btn" onclick="editDevis(${d.id})" title="Modifier"><i class="ti ti-edit"></i></button>` : ''}
+        ${statut !== 'accepte' && statut !== 'envoye' ? `<button class="icon-btn" onclick="editDevis(${d.id})" title="Modifier"><i class="ti ti-edit"></i></button>` : ''}
           <button class="icon-btn" onclick="genDevisPDFById(${d.id})" title="PDF"><i class="ti ti-file-type-pdf"></i></button>
           <button class="icon-btn danger" onclick="deleteDevis(${d.id})" title="Supprimer"><i class="ti ti-trash"></i></button>
         </div>
