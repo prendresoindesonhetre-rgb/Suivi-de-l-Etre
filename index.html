@@ -515,11 +515,6 @@ html, body {
       <div style="background:var(--lavender-light);border:0.5px solid var(--lavender);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:0.5rem">
         <div style="font-size:11px;font-weight:700;color:var(--lavender-dark);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem"><i class="ti ti-user-plus" style="font-size:13px;vertical-align:-1px;margin-right:4px"></i>Nouveau client</div>
         <div class="form-grid form-grid-2">
-          <div class="form-row"><label>Prénom</label><input type="text" id="rdv-nc-prenom" placeholder="Prénom"></div>
-          <div class="form-row"><label>Nom <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="text" id="rdv-nc-nom" placeholder="Nom"></div>
-        </div>
-        <div class="form-grid form-grid-2">
-          <div class="form-row"><label>Téléphone <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="tel" id="rdv-nc-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
           <div class="form-row"><label>Profil</label>
             <select id="rdv-nc-profil" onchange="toggleRdvNcEnfantFields()">
               <option value="adulte">Adulte</option>
@@ -527,6 +522,11 @@ html, body {
               <option value="structure">Structure</option>
             </select>
           </div>
+          <div class="form-row"><label>Prénom</label><input type="text" id="rdv-nc-prenom" placeholder="Prénom"></div>
+        </div>
+        <div class="form-grid form-grid-2">
+          <div class="form-row"><label>Nom <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="text" id="rdv-nc-nom" placeholder="Nom"></div>
+          <div class="form-row" id="rdv-nc-tel-row"><label>Téléphone <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="tel" id="rdv-nc-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
         </div>
 
         <!-- Champs enfant (visibles si profil = enfant) -->
@@ -535,20 +535,55 @@ html, body {
             <div class="form-row"><label>Date de naissance <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="date" id="rdv-nc-naissance" onchange="updateRdvNcAge()"></div>
             <div class="form-row"><label>Âge</label><input type="text" id="rdv-nc-age" placeholder="calculé auto" readonly style="background:var(--lavender-light);color:var(--lavender-dark);font-weight:600"></div>
           </div>
-          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.5rem 0 0.4rem">Père <span style="color:var(--text-hint);font-weight:400;text-transform:none">(optionnel)</span></div>
-          <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-resp1" placeholder="Ex: Dupont Sophie"></div>
-          <div class="form-grid form-grid-2">
-            <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-resp1-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
-            <div class="form-row"><label>Email</label><input type="email" id="rdv-nc-resp1-email" placeholder="email@exemple.fr"></div>
+
+          <!-- Situation familiale -->
+          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);text-transform:uppercase;letter-spacing:0.06em;margin:0.75rem 0 0.5rem">Situation familiale</div>
+          <div style="display:flex;gap:8px;margin-bottom:0.75rem;flex-wrap:wrap">
+            <button type="button" id="rdv-nc-sit-btn-ensemble" class="btn" onclick="setRdvNcSituation('ensemble')" style="flex:1;justify-content:center;font-size:12px">👨‍👩‍👦 Parents ensemble</button>
+            <button type="button" id="rdv-nc-sit-btn-separes" class="btn" onclick="setRdvNcSituation('separes')" style="flex:1;justify-content:center;font-size:12px">↔ Parents séparés</button>
+            <button type="button" id="rdv-nc-sit-btn-recompose" class="btn" onclick="setRdvNcSituation('recompose')" style="flex:1;justify-content:center;font-size:12px">🏠 Famille recomposée</button>
           </div>
-          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.5rem 0 0.4rem">Mère <span style="color:var(--text-hint);font-weight:400;text-transform:none">(optionnel)</span></div>
-          <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-resp2" placeholder="Ex: Dupont Jean"></div>
-          <div class="form-grid form-grid-2">
-            <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-resp2-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
-            <div class="form-row"><label>Email</label><input type="email" id="rdv-nc-resp2-email" placeholder="email@exemple.fr"></div>
+          <input type="hidden" id="rdv-nc-situation" value="">
+
+          <!-- Parents ensemble -->
+          <div id="rdv-nc-sit-ensemble" style="display:none">
+            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.4rem 0">Père</div>
+            <div class="form-grid form-grid-2">
+              <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-ens-pere-nom" placeholder="Ex: Dupont Jean"></div>
+              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-ens-pere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.4rem 0">Mère</div>
+            <div class="form-grid form-grid-2">
+              <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-ens-mere-nom" placeholder="Ex: Dupont Sophie"></div>
+              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-ens-mere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+            </div>
+            <div class="form-row"><label>Email commun <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="email" id="rdv-nc-ens-email" placeholder="email@famille.fr"></div>
           </div>
 
-          <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:0.06em;margin:0.6rem 0 0.4rem">Structure / Établissement <span style="color:var(--text-hint);font-weight:400;text-transform:none">(optionnel)</span></div>
+          <!-- Parents séparés -->
+          <div id="rdv-nc-sit-separes" style="display:none">
+            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.4rem 0">Père</div>
+            <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-sep-pere-nom" placeholder="Ex: Dupont Jean"></div>
+            <div class="form-grid form-grid-2">
+              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-sep-pere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+              <div class="form-row"><label>Email</label><input type="email" id="rdv-nc-sep-pere-email" placeholder="email@exemple.fr"></div>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.5rem 0 0.4rem">Mère</div>
+            <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-sep-mere-nom" placeholder="Ex: Dupont Sophie"></div>
+            <div class="form-grid form-grid-2">
+              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-sep-mere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+              <div class="form-row"><label>Email</label><input type="email" id="rdv-nc-sep-mere-email" placeholder="email@exemple.fr"></div>
+            </div>
+          </div>
+
+          <!-- Famille recomposée -->
+          <div id="rdv-nc-sit-recompose" style="display:none">
+            <div id="rdv-nc-recompose-membres"></div>
+            <button type="button" class="btn" onclick="addRdvNcMembre()" style="font-size:12px;margin-top:4px"><i class="ti ti-plus"></i> Ajouter un membre</button>
+          </div>
+
+          <!-- Structure -->
+          <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:0.06em;margin:0.75rem 0 0.4rem">Structure / Établissement <span style="color:var(--text-hint);font-weight:400;text-transform:none">(optionnel)</span></div>
           <div class="form-row"><label>Nom de la structure</label><input type="text" id="rdv-nc-structure" placeholder="Ex: IME Les Pins, École Jules Ferry..."></div>
           <div class="form-row"><label>Nom du responsable / référent</label><input type="text" id="rdv-nc-structure-resp" placeholder="Ex: Mme Martin — Éducatrice spécialisée"></div>
           <div class="form-grid form-grid-2">
@@ -954,6 +989,42 @@ function formatPhone(el) {
 function toggleRdvNcEnfantFields() {
   const profil = document.getElementById('rdv-nc-profil').value;
   document.getElementById('rdv-nc-enfant-fields').style.display = profil === 'enfant' ? 'block' : 'none';
+  // Masquer le téléphone si enfant
+  document.getElementById('rdv-nc-tel-row').style.display = profil === 'enfant' ? 'none' : '';
+}
+
+function setRdvNcSituation(sit) {
+  document.getElementById('rdv-nc-situation').value = sit;
+  ['ensemble','separes','recompose'].forEach(s => {
+    document.getElementById(`rdv-nc-sit-${s}`).style.display = s === sit ? 'block' : 'none';
+    const btn = document.getElementById(`rdv-nc-sit-btn-${s}`);
+    btn.style.background = s === sit ? 'var(--teal)' : '';
+    btn.style.color = s === sit ? 'white' : '';
+    btn.style.borderColor = s === sit ? 'var(--teal)' : '';
+  });
+  if (sit === 'recompose' && !document.getElementById('rdv-nc-recompose-membres').children.length) {
+    addRdvNcMembre(); addRdvNcMembre();
+  }
+}
+
+let rdvNcMembreIdx = 0;
+function addRdvNcMembre() {
+  const idx = rdvNcMembreIdx++;
+  const container = document.getElementById('rdv-nc-recompose-membres');
+  const div = document.createElement('div');
+  div.id = `rdv-nc-membre-${idx}`;
+  div.style.marginBottom = '0.75rem';
+  div.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <input type="text" id="rdv-nc-mb-titre-${idx}" placeholder="Ex: Père, Belle-mère..." style="flex:1;padding:6px 10px;font-size:12px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif">
+      <button type="button" class="icon-btn danger" onclick="document.getElementById('rdv-nc-membre-${idx}').remove()"><i class="ti ti-trash"></i></button>
+    </div>
+    <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-mb-nom-${idx}" placeholder="Ex: Dupont Jean"></div>
+    <div class="form-grid form-grid-2">
+      <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-mb-tel-${idx}" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+      <div class="form-row"><label>Email</label><input type="email" id="rdv-nc-mb-email-${idx}" placeholder="email@exemple.fr"></div>
+    </div>`;
+  container.appendChild(div);
 }
 
 function updateRdvNcAge() {
@@ -1027,7 +1098,7 @@ function renderDashboard() {
     return `<div class="upcoming-item" style="${r.annule?'opacity:0.5;text-decoration:line-through;':''}">
       <div class="upcoming-dot ${r.annule?'dot-annule':hasTrajet?'dot-trajet':'dot-seance'}"></div>
       <div class="upcoming-info" style="cursor:pointer" onclick="openRdvDetail(${r.id})">
-        <div class="upcoming-name"><strong style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800">${r.heure}–${calcEndTime(r.heure, r.duree)}</strong> · <span style="color:#6B7A8D">${c ? c.prenom+' '+c.nom : '?'} — ${r.type}</span> <span style="font-weight:400;color:var(--text-muted);font-style:italic">(${r.duree} min)</span>${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600;text-decoration:none">Annulé</span>':''}</div>
+        <div class="upcoming-name"><strong style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800">${r.heure}–${calcEndTime(r.heure, r.duree)} :</strong> · <span style="color:#6B7A8D">${c ? c.prenom+' '+c.nom : '?'} — ${r.type}</span> <span style="font-weight:400;color:var(--text-muted);font-style:italic">(${r.duree} min)</span>${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600;text-decoration:none">Annulé</span>':''}</div>
         <div class="upcoming-detail">${(r.trajetAller||0) > 0 ? `<i class="ti ti-car" style="font-size:11px;margin-right:3px;color:#7A4F3A"></i><span style="color:#7A4F3A;font-weight:500;text-decoration:underline">Départ à ${calcEndTime(r.heure, -(r.trajetAller||0))}</span> <span style="color:#9B8EC4">pour ${r.lieu||(c&&c.adresse)||'?'}</span><br>` : (r.lieu ? `<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px;color:#D4A5B5"></i><span style="color:#9B8EC4">${r.lieu}</span><br>` : (c&&c.adresse ? `<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px;color:#D4A5B5"></i><span style="color:#9B8EC4">${c.adresse}</span><br>` : ''))}${(r.trajetRetour||0) > 0 ? `<i class="ti ti-arrow-back-up" style="font-size:11px;margin-right:3px;color:#6B7A8D"></i><span style="color:#6B7A8D">Retour : ${r.trajetRetour} min</span>` : ''}</div>
         ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:4px;font-size:11px;color:#7A9E7E;font-weight:500"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
       </div>
@@ -1189,7 +1260,7 @@ function renderRdvs() {
     return `<div class="rdv-item" style="${r.annule?'opacity:0.5;':''}">
       <div class="upcoming-dot ${r.annule?'dot-annule':tt>0?'dot-trajet':'dot-seance'}"></div>
       <div class="rdv-info">
-        <div class="rdv-title"><strong style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800">${r.heure}–${calcEndTime(r.heure, r.duree)}</strong> · <span style="color:#6B7A8D">${c?c.prenom+' '+c.nom:'?'} — ${r.type}</span> <span style="font-weight:400;color:var(--text-muted);font-style:italic">(${r.duree} min)</span>${r.premiere?' <span style="font-size:10px;background:var(--lavender-light);color:var(--lavender-dark);padding:1px 6px;border-radius:8px;font-weight:600">1ère séance</span>':''}${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600">Annulé</span>':''}</div>
+        <div class="rdv-title"><strong style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800">${r.heure}–${calcEndTime(r.heure, r.duree)} :</strong> · <span style="color:#6B7A8D">${c?c.prenom+' '+c.nom:'?'} — ${r.type}</span> <span style="font-weight:400;color:var(--text-muted);font-style:italic">(${r.duree} min)</span>${r.premiere?' <span style="font-size:10px;background:var(--lavender-light);color:var(--lavender-dark);padding:1px 6px;border-radius:8px;font-weight:600">1ère séance</span>':''}${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600">Annulé</span>':''}</div>
         <div class="rdv-detail">${(r.trajetAller||0) > 0 ? `<i class="ti ti-car" style="font-size:11px;margin-right:3px;color:#7A4F3A"></i><span style="color:#7A4F3A;font-weight:500;text-decoration:underline">Départ à ${calcEndTime(r.heure, -(r.trajetAller||0))}</span> <span style="color:#9B8EC4">pour ${r.lieu||(c&&c.adresse)||'?'}</span>` : (r.lieu ? `<span style="color:#9B8EC4">${r.lieu}</span>` : (c&&c.adresse ? `<span style="color:#9B8EC4">${c.adresse}</span>` : ''))}${tt>0 && !(r.trajetAller>0) ? `<span style="color:#6B7A8D"> · ${tt} min trajet</span>` : ''}</div>
         ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:3px;font-size:11px;color:#7A9E7E;font-weight:500"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
       </div>
@@ -1287,14 +1358,16 @@ function togglePremiereFields() {
     document.getElementById('rdv-nc-nom').value = '';
     document.getElementById('rdv-nc-tel').value = '';
     document.getElementById('rdv-nc-profil').value = 'adulte';
+    document.getElementById('rdv-nc-tel-row').style.display = '';
     document.getElementById('rdv-nc-naissance').value = '';
     document.getElementById('rdv-nc-age').value = '';
-    document.getElementById('rdv-nc-resp1').value = '';
-    document.getElementById('rdv-nc-resp1-tel').value = '';
-    document.getElementById('rdv-nc-resp1-email').value = '';
-    document.getElementById('rdv-nc-resp2').value = '';
-    document.getElementById('rdv-nc-resp2-tel').value = '';
-    document.getElementById('rdv-nc-resp2-email').value = '';
+    document.getElementById('rdv-nc-situation').value = '';
+    ['ensemble','separes','recompose'].forEach(s => {
+      document.getElementById(`rdv-nc-sit-${s}`).style.display = 'none';
+      const btn = document.getElementById(`rdv-nc-sit-btn-${s}`);
+      btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
+    });
+    document.getElementById('rdv-nc-recompose-membres').innerHTML = '';
     document.getElementById('rdv-nc-structure').value = '';
     document.getElementById('rdv-nc-structure-resp').value = '';
     document.getElementById('rdv-nc-structure-tel').value = '';
@@ -1606,20 +1679,48 @@ function saveRdv() {
   if (premiere) {
     const prenom = document.getElementById('rdv-nc-prenom').value.trim();
     if (!prenom) { alert('Le prénom du nouveau client est requis'); return; }
+    const sit = document.getElementById('rdv-nc-situation').value;
+    let resp1='', resp1Tel='', resp1Email='', resp2='', resp2Tel='', resp2Email='', emailCommun='';
+    let membres = [];
+    if (sit === 'ensemble') {
+      resp1 = document.getElementById('rdv-nc-ens-pere-nom').value.trim();
+      resp1Tel = document.getElementById('rdv-nc-ens-pere-tel').value.trim();
+      resp2 = document.getElementById('rdv-nc-ens-mere-nom').value.trim();
+      resp2Tel = document.getElementById('rdv-nc-ens-mere-tel').value.trim();
+      emailCommun = document.getElementById('rdv-nc-ens-email').value.trim();
+      resp1Email = emailCommun; resp2Email = emailCommun;
+    } else if (sit === 'separes') {
+      resp1 = document.getElementById('rdv-nc-sep-pere-nom').value.trim();
+      resp1Tel = document.getElementById('rdv-nc-sep-pere-tel').value.trim();
+      resp1Email = document.getElementById('rdv-nc-sep-pere-email').value.trim();
+      resp2 = document.getElementById('rdv-nc-sep-mere-nom').value.trim();
+      resp2Tel = document.getElementById('rdv-nc-sep-mere-tel').value.trim();
+      resp2Email = document.getElementById('rdv-nc-sep-mere-email').value.trim();
+    } else if (sit === 'recompose') {
+      document.querySelectorAll('#rdv-nc-recompose-membres > div').forEach(div => {
+        const idx = div.id.replace('rdv-nc-membre-','');
+        membres.push({
+          titre: document.getElementById(`rdv-nc-mb-titre-${idx}`)?.value.trim()||'',
+          nom: document.getElementById(`rdv-nc-mb-nom-${idx}`)?.value.trim()||'',
+          tel: document.getElementById(`rdv-nc-mb-tel-${idx}`)?.value.trim()||'',
+          email: document.getElementById(`rdv-nc-mb-email-${idx}`)?.value.trim()||'',
+        });
+      });
+      if (membres[0]) { resp1=membres[0].titre+' '+membres[0].nom; resp1Tel=membres[0].tel; resp1Email=membres[0].email; }
+      if (membres[1]) { resp2=membres[1].titre+' '+membres[1].nom; resp2Tel=membres[1].tel; resp2Email=membres[1].email; }
+    }
     const nouveauClient = {
       id: newId(),
       prenom,
       nom: document.getElementById('rdv-nc-nom').value.trim(),
       profil: document.getElementById('rdv-nc-profil').value,
       tel: document.getElementById('rdv-nc-tel').value.trim(),
-      adresse: '', email: '', motif: '',
+      adresse: '', email: emailCommun || resp1Email || '', motif: '',
       naissance: document.getElementById('rdv-nc-naissance').value,
-      resp1: document.getElementById('rdv-nc-resp1').value.trim(),
-      resp1Tel: document.getElementById('rdv-nc-resp1-tel').value.trim(),
-      resp1Email: document.getElementById('rdv-nc-resp1-email').value.trim(),
-      resp2: document.getElementById('rdv-nc-resp2').value.trim(),
-      resp2Tel: document.getElementById('rdv-nc-resp2-tel').value.trim(),
-      resp2Email: document.getElementById('rdv-nc-resp2-email').value.trim(),
+      situationFamiliale: sit,
+      membres,
+      resp1, resp1Tel, resp1Email,
+      resp2, resp2Tel, resp2Email,
       structure: document.getElementById('rdv-nc-structure').value.trim(),
       structureResp: document.getElementById('rdv-nc-structure-resp').value.trim(),
       structureFonction: '',
