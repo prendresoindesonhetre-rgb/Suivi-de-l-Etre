@@ -835,6 +835,7 @@ html, body {
     </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal('devis')">Annuler</button>
+      <button class="btn" onclick="saveDevisBrouillon()" style="border-color:var(--text-hint);color:var(--text-hint)"><i class="ti ti-pencil"></i> Brouillon</button>
       <button class="btn" onclick="genDevisPDF()" style="border-color:var(--teal);color:var(--teal)"><i class="ti ti-file-type-pdf"></i> PDF</button>
       <button class="btn" onclick="sendDevisEmail()" style="border-color:var(--amber);color:var(--amber)"><i class="ti ti-mail"></i> Envoyer</button>
       <button class="btn btn-primary" onclick="saveDevis()"><i class="ti ti-check"></i> Enregistrer</button>
@@ -1900,10 +1901,23 @@ function buildDevisData() {
   };
 }
 
+function saveDevisBrouillon() {
+  const d = buildDevisData();
+  d.brouillon = true;
+  const idx = devisList.findIndex(x => x.id === d.id);
+  if (idx >= 0) devisList[idx] = d;
+  else devisList.unshift(d);
+  saveDevisLocal();
+  closeModal('devis');
+  renderDevisList();
+  toast('Brouillon enregistré ✓');
+}
+
 function saveDevis() {
   const d = buildDevisData();
   if (!d.clientId) { alert('Veuillez sélectionner un client.'); return; }
   if (!d.objet) { alert('Veuillez renseigner un objet.'); return; }
+  d.brouillon = false;
   const idx = devisList.findIndex(x => x.id === d.id);
   if (idx >= 0) devisList[idx] = d;
   else devisList.unshift(d);
@@ -1913,26 +1927,25 @@ function saveDevis() {
   toast('Devis enregistré ✓');
 }
 
-function deleteDevis(id) {
-  if (!confirm('Supprimer ce devis ?')) return;
-  devisList = devisList.filter(d => d.id !== id);
-  saveDevisLocal();
-  renderDevisList();
-  toast('Devis supprimé');
-}
-
 function renderDevisList() {
   const el = document.getElementById('devis-list');
   if (!devisList.length) {
     el.innerHTML = '<div class="empty-state"><i class="ti ti-file-off"></i>Aucun devis</div>';
     return;
   }
-  el.innerHTML = devisList.map(d => {
+
+  const brouillons = devisList.filter(d => d.brouillon);
+  const finalises = devisList.filter(d => !d.brouillon);
+
+  const devisCard = (d) => {
     const c = d.client || clients.find(x => x.id === d.clientId);
     const nom = c ? `${c.prenom} ${c.nom}` : 'Client inconnu';
+    const badge = d.brouillon
+      ? `<span style="background:var(--lavender-light);color:var(--lavender-dark);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px">BROUILLON</span>`
+      : '';
     return `<div class="rdv-card">
       <div class="rdv-info">
-        <div class="rdv-title">${d.objet || 'Devis'}</div>
+        <div class="rdv-title">${d.objet || 'Devis sans titre'}${badge}</div>
         <div class="rdv-meta">${nom} · ${fmtDate(d.date)} · <strong>${d.total.toFixed(2)} €</strong></div>
       </div>
       <div class="rdv-actions">
@@ -1941,7 +1954,19 @@ function renderDevisList() {
         <button class="icon-btn danger" onclick="deleteDevis(${d.id})" title="Supprimer"><i class="ti ti-trash"></i></button>
       </div>
     </div>`;
-  }).join('');
+  };
+
+  let html = '';
+  if (brouillons.length) {
+    html += `<div class="section-title" style="margin-bottom:0.5rem"><i class="ti ti-pencil" style="font-size:13px;margin-right:4px"></i>Brouillons</div>`;
+    html += brouillons.map(devisCard).join('');
+    html += `<div style="margin-bottom:1.5rem"></div>`;
+  }
+  if (finalises.length) {
+    html += `<div class="section-title" style="margin-bottom:0.5rem"><i class="ti ti-file-check" style="font-size:13px;margin-right:4px"></i>Devis finalisés</div>`;
+    html += finalises.map(devisCard).join('');
+  }
+  el.innerHTML = html;
 }
 
 function editDevis(id) {
