@@ -583,12 +583,19 @@ html, body {
           </div>
 
           <!-- Structure -->
-          <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:0.06em;margin:0.75rem 0 0.4rem">Structure / Établissement <span style="color:var(--text-hint);font-weight:400;text-transform:none">(optionnel)</span></div>
-          <div class="form-row"><label>Nom de la structure</label><input type="text" id="rdv-nc-structure" placeholder="Ex: IME Les Pins, École Jules Ferry..."></div>
-          <div class="form-row"><label>Nom du responsable / référent</label><input type="text" id="rdv-nc-structure-resp" placeholder="Ex: Mme Martin — Éducatrice spécialisée"></div>
-          <div class="form-grid form-grid-2">
-            <div class="form-row"><label>Téléphone du référent</label><input type="tel" id="rdv-nc-structure-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
-            <div class="form-row"><label>Email du référent</label><input type="email" id="rdv-nc-structure-email" placeholder="email@structure.fr"></div>
+          <div style="margin:0.75rem 0 0.4rem;display:flex;align-items:center;gap:8px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:0.06em">
+              <input type="checkbox" id="rdv-nc-avec-structure" onchange="toggleRdvNcStructure()" style="width:16px;height:16px;accent-color:var(--teal);cursor:pointer">
+              Accompagné par un établissement
+            </label>
+          </div>
+          <div id="rdv-nc-structure-fields" style="display:none">
+            <div class="form-row"><label>Nom de la structure</label><input type="text" id="rdv-nc-structure" placeholder="Ex: IME Les Pins, École Jules Ferry..."></div>
+            <div class="form-row"><label>Nom du responsable / référent</label><input type="text" id="rdv-nc-structure-resp" placeholder="Ex: Mme Martin — Éducatrice spécialisée"></div>
+            <div class="form-grid form-grid-2">
+              <div class="form-row"><label>Téléphone du référent</label><input type="tel" id="rdv-nc-structure-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+              <div class="form-row"><label>Email du référent</label><input type="email" id="rdv-nc-structure-email" placeholder="email@structure.fr"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -986,6 +993,11 @@ function formatPhone(el) {
   el.value = digits.replace(/(\d{2})(?=\d)/g, '$1 ');
 }
 
+function toggleRdvNcStructure() {
+  const checked = document.getElementById('rdv-nc-avec-structure').checked;
+  document.getElementById('rdv-nc-structure-fields').style.display = checked ? 'block' : 'none';
+}
+
 function toggleRdvNcEnfantFields() {
   const profil = document.getElementById('rdv-nc-profil').value;
   document.getElementById('rdv-nc-enfant-fields').style.display = profil === 'enfant' ? 'block' : 'none';
@@ -1372,6 +1384,8 @@ function togglePremiereFields() {
     document.getElementById('rdv-nc-structure-resp').value = '';
     document.getElementById('rdv-nc-structure-tel').value = '';
     document.getElementById('rdv-nc-structure-email').value = '';
+    document.getElementById('rdv-nc-avec-structure').checked = false;
+    document.getElementById('rdv-nc-structure-fields').style.display = 'none';
     document.getElementById('rdv-nc-enfant-fields').style.display = 'none';
   }
 }
