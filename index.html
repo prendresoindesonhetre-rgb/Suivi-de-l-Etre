@@ -102,6 +102,7 @@ html, body {
 .upcoming-list { display: flex; flex-direction: column; gap: 8px; }
 .upcoming-item { background: var(--cream-card); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 0.8rem 1rem; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow); }
 .upcoming-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-annule { background: var(--danger) !important; }
 .dot-seance { background: var(--teal); }
 .dot-trajet { background: var(--amber); }
 .upcoming-info { flex: 1; min-width: 0; }
@@ -594,6 +595,7 @@ html, body {
     </div>
     <div class="modal-actions" style="margin-top:1rem">
       <button class="btn btn-danger" id="detail-delete-btn"><i class="ti ti-trash"></i> Supprimer</button>
+      <button class="btn" id="detail-cancel-btn"><i class="ti ti-calendar-off"></i> Annuler</button>
       <button class="btn" id="detail-edit-btn"><i class="ti ti-edit"></i> Modifier</button>
       <button class="btn btn-primary" id="detail-note-btn"><i class="ti ti-notes"></i> Note de séance</button>
     </div>
@@ -1022,17 +1024,18 @@ function renderDashboard() {
     const c = getClient(r.clientId);
     const hasTrajet = (r.trajetAller||0)+(r.trajetRetour||0) > 0;
     const trajetTxt = hasTrajet ? `<br><i class="ti ti-car" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>${(r.trajetAller||0)+(r.trajetRetour||0)} min de trajet · ` : '';
-    return `<div class="upcoming-item">
-      <div class="upcoming-dot ${hasTrajet?'dot-trajet':'dot-seance'}"></div>
+    return `<div class="upcoming-item" style="${r.annule?'opacity:0.5;text-decoration:line-through;':''}">
+      <div class="upcoming-dot ${r.annule?'dot-annule':hasTrajet?'dot-trajet':'dot-seance'}"></div>
       <div class="upcoming-info" style="cursor:pointer" onclick="openRdvDetail(${r.id})">
-        <div class="upcoming-name">${c ? c.prenom+' '+c.nom : '?'} — ${r.type}</div>
+        <div class="upcoming-name">${c ? c.prenom+' '+c.nom : '?'} — ${r.type}${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600;text-decoration:none">Annulé</span>':''}</div>
         <div class="upcoming-detail">${r.heure} · ${r.duree} min${r.lieu ? '<br><i class="ti ti-map-pin" style="font-size:11px;margin-right:3px"></i>'+r.lieu : (c && c.adresse ? '<br><i class="ti ti-map-pin" style="font-size:11px;margin-right:3px"></i>'+c.adresse : '')}${trajetTxt ? '<br>'+trajetTxt.slice(4) : ''}</div>
-        ${getProchaineEtape(r.clientId) ? `<div style="margin-top:4px;font-size:11px;color:var(--teal);font-weight:600"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
+        ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:4px;font-size:11px;color:var(--teal);font-weight:600"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
         <div class="upcoming-time" style="margin-right:4px">${fmtDate(r.date)}</div>
-        <button class="icon-btn" onclick="openNoteFromRdv(${r.id})" title="Ajouter une note" style="color:var(--teal-mid)"><i class="ti ti-notes"></i></button>
-        ${c && c.tel ? `<button class="icon-btn" onclick="openWhatsapp(${r.id})" title="WhatsApp" style="color:#25D366"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
+        ${!r.annule ? `<button class="icon-btn" onclick="openNoteFromRdv(${r.id})" title="Ajouter une note" style="color:var(--teal-mid)"><i class="ti ti-notes"></i></button>` : ''}
+        ${c && c.tel && !r.annule ? `<button class="icon-btn" onclick="openWhatsapp(${r.id})" title="WhatsApp" style="color:#25D366"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
+        <button class="icon-btn" onclick="cancelRdv(${r.id})" title="${r.annule?'Réactiver':'Annuler le RDV'}" style="color:${r.annule?'var(--teal)':'var(--danger)'}"><i class="ti ti-${r.annule?'rotate':'calendar-off'}"></i></button>
         <button class="icon-btn danger" onclick="confirmDeleteRdv(${r.id})" title="Supprimer"><i class="ti ti-trash"></i></button>
       </div>
     </div>`;
@@ -1183,17 +1186,18 @@ function renderRdvs() {
   function rdvHtml(r) {
     const c = getClient(r.clientId);
     const tt = (r.trajetAller||0)+(r.trajetRetour||0);
-    return `<div class="rdv-item">
-      <div class="upcoming-dot ${tt>0?'dot-trajet':'dot-seance'}"></div>
+    return `<div class="rdv-item" style="${r.annule?'opacity:0.5;':''}">
+      <div class="upcoming-dot ${r.annule?'dot-annule':tt>0?'dot-trajet':'dot-seance'}"></div>
       <div class="rdv-info">
-        <div class="rdv-title">${c?c.prenom+' '+c.nom:'?'} — ${r.type}${r.premiere?' <span style="font-size:10px;background:var(--lavender-light);color:var(--lavender-dark);padding:1px 6px;border-radius:8px;font-weight:600">1ère séance</span>':''}</div>
+        <div class="rdv-title">${c?c.prenom+' '+c.nom:'?'} — ${r.type}${r.premiere?' <span style="font-size:10px;background:var(--lavender-light);color:var(--lavender-dark);padding:1px 6px;border-radius:8px;font-weight:600">1ère séance</span>':''}${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600">Annulé</span>':''}</div>
         <div class="rdv-detail">${r.heure} · ${r.duree} min${r.lieu ? ' · '+r.lieu : (c && c.adresse ? ' · '+c.adresse : '')}${tt>0?' · '+tt+' min trajet':''}</div>
-        ${getProchaineEtape(r.clientId) ? `<div style="margin-top:3px;font-size:11px;color:var(--teal);font-weight:600"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
+        ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:3px;font-size:11px;color:var(--teal);font-weight:600"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <div class="rdv-time">${fmtDate(r.date)}</div>
-        ${c && c.tel ? `<button class="icon-btn" onclick="openWhatsapp(${r.id})" title="Confirmation WhatsApp" style="color:#25D366"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
-        <button class="icon-btn" onclick="editRdv(${r.id})" title="Modifier"><i class="ti ti-edit"></i></button>
+        ${c && c.tel && !r.annule ? `<button class="icon-btn" onclick="openWhatsapp(${r.id})" title="Confirmation WhatsApp" style="color:#25D366"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
+        ${!r.annule ? `<button class="icon-btn" onclick="editRdv(${r.id})" title="Modifier"><i class="ti ti-edit"></i></button>` : ''}
+        <button class="icon-btn" onclick="cancelRdv(${r.id})" title="${r.annule?'Réactiver':'Annuler'}" style="color:${r.annule?'var(--teal)':'var(--danger)'}"><i class="ti ti-${r.annule?'rotate':'calendar-off'}"></i></button>
         <button class="icon-btn danger" onclick="deleteRdv(${r.id})" title="Supprimer"><i class="ti ti-trash"></i></button>
       </div>
     </div>`;
@@ -1203,6 +1207,25 @@ function renderRdvs() {
 }
 
 // --- DURÉES PRÉDÉFINIES ---
+function cancelRdv(id) {
+  const r = rdvs.find(x => x.id === id);
+  if (!r) return;
+  if (r.annule) {
+    // Réactiver
+    r.annule = false;
+    toast('RDV réactivé ✓');
+  } else {
+    if (!confirm('Marquer ce rendez-vous comme annulé ?')) return;
+    r.annule = true;
+    toast('RDV marqué comme annulé');
+  }
+  persistAndSync();
+  renderDashboard();
+  renderRdvs();
+  if (document.getElementById('modal-rdv-detail').classList.contains('open')) {
+    closeModal('rdv-detail');
+  }
+}
 function getProchaineEtape(clientId) {
   const clientNotes = notes.filter(n => n.clientId === clientId).sort((a,b) => b.date.localeCompare(a.date));
   return clientNotes[0]?.suite || null;
@@ -1360,7 +1383,12 @@ function openRdvDetail(id) {
       ${r.notes ? `<div style="margin-top:4px;padding:8px;background:var(--warm-cream);border-radius:6px;font-style:italic">${r.notes}</div>` : ''}
     </div>
     ${derniereNoteHtml}`;
+  const cancelBtn = document.getElementById('detail-cancel-btn');
+  cancelBtn.innerHTML = r.annule ? '<i class="ti ti-rotate"></i> Réactiver' : '<i class="ti ti-calendar-off"></i> Annuler';
+  cancelBtn.style.borderColor = r.annule ? 'var(--teal)' : 'var(--danger)';
+  cancelBtn.style.color = r.annule ? 'var(--teal)' : 'var(--danger)';
   document.getElementById('detail-delete-btn').onclick = () => { closeModal('rdv-detail'); confirmDeleteRdv(id); };
+  document.getElementById('detail-cancel-btn').onclick = () => { cancelRdv(id); };
   document.getElementById('detail-edit-btn').onclick = () => { closeModal('rdv-detail'); editRdv(id); };
   document.getElementById('detail-note-btn').onclick = () => { closeModal('rdv-detail'); openNoteFromRdv(id); };
   document.getElementById('modal-rdv-detail').classList.add('open');
