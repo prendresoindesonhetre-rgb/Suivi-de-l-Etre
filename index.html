@@ -1354,7 +1354,7 @@ function openRdvDetail(id) {
     <div style="display:flex;flex-direction:column;gap:7px;font-size:13px;color:var(--text-muted)">
       <div><i class="ti ti-calendar" style="color:var(--teal);margin-right:6px"></i>${dateStr}</div>
       <div><i class="ti ti-clock" style="color:var(--teal);margin-right:6px"></i>${r.heure} · ${r.duree} min</div>
-      ${r.lieu ? `<div><i class="ti ti-map-pin" style="color:var(--teal);margin-right:6px"></i>${r.lieu}</div>` : ''}
+      ${r.lieu ? `<div><i class="ti ti-map-pin" style="color:var(--teal);margin-right:6px"></i>${r.lieu}</div>` : (c && c.adresse ? `<div><i class="ti ti-map-pin" style="color:var(--teal);margin-right:6px"></i>${c.adresse}</div>` : '')}
       ${tt > 0 ? `<div><i class="ti ti-car" style="color:var(--amber);margin-right:6px"></i>${r.trajetAller||0} min aller · ${r.trajetRetour||0} min retour</div>` : ''}
       ${r.premiere ? `<div><i class="ti ti-star" style="color:var(--lavender-dark);margin-right:6px"></i>Première séance</div>` : ''}
       ${r.notes ? `<div style="margin-top:4px;padding:8px;background:var(--warm-cream);border-radius:6px;font-style:italic">${r.notes}</div>` : ''}
