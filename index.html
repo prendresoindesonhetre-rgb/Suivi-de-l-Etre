@@ -1202,8 +1202,40 @@ function renderRdvs() {
       </div>
     </div>`;
   }
-  document.getElementById('rdvs-upcoming').innerHTML = up.length ? up.map(rdvHtml).join('') : '<div class="empty-state"><i class="ti ti-calendar-off"></i>Aucun RDV à venir</div>';
-  document.getElementById('rdvs-past').innerHTML = past.length ? past.slice(0,20).map(rdvHtml).join('') : '<div class="empty-state"><i class="ti ti-clock-off"></i>Aucun RDV passé</div>';
+  function groupLabel(dateStr, isPast) {
+    const d = new Date(dateStr + 'T12:00:00');
+    const todayD = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const diff = Math.round((d - todayD) / 86400000);
+    if (!isPast) {
+      if (diff === 0) return { label: "Aujourd'hui", color: '#2E7D8C' };
+      if (diff === 1) return { label: 'Demain', color: '#7A4F3A' };
+      if (diff <= 7) return { label: 'Cette semaine', color: '#7A9E7E' };
+      if (diff <= 31) return { label: 'Ce mois-ci', color: '#9B8EC4' };
+      return { label: 'Plus tard', color: '#6B7A8D' };
+    } else {
+      if (diff === -1) return { label: 'Hier', color: '#D4A5B5' };
+      if (diff >= -7) return { label: 'Cette semaine', color: '#6B7A8D' };
+      return { label: 'Plus ancien', color: '#6B7A8D' };
+    }
+  }
+
+  function renderGrouped(list, isPast) {
+    if (!list.length) return `<div class="empty-state"><i class="ti ti-${isPast?'clock-off':'calendar-off'}"></i>Aucun RDV ${isPast?'passé':'à venir'}</div>`;
+    let html = '';
+    let lastLabel = null;
+    list.forEach(r => {
+      const g = groupLabel(r.date, isPast);
+      if (g.label !== lastLabel) {
+        html += `<div style="font-size:11px;font-weight:700;color:${g.color};text-transform:uppercase;letter-spacing:0.07em;margin:${lastLabel?'1.25rem':'0'} 0 0.4rem;display:flex;align-items:center;gap:6px"><span style="flex:1;height:0.5px;background:${g.color};opacity:0.3;display:inline-block"></span>${g.label}<span style="flex:1;height:0.5px;background:${g.color};opacity:0.3;display:inline-block"></span></div>`;
+        lastLabel = g.label;
+      }
+      html += rdvHtml(r);
+    });
+    return html;
+  }
+
+  document.getElementById('rdvs-upcoming').innerHTML = renderGrouped(up, false);
+  document.getElementById('rdvs-past').innerHTML = renderGrouped(past.slice(0, 20), true);
 }
 
 // --- DURÉES PRÉDÉFINIES ---
