@@ -1027,8 +1027,8 @@ function renderDashboard() {
     return `<div class="upcoming-item" style="${r.annule?'opacity:0.5;text-decoration:line-through;':''}">
       <div class="upcoming-dot ${r.annule?'dot-annule':hasTrajet?'dot-trajet':'dot-seance'}"></div>
       <div class="upcoming-info" style="cursor:pointer" onclick="openRdvDetail(${r.id})">
-        <div class="upcoming-name">${c ? c.prenom+' '+c.nom : '?'} — ${r.type}${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600;text-decoration:none">Annulé</span>':''}</div>
-        <div class="upcoming-detail">${r.heure} · ${r.duree} min${r.lieu ? '<br><i class="ti ti-map-pin" style="font-size:11px;margin-right:3px"></i>'+r.lieu : (c && c.adresse ? '<br><i class="ti ti-map-pin" style="font-size:11px;margin-right:3px"></i>'+c.adresse : '')}${trajetTxt ? '<br>'+trajetTxt.slice(4) : ''}</div>
+        <div class="upcoming-name">${r.heure} · ${c ? c.prenom+' '+c.nom : '?'} — ${r.type} (${r.duree} min)${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600;text-decoration:none">Annulé</span>':''}</div>
+        <div class="upcoming-detail">${r.lieu ? '<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px"></i>'+r.lieu : (c && c.adresse ? '<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px"></i>'+c.adresse : '')}${trajetTxt ? '<br>'+trajetTxt.slice(4) : ''}</div>
         ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:4px;font-size:11px;color:var(--teal);font-weight:600"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
@@ -1189,8 +1189,8 @@ function renderRdvs() {
     return `<div class="rdv-item" style="${r.annule?'opacity:0.5;':''}">
       <div class="upcoming-dot ${r.annule?'dot-annule':tt>0?'dot-trajet':'dot-seance'}"></div>
       <div class="rdv-info">
-        <div class="rdv-title">${c?c.prenom+' '+c.nom:'?'} — ${r.type}${r.premiere?' <span style="font-size:10px;background:var(--lavender-light);color:var(--lavender-dark);padding:1px 6px;border-radius:8px;font-weight:600">1ère séance</span>':''}${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600">Annulé</span>':''}</div>
-        <div class="rdv-detail">${r.heure} · ${r.duree} min${r.lieu ? ' · '+r.lieu : (c && c.adresse ? ' · '+c.adresse : '')}${tt>0?' · '+tt+' min trajet':''}</div>
+        <div class="rdv-title">${r.heure} · ${c?c.prenom+' '+c.nom:'?'} — ${r.type} (${r.duree} min)${r.premiere?' <span style="font-size:10px;background:var(--lavender-light);color:var(--lavender-dark);padding:1px 6px;border-radius:8px;font-weight:600">1ère séance</span>':''}${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600">Annulé</span>':''}</div>
+        <div class="rdv-detail">${r.lieu ? r.lieu : (c && c.adresse ? c.adresse : '')}${tt>0?' · '+tt+' min trajet':''}</div>
         ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:3px;font-size:11px;color:var(--teal);font-weight:600"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:8px">
