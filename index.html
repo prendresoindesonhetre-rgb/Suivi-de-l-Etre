@@ -779,9 +779,14 @@ html, body {
 
       <!-- Client -->
       <div class="form-row"><label>Client</label>
-        <select id="devis-client" onchange="onDevisClientChange()">
-          <option value="">— Sélectionner un client —</option>
-        </select>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="devis-client" onchange="onDevisClientChange()" style="flex:1">
+            <option value="">— Sélectionner un client —</option>
+          </select>
+          <button class="btn" type="button" onclick="createClientFromDevis()" title="Créer un nouveau client" style="flex-shrink:0;border-color:var(--teal);color:var(--teal)">
+            <i class="ti ti-user-plus"></i> Nouveau
+          </button>
+        </div>
       </div>
 
       <!-- Infos client auto-remplies -->
@@ -1670,6 +1675,12 @@ function saveClient() {
   renderClients();
   renderDashboard();
   if (editId && currentClientId == editId) showFiche(editId);
+  // Si on vient du devis, retourner au devis avec le nouveau client sélectionné
+  if (window._devisRetourNewClient || window._devisRetourClientId) {
+    if (!editId) window._devisRetourNewClient = true;
+    retourAuDevis();
+    document.getElementById('retour-devis-btn').style.display = 'none';
+  }
 }
 
 function editClient(id) {
@@ -1831,13 +1842,36 @@ function onDevisClientChange() {
   editBtn.style.display = 'block';
 }
 
+function createClientFromDevis() {
+  closeModal('devis');
+  window._devisRetourClientId = null;
+  window._devisRetourNewClient = true;
+  // Ouvrir le modal client vierge
+  openModal('client');
+  // Après la sauvegarde du client, on reviendra au devis
+  // On surcharge temporairement saveClient pour intercepter
+  window._saveClientOriginal = window._saveClientOriginal || null;
+  document.getElementById('retour-devis-btn').style.display = '';
+}
+
 function retourAuDevis() {
   document.getElementById('retour-devis-btn').style.display = 'none';
   openModal('devis');
   setTimeout(() => {
+    // Rafraîchir la liste des clients dans le select
+    const sel = document.getElementById('devis-client');
+    sel.innerHTML = '<option value="">— Sélectionner un client —</option>' + clients.map(c=>`<option value="${c.id}">${c.prenom} ${c.nom}</option>`).join('');
     if (window._devisRetourClientId) {
-      document.getElementById('devis-client').value = window._devisRetourClientId;
+      sel.value = window._devisRetourClientId;
       onDevisClientChange();
+    } else if (window._devisRetourNewClient) {
+      // Sélectionner le client le plus récemment créé
+      if (clients.length) {
+        const lastClient = clients[clients.length - 1];
+        sel.value = lastClient.id;
+        onDevisClientChange();
+      }
+      window._devisRetourNewClient = false;
     }
   }, 100);
 }
