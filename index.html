@@ -310,6 +310,13 @@ html, body {
     <div class="nav-item" onclick="showView('rdvs')" id="nav-rdvs">
       <i class="ti ti-list-details"></i> Tous les RDV
     </div>
+    <div class="nav-section">Outils</div>
+    <div class="nav-item" onclick="showView('devis')" id="nav-devis">
+      <i class="ti ti-file-invoice"></i> Devis
+    </div>
+    <div class="nav-item" onclick="showView('parametres')" id="nav-parametres">
+      <i class="ti ti-settings"></i> Mes informations
+    </div>
     <div class="sidebar-footer">
       <div style="margin-bottom:8px;font-size:11px;color:var(--text-hint);display:flex;align-items:center;gap:4px">
         <i class="ti ti-device-floppy" style="font-size:13px"></i> Sauvegarde auto activée
@@ -416,6 +423,55 @@ html, body {
         <div id="rdvs-upcoming" class="rdv-list"></div>
         <div class="section-title" style="margin-top:1.5rem">Passés</div>
         <div id="rdvs-past" class="rdv-list"></div>
+      </div>
+
+      <!-- VUE DEVIS -->
+      <div class="view" id="view-devis">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <div></div>
+          <button class="btn btn-primary" onclick="openModal('devis')"><i class="ti ti-plus"></i> Nouveau devis</button>
+        </div>
+        <div id="devis-list"></div>
+      </div>
+
+      <!-- VUE PARAMÈTRES -->
+      <div class="view" id="view-parametres">
+        <div style="max-width:560px">
+          <div class="section-title" style="margin-bottom:1rem">Mes informations professionnelles</div>
+          <div class="form-grid form-grid-2">
+            <div class="form-row"><label>Prénom</label><input type="text" id="param-prenom" placeholder="Yoann"></div>
+            <div class="form-row"><label>Nom</label><input type="text" id="param-nom" placeholder="Pageot"></div>
+          </div>
+          <div class="form-row"><label>SIRET</label><input type="text" id="param-siret" placeholder="000 000 000 00000"></div>
+          <div class="form-row"><label>Adresse professionnelle</label><input type="text" id="param-adresse" placeholder="10 rue des Lilas, 10600 La Chapelle-Saint-Luc"></div>
+          <div class="form-grid form-grid-2">
+            <div class="form-row"><label>Email professionnel</label><input type="email" id="param-email" placeholder="yoann.pageot@prendresoindesonhetre.fr"></div>
+            <div class="form-row"><label>Téléphone</label><input type="tel" id="param-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+          </div>
+          <div class="form-row"><label>Nom de l'activité / Enseigne</label><input type="text" id="param-enseigne" placeholder="Prendre Soin de Son Être"></div>
+
+          <div class="section-title" style="margin:1.5rem 0 1rem">Facturation</div>
+          <div class="form-grid form-grid-2">
+            <div class="form-row"><label>Prix de séance par défaut (€)</label><input type="number" id="param-prix" placeholder="60" min="0" step="0.01"></div>
+            <div class="form-row"><label>Taux kilométrique (€/km)</label><input type="number" id="param-taux-km" value="0.518" min="0" step="0.001"></div>
+          </div>
+          <div class="form-row"><label>Mention TVA</label><input type="text" id="param-tva" value="TVA non applicable — article 293 B du CGI"></div>
+
+          <div class="section-title" style="margin:1.5rem 0 1rem">Envoi d'emails (EmailJS)</div>
+          <div class="form-row" style="background:var(--amber-light);border-radius:var(--radius-sm);padding:0.75rem 1rem;font-size:12px;color:var(--amber);margin-bottom:1rem">
+            <i class="ti ti-info-circle"></i> Pour envoyer des emails depuis l'appli, vous devez créer un compte gratuit sur <strong>emailjs.com</strong> et renseigner vos identifiants ci-dessous.
+          </div>
+          <div class="form-grid form-grid-2">
+            <div class="form-row"><label>Service ID</label><input type="text" id="param-ejs-service" placeholder="service_xxxxxxx"></div>
+            <div class="form-row"><label>Template ID</label><input type="text" id="param-ejs-template" placeholder="template_xxxxxxx"></div>
+          </div>
+          <div class="form-row"><label>Public Key</label><input type="text" id="param-ejs-pubkey" placeholder="xxxxxxxxxxxxxxx"></div>
+
+          <div style="margin-top:1.5rem;display:flex;gap:8px">
+            <button class="btn btn-primary" onclick="saveParametres()"><i class="ti ti-check"></i> Enregistrer</button>
+            <button class="btn" onclick="loadParametres()"><i class="ti ti-refresh"></i> Annuler</button>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -708,6 +764,78 @@ html, body {
 
 <div class="toast" id="toast"><i class="ti ti-check"></i> <span id="toast-msg"></span></div>
 
+<!-- MODAL DEVIS -->
+<div class="overlay" id="modal-devis">
+  <div class="modal" style="width:600px">
+    <div class="modal-title">
+      <span id="devis-modal-title">Nouveau devis</span>
+      <button class="modal-close" onclick="closeModal('devis')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="devis-edit-id">
+
+      <!-- Client -->
+      <div class="form-row"><label>Client</label>
+        <select id="devis-client" onchange="onDevisClientChange()">
+          <option value="">— Sélectionner un client —</option>
+        </select>
+      </div>
+
+      <!-- Infos client auto-remplies -->
+      <div id="devis-client-info" style="display:none;background:var(--teal-light);border-radius:var(--radius-sm);padding:0.6rem 0.85rem;font-size:12px;color:var(--teal-dark);margin-bottom:1rem;line-height:1.7"></div>
+
+      <!-- Objet -->
+      <div class="form-row"><label>Objet du devis</label>
+        <input type="text" id="devis-objet" placeholder="Ex: Suivi en hypnothérapie — 3 mois">
+      </div>
+
+      <!-- Période -->
+      <div class="form-grid form-grid-2">
+        <div class="form-row"><label>Durée (mois)</label>
+          <input type="number" id="devis-duree" min="1" max="24" value="3" oninput="calcDevisTotal()">
+        </div>
+        <div class="form-row"><label>Fréquence</label>
+          <select id="devis-frequence" onchange="calcDevisTotal()">
+            <option value="4">1 séance / semaine (~4/mois)</option>
+            <option value="2" selected>1 séance / 15 jours (~2/mois)</option>
+            <option value="1">1 séance / mois</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Prestations -->
+      <div style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;margin:0.75rem 0 0.5rem">Prestations</div>
+      <div id="devis-prestations"></div>
+      <button class="btn" onclick="addDevisPrestation()" style="font-size:12px;margin-bottom:1rem"><i class="ti ti-plus"></i> Ajouter une prestation</button>
+
+      <!-- Km -->
+      <div style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem">Déplacements</div>
+      <div class="form-grid form-grid-2">
+        <div class="form-row"><label>Distance aller (km)</label>
+          <input type="number" id="devis-km" min="0" value="0" oninput="calcDevisTotal()">
+        </div>
+        <div class="form-row"><label>Taux km (€/km)</label>
+          <input type="number" id="devis-taux-km" min="0" step="0.001" oninput="calcDevisTotal()">
+        </div>
+      </div>
+
+      <!-- Résumé -->
+      <div id="devis-resume" style="background:var(--lavender-light);border-radius:var(--radius-sm);padding:0.85rem 1rem;font-size:13px;margin-bottom:1rem;line-height:1.9"></div>
+
+      <!-- Notes -->
+      <div class="form-row"><label>Notes <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label>
+        <textarea id="devis-notes" placeholder="Informations complémentaires..."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('devis')">Annuler</button>
+      <button class="btn" onclick="genDevisPDF()" style="border-color:var(--teal);color:var(--teal)"><i class="ti ti-file-type-pdf"></i> PDF</button>
+      <button class="btn" onclick="sendDevisEmail()" style="border-color:var(--amber);color:var(--amber)"><i class="ti ti-mail"></i> Envoyer</button>
+      <button class="btn btn-primary" onclick="saveDevis()"><i class="ti ti-check"></i> Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- Navigation mobile en bas -->
 <nav class="mobile-nav">
   <div class="mobile-nav-item active" id="mnav-dashboard" onclick="showView('dashboard')">
@@ -726,9 +854,9 @@ html, body {
     <i class="ti ti-list-details"></i>
     <span>RDV</span>
   </div>
-  <div class="mobile-nav-item" id="mnav-plus" onclick="openModal('rdv')">
-    <i class="ti ti-circle-plus"></i>
-    <span>Nouveau</span>
+  <div class="mobile-nav-item" id="mnav-devis" onclick="showView('devis')">
+    <i class="ti ti-file-invoice"></i>
+    <span>Devis</span>
   </div>
 </nav>
 
@@ -851,12 +979,14 @@ function showView(v) {
   if (nav) nav.classList.add('active');
   const mnav = document.getElementById('mnav-'+v);
   if (mnav) mnav.classList.add('active');
-  const titles = { dashboard:'Tableau de bord', calendrier:'Calendrier', clients:'Clients', fiche:'Fiche client', rdvs:'Tous les rendez-vous' };
+  const titles = { dashboard:'Tableau de bord', calendrier:'Calendrier', clients:'Clients', fiche:'Fiche client', rdvs:'Tous les rendez-vous', devis:'Devis', parametres:'Mes informations' };
   document.getElementById('topbar-title').textContent = titles[v] || v;
   if (v==='calendrier') renderCalendar();
   if (v==='clients') renderClients();
   if (v==='dashboard') renderDashboard();
   if (v==='rdvs') renderRdvs();
+  if (v==='devis') renderDevisList();
+  if (v==='parametres') loadParametres();
 }
 
 // --- DASHBOARD ---
@@ -1250,6 +1380,28 @@ function calcAge(naissance) {
   return age;
 }
 function openModal(type) {
+  if (type === 'devis') {
+    const p = getParams();
+    const sel = document.getElementById('devis-client');
+    sel.innerHTML = '<option value="">— Sélectionner un client —</option>' + clients.map(c=>`<option value="${c.id}">${c.prenom} ${c.nom}</option>`).join('');
+    document.getElementById('devis-edit-id').value = '';
+    document.getElementById('devis-modal-title').textContent = 'Nouveau devis';
+    document.getElementById('devis-client').value = '';
+    document.getElementById('devis-objet').value = '';
+    document.getElementById('devis-duree').value = 3;
+    document.getElementById('devis-frequence').value = '2';
+    document.getElementById('devis-km').value = 0;
+    document.getElementById('devis-taux-km').value = p.tauxKm || 0.518;
+    document.getElementById('devis-notes').value = '';
+    document.getElementById('devis-client-info').style.display = 'none';
+    document.getElementById('devis-client-info').innerHTML = '';
+    document.getElementById('devis-prestations').innerHTML = '';
+    devisPrestationIdx = 0;
+    addDevisPrestation();
+    calcDevisTotal();
+    document.getElementById('modal-devis').classList.add('open');
+    return;
+  }
   if (type==='rdv') {
     const sel = document.getElementById('rdv-client');
     sel.innerHTML = '<option value="">— Sélectionner un client —</option>' + clients.map(c=>`<option value="${c.id}">${c.prenom} ${c.nom}</option>`).join('');
@@ -1557,6 +1709,417 @@ function deleteNote(id) {
 
 // Fermer modal en cliquant dehors
 document.querySelectorAll('.overlay').forEach(el => el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open'); }));
+
+// ---- PARAMÈTRES ----
+const PARAM_KEY = 'mac_parametres';
+const DEFAULT_PARAMS = {
+  prenom:'', nom:'', siret:'', adresse:'', email:'', tel:'', enseigne:'Prendre Soin de Son Être',
+  prix: 60, tauxKm: 0.518, tva: 'TVA non applicable — article 293 B du CGI',
+  ejsService:'', ejsTemplate:'', ejsPubkey:''
+};
+
+function loadParametres() {
+  const p = JSON.parse(localStorage.getItem(PARAM_KEY) || 'null') || DEFAULT_PARAMS;
+  document.getElementById('param-prenom').value = p.prenom || '';
+  document.getElementById('param-nom').value = p.nom || '';
+  document.getElementById('param-siret').value = p.siret || '';
+  document.getElementById('param-adresse').value = p.adresse || '';
+  document.getElementById('param-email').value = p.email || '';
+  document.getElementById('param-tel').value = p.tel || '';
+  document.getElementById('param-enseigne').value = p.enseigne || '';
+  document.getElementById('param-prix').value = p.prix || 60;
+  document.getElementById('param-taux-km').value = p.tauxKm || 0.518;
+  document.getElementById('param-tva').value = p.tva || DEFAULT_PARAMS.tva;
+  document.getElementById('param-ejs-service').value = p.ejsService || '';
+  document.getElementById('param-ejs-template').value = p.ejsTemplate || '';
+  document.getElementById('param-ejs-pubkey').value = p.ejsPubkey || '';
+}
+
+function saveParametres() {
+  const p = {
+    prenom: document.getElementById('param-prenom').value.trim(),
+    nom: document.getElementById('param-nom').value.trim(),
+    siret: document.getElementById('param-siret').value.trim(),
+    adresse: document.getElementById('param-adresse').value.trim(),
+    email: document.getElementById('param-email').value.trim(),
+    tel: document.getElementById('param-tel').value.trim(),
+    enseigne: document.getElementById('param-enseigne').value.trim(),
+    prix: parseFloat(document.getElementById('param-prix').value) || 60,
+    tauxKm: parseFloat(document.getElementById('param-taux-km').value) || 0.518,
+    tva: document.getElementById('param-tva').value.trim(),
+    ejsService: document.getElementById('param-ejs-service').value.trim(),
+    ejsTemplate: document.getElementById('param-ejs-template').value.trim(),
+    ejsPubkey: document.getElementById('param-ejs-pubkey').value.trim(),
+  };
+  localStorage.setItem(PARAM_KEY, JSON.stringify(p));
+  toast('Informations enregistrées ✓');
+}
+
+function getParams() {
+  return JSON.parse(localStorage.getItem(PARAM_KEY) || 'null') || DEFAULT_PARAMS;
+}
+
+// ---- DEVIS ----
+let devisList = JSON.parse(localStorage.getItem('mac_devis') || '[]');
+
+function saveDevisLocal() {
+  localStorage.setItem('mac_devis', JSON.stringify(devisList));
+}
+
+function onDevisClientChange() {
+  const id = parseInt(document.getElementById('devis-client').value);
+  const infoEl = document.getElementById('devis-client-info');
+  if (!id) { infoEl.style.display = 'none'; return; }
+  const c = clients.find(x => x.id === id);
+  if (!c) { infoEl.style.display = 'none'; return; }
+  let lines = [];
+  if (c.adresse) lines.push(`<i class="ti ti-map-pin"></i> ${c.adresse}`);
+  if (c.tel) lines.push(`<i class="ti ti-phone"></i> ${c.tel}`);
+  if (c.email) lines.push(`<i class="ti ti-mail"></i> ${c.email}`);
+  if (c.profil === 'enfant') {
+    if (c.resp1) lines.push(`<i class="ti ti-user"></i> Mère : ${c.resp1}${c.resp1Tel ? ' · '+c.resp1Tel : ''}`);
+    if (c.resp2) lines.push(`<i class="ti ti-user"></i> Père : ${c.resp2}${c.resp2Tel ? ' · '+c.resp2Tel : ''}`);
+    if (c.structure) lines.push(`<i class="ti ti-building"></i> ${c.structure}${c.structureResp ? ' — '+c.structureResp : ''}`);
+  }
+  infoEl.innerHTML = lines.join('<br>');
+  infoEl.style.display = lines.length ? 'block' : 'none';
+}
+
+let devisPrestationIdx = 0;
+function addDevisPrestation() {
+  const p = getParams();
+  const idx = devisPrestationIdx++;
+  const container = document.getElementById('devis-prestations');
+  const div = document.createElement('div');
+  div.id = `dp-${idx}`;
+  div.style.cssText = 'display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:end;margin-bottom:8px';
+  div.innerHTML = `
+    <div class="form-row" style="margin:0"><label>Prestation</label>
+      <input type="text" id="dp-label-${idx}" placeholder="Ex: Séance d'hypnothérapie" oninput="calcDevisTotal()">
+    </div>
+    <div class="form-row" style="margin:0"><label>Prix (€)</label>
+      <input type="number" id="dp-prix-${idx}" value="${p.prix||60}" min="0" step="0.01" style="width:90px" oninput="calcDevisTotal()">
+    </div>
+    <button class="icon-btn danger" onclick="removeDevisPrestation(${idx})" style="margin-bottom:1px"><i class="ti ti-trash"></i></button>
+  `;
+  container.appendChild(div);
+  calcDevisTotal();
+}
+
+function removeDevisPrestation(idx) {
+  const el = document.getElementById(`dp-${idx}`);
+  if (el) el.remove();
+  calcDevisTotal();
+}
+
+function getDevisPrestations() {
+  const items = [];
+  document.querySelectorAll('#devis-prestations > div').forEach(div => {
+    const idx = div.id.replace('dp-', '');
+    const label = document.getElementById(`dp-label-${idx}`)?.value.trim() || 'Séance';
+    const prix = parseFloat(document.getElementById(`dp-prix-${idx}`)?.value) || 0;
+    items.push({ label, prix });
+  });
+  return items;
+}
+
+function calcDevisTotal() {
+  const duree = parseInt(document.getElementById('devis-duree').value) || 1;
+  const freq = parseInt(document.getElementById('devis-frequence').value) || 2;
+  const nbSeances = duree * freq;
+  const km = parseFloat(document.getElementById('devis-km').value) || 0;
+  const tauxKm = parseFloat(document.getElementById('devis-taux-km').value) || 0.518;
+  const prestations = getDevisPrestations();
+
+  const totalPrestations = prestations.reduce((s, p) => s + p.prix * nbSeances, 0);
+  const totalKm = km > 0 ? (km * 2 * nbSeances * tauxKm) : 0;
+  const total = totalPrestations + totalKm;
+
+  const freqLabel = { '4': '1/semaine', '2': '1/15 jours', '1': '1/mois' }[String(freq)] || '';
+  let html = `<strong>Durée :</strong> ${duree} mois · ${freqLabel} · <strong>${nbSeances} séances au total</strong><br>`;
+  prestations.forEach(p => {
+    html += `${p.label} : ${nbSeances} × ${p.prix.toFixed(2)} € = <strong>${(p.prix*nbSeances).toFixed(2)} €</strong><br>`;
+  });
+  if (km > 0) {
+    html += `Déplacements : ${nbSeances} × ${km*2} km × ${tauxKm} €/km = <strong>${totalKm.toFixed(2)} €</strong><br>`;
+  }
+  html += `<strong style="font-size:14px;color:var(--teal)">Total : ${total.toFixed(2)} €</strong>`;
+  document.getElementById('devis-resume').innerHTML = html;
+}
+
+function buildDevisData() {
+  const clientId = parseInt(document.getElementById('devis-client').value);
+  const client = clients.find(c => c.id === clientId);
+  const duree = parseInt(document.getElementById('devis-duree').value) || 1;
+  const freq = parseInt(document.getElementById('devis-frequence').value) || 2;
+  const nbSeances = duree * freq;
+  const km = parseFloat(document.getElementById('devis-km').value) || 0;
+  const tauxKm = parseFloat(document.getElementById('devis-taux-km').value) || 0.518;
+  const prestations = getDevisPrestations();
+  const totalPrestations = prestations.reduce((s, p) => s + p.prix * nbSeances, 0);
+  const totalKm = km > 0 ? km * 2 * nbSeances * tauxKm : 0;
+  return {
+    id: parseInt(document.getElementById('devis-edit-id').value) || newId(),
+    date: fmt(today),
+    clientId, client,
+    objet: document.getElementById('devis-objet').value.trim(),
+    duree, freq, nbSeances,
+    prestations,
+    km, tauxKm,
+    totalPrestations, totalKm,
+    total: totalPrestations + totalKm,
+    notes: document.getElementById('devis-notes').value.trim(),
+  };
+}
+
+function saveDevis() {
+  const d = buildDevisData();
+  if (!d.clientId) { alert('Veuillez sélectionner un client.'); return; }
+  if (!d.objet) { alert('Veuillez renseigner un objet.'); return; }
+  const idx = devisList.findIndex(x => x.id === d.id);
+  if (idx >= 0) devisList[idx] = d;
+  else devisList.unshift(d);
+  saveDevisLocal();
+  closeModal('devis');
+  renderDevisList();
+  toast('Devis enregistré ✓');
+}
+
+function deleteDevis(id) {
+  if (!confirm('Supprimer ce devis ?')) return;
+  devisList = devisList.filter(d => d.id !== id);
+  saveDevisLocal();
+  renderDevisList();
+  toast('Devis supprimé');
+}
+
+function renderDevisList() {
+  const el = document.getElementById('devis-list');
+  if (!devisList.length) {
+    el.innerHTML = '<div class="empty-state"><i class="ti ti-file-off"></i>Aucun devis</div>';
+    return;
+  }
+  el.innerHTML = devisList.map(d => {
+    const c = d.client || clients.find(x => x.id === d.clientId);
+    const nom = c ? `${c.prenom} ${c.nom}` : 'Client inconnu';
+    return `<div class="rdv-card">
+      <div class="rdv-info">
+        <div class="rdv-title">${d.objet || 'Devis'}</div>
+        <div class="rdv-meta">${nom} · ${fmtDate(d.date)} · <strong>${d.total.toFixed(2)} €</strong></div>
+      </div>
+      <div class="rdv-actions">
+        <button class="icon-btn" onclick="editDevis(${d.id})" title="Modifier"><i class="ti ti-edit"></i></button>
+        <button class="icon-btn" onclick="genDevisPDFById(${d.id})" title="PDF"><i class="ti ti-file-type-pdf"></i></button>
+        <button class="icon-btn danger" onclick="deleteDevis(${d.id})" title="Supprimer"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function editDevis(id) {
+  const d = devisList.find(x => x.id === id);
+  if (!d) return;
+  const p = getParams();
+  const sel = document.getElementById('devis-client');
+  sel.innerHTML = '<option value="">— Sélectionner un client —</option>' + clients.map(c=>`<option value="${c.id}">${c.prenom} ${c.nom}</option>`).join('');
+  document.getElementById('devis-edit-id').value = d.id;
+  document.getElementById('devis-modal-title').textContent = 'Modifier le devis';
+  document.getElementById('devis-client').value = d.clientId;
+  onDevisClientChange();
+  document.getElementById('devis-objet').value = d.objet || '';
+  document.getElementById('devis-duree').value = d.duree;
+  document.getElementById('devis-frequence').value = String(d.freq);
+  document.getElementById('devis-km').value = d.km;
+  document.getElementById('devis-taux-km').value = d.tauxKm;
+  document.getElementById('devis-notes').value = d.notes || '';
+  document.getElementById('devis-client-info').style.display = 'none';
+  document.getElementById('devis-prestations').innerHTML = '';
+  devisPrestationIdx = 0;
+  (d.prestations || []).forEach(pr => {
+    addDevisPrestation();
+    const idx = devisPrestationIdx - 1;
+    document.getElementById(`dp-label-${idx}`).value = pr.label;
+    document.getElementById(`dp-prix-${idx}`).value = pr.prix;
+  });
+  calcDevisTotal();
+  document.getElementById('modal-devis').classList.add('open');
+}
+
+// ---- GÉNÉRATION PDF ----
+function genDevisPDFById(id) {
+  const d = devisList.find(x => x.id === id);
+  if (!d) return;
+  genDevisPDFFromData(d);
+}
+
+function genDevisPDF() {
+  const d = buildDevisData();
+  if (!d.clientId) { alert('Veuillez sélectionner un client.'); return; }
+  genDevisPDFFromData(d);
+}
+
+function genDevisPDFFromData(d) {
+  const p = getParams();
+  const c = d.client || clients.find(x => x.id === d.clientId) || {};
+  const freqLabel = { '4': '1 séance par semaine', '2': '1 séance tous les 15 jours', '1': '1 séance par mois' }[String(d.freq)] || '';
+  const numDevis = `DEV-${d.id}`;
+  const dateStr = fmtDate(d.date);
+
+  let prestationsRows = (d.prestations || []).map(pr =>
+    `<tr><td>${pr.label}</td><td style="text-align:center">${d.nbSeances}</td><td style="text-align:right">${pr.prix.toFixed(2)} €</td><td style="text-align:right">${(pr.prix*d.nbSeances).toFixed(2)} €</td></tr>`
+  ).join('');
+
+  if (d.km > 0) {
+    const kmTotal = d.km * 2 * d.nbSeances * d.tauxKm;
+    prestationsRows += `<tr><td>Déplacements (${d.km}km A/R × ${d.nbSeances} séances × ${d.tauxKm} €/km)</td><td style="text-align:center">${d.nbSeances}</td><td style="text-align:right">${(d.km*2*d.tauxKm).toFixed(2)} €</td><td style="text-align:right">${kmTotal.toFixed(2)} €</td></tr>`;
+  }
+
+  let clientAddr = [c.prenom+' '+c.nom];
+  if (c.adresse) clientAddr.push(c.adresse);
+  if (c.profil === 'enfant') {
+    if (c.resp1) clientAddr.push(`Mère : ${c.resp1}${c.resp1Tel ? ' · '+c.resp1Tel : ''}`);
+    if (c.resp2) clientAddr.push(`Père : ${c.resp2}${c.resp2Tel ? ' · '+c.resp2Tel : ''}`);
+    if (c.structure) clientAddr.push(`Structure : ${c.structure}`);
+    if (c.structureResp) clientAddr.push(`Référent : ${c.structureResp}${c.structureTel ? ' · '+c.structureTel : ''}`);
+  } else {
+    if (c.tel) clientAddr.push(c.tel);
+    if (c.email) clientAddr.push(c.email);
+  }
+
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+<title>Devis ${numDevis}</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 13px; color: #2d2d2d; margin: 0; padding: 40px; }
+  h1 { font-size: 26px; color: #1a7a7a; margin: 0 0 4px; }
+  .subtitle { color: #7a6a9a; font-size: 14px; font-style: italic; }
+  .header { display: flex; justify-content: space-between; margin-bottom: 40px; }
+  .emetteur { max-width: 50%; }
+  .meta { text-align: right; }
+  .meta strong { display: block; font-size: 20px; color: #1a7a7a; }
+  .parties { display: flex; gap: 40px; margin-bottom: 30px; }
+  .partie { flex: 1; background: #f5f5f5; border-radius: 6px; padding: 14px 16px; font-size: 12px; line-height: 1.7; }
+  .partie-title { font-weight: 700; color: #1a7a7a; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .objet { background: #e8f4f4; border-left: 3px solid #1a7a7a; padding: 10px 14px; margin-bottom: 20px; font-weight: 600; }
+  .periode { margin-bottom: 20px; color: #555; font-size: 12px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  th { background: #1a7a7a; color: white; padding: 8px 10px; text-align: left; font-size: 12px; }
+  td { padding: 7px 10px; border-bottom: 0.5px solid #e0e0e0; font-size: 12px; }
+  tr:nth-child(even) td { background: #f9f9f9; }
+  .total-row td { font-weight: 700; font-size: 14px; color: #1a7a7a; border-top: 2px solid #1a7a7a; background: #e8f4f4; }
+  .tva { font-size: 11px; color: #888; margin: -10px 0 20px; font-style: italic; }
+  .notes { background: #fdf0e6; border-radius: 6px; padding: 12px 14px; font-size: 12px; color: #555; margin-bottom: 20px; }
+  .footer { font-size: 10px; color: #aaa; border-top: 0.5px solid #ddd; padding-top: 12px; text-align: center; margin-top: 40px; }
+  @media print { body { padding: 20px; } }
+</style></head><body>
+<div class="header">
+  <div class="emetteur">
+    <h1>${p.enseigne || 'Prendre Soin de Son Être'}</h1>
+    <div class="subtitle">Hypnothérapie · Coaching · Relaxation</div>
+    <div style="margin-top:10px;font-size:12px;line-height:1.8;color:#555">
+      ${p.prenom || ''} ${p.nom || ''}<br>
+      ${p.adresse ? p.adresse+'<br>' : ''}
+      ${p.tel ? p.tel+'<br>' : ''}
+      ${p.email ? p.email+'<br>' : ''}
+      ${p.siret ? 'SIRET : '+p.siret : ''}
+    </div>
+  </div>
+  <div class="meta">
+    <strong>DEVIS</strong>
+    N° ${numDevis}<br>
+    Date : ${dateStr}<br>
+    Valable 30 jours
+  </div>
+</div>
+
+<div class="parties">
+  <div class="partie">
+    <div class="partie-title">Émetteur</div>
+    ${p.prenom || ''} ${p.nom || ''}<br>
+    ${p.enseigne || ''}<br>
+    ${p.adresse || ''}<br>
+    ${p.siret ? 'SIRET : '+p.siret : ''}
+  </div>
+  <div class="partie">
+    <div class="partie-title">Client</div>
+    ${clientAddr.join('<br>')}
+  </div>
+</div>
+
+<div class="objet">Objet : ${d.objet || 'Accompagnement'}</div>
+<div class="periode">Durée : ${d.duree} mois · Fréquence : ${freqLabel} · Nombre total de séances : <strong>${d.nbSeances}</strong></div>
+
+<table>
+  <thead><tr><th>Prestation</th><th style="text-align:center">Qté</th><th style="text-align:right">P.U.</th><th style="text-align:right">Total</th></tr></thead>
+  <tbody>${prestationsRows}
+  <tr class="total-row"><td colspan="3">TOTAL</td><td style="text-align:right">${d.total.toFixed(2)} €</td></tr>
+  </tbody>
+</table>
+<div class="tva">${p.tva || 'TVA non applicable — article 293 B du CGI'}</div>
+
+${d.notes ? `<div class="notes"><strong>Notes :</strong> ${d.notes}</div>` : ''}
+
+<div class="footer">
+  ${p.enseigne || 'Prendre Soin de Son Être'} — ${p.prenom || ''} ${p.nom || ''} — SIRET : ${p.siret || ''}
+  <br>Ce document est un devis. Il ne constitue pas une facture.
+</div>
+</body></html>`;
+
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => w.print(), 500);
+}
+
+// ---- ENVOI EMAIL ----
+async function sendDevisEmail() {
+  const p = getParams();
+  if (!p.ejsService || !p.ejsTemplate || !p.ejsPubkey) {
+    alert('Veuillez d\'abord configurer EmailJS dans "Mes informations" (Service ID, Template ID, Public Key).');
+    showView('parametres');
+    closeModal('devis');
+    return;
+  }
+  const d = buildDevisData();
+  if (!d.clientId) { alert('Veuillez sélectionner un client.'); return; }
+  const c = d.client || clients.find(x => x.id === d.clientId) || {};
+  const emailDest = c.email || (c.profil==='enfant' ? c.resp1Email || c.resp2Email || '' : '');
+  if (!emailDest) { alert(`Aucun email trouvé pour ${c.prenom} ${c.nom}. Veuillez renseigner son email dans la fiche client.`); return; }
+
+  const freqLabel = { '4': '1/semaine', '2': '1/15 jours', '1': '1/mois' }[String(d.freq)] || '';
+  const lignesPrest = (d.prestations||[]).map(pr => `${pr.label} × ${d.nbSeances} = ${(pr.prix*d.nbSeances).toFixed(2)} €`).join('\n');
+  const ligneKm = d.km > 0 ? `\nDéplacements : ${(d.km*2*d.nbSeances*d.tauxKm).toFixed(2)} €` : '';
+
+  const templateParams = {
+    to_email: emailDest,
+    to_name: `${c.prenom} ${c.nom}`,
+    from_name: `${p.prenom} ${p.nom} — ${p.enseigne || 'Prendre Soin de Son Être'}`,
+    reply_to: p.email,
+    objet: d.objet || 'Devis accompagnement',
+    duree: `${d.duree} mois · ${freqLabel} · ${d.nbSeances} séances`,
+    prestations: lignesPrest + ligneKm,
+    total: `${d.total.toFixed(2)} €`,
+    tva: p.tva || 'TVA non applicable — article 293 B du CGI',
+    notes: d.notes || '',
+    date: fmtDate(d.date),
+  };
+
+  try {
+    if (!window.emailjs) {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+        s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+    emailjs.init(p.ejsPubkey);
+    await emailjs.send(p.ejsService, p.ejsTemplate, templateParams);
+    toast('Devis envoyé par email ✓');
+    closeModal('devis');
+  } catch(e) {
+    alert('Erreur lors de l\'envoi : ' + (e?.text || e?.message || JSON.stringify(e)));
+  }
+}
 
 // ---- SUPABASE SYNC ----
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
