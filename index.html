@@ -838,7 +838,7 @@ html, body {
       <button class="btn" onclick="saveDevisBrouillon()" style="border-color:var(--text-hint);color:var(--text-hint)"><i class="ti ti-pencil"></i> Brouillon</button>
       <button class="btn" onclick="genDevisPDF()" style="border-color:var(--teal);color:var(--teal)"><i class="ti ti-file-type-pdf"></i> PDF</button>
       <button class="btn" onclick="sendDevisEmail()" style="border-color:var(--amber);color:var(--amber)"><i class="ti ti-mail"></i> Envoyer</button>
-      <button class="btn btn-primary" onclick="saveDevis()"><i class="ti ti-check"></i> Enregistrer</button>
+      <button class="btn btn-primary" onclick="saveDevis('finalise')"><i class="ti ti-check"></i> Finaliser</button>
     </div>
   </div>
 </div>
@@ -1302,16 +1302,53 @@ function openRdvDetail(id) {
   const c = getClient(r.clientId);
   const tt = (r.trajetAller||0) + (r.trajetRetour||0);
   const dateStr = new Date(r.date+'T12:00:00').toLocaleDateString('fr-FR', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  // Dernière note du client + prochaine étape
+  const clientNotes = notes.filter(n => n.clientId === r.clientId).sort((a,b) => b.date.localeCompare(a.date));
+  const derniereNote = clientNotes[0] || null;
+
+  let prochaineEtapeHtml = '';
+  if (derniereNote && derniereNote.suite) {
+    prochaineEtapeHtml = `
+      <div style="background:var(--teal);color:white;border-radius:var(--radius-sm);padding:1rem 1.1rem;margin-bottom:1rem">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;opacity:0.85;margin-bottom:6px"><i class="ti ti-target"></i> Objectif / Travail pour cette séance</div>
+        <div style="font-size:15px;font-weight:600;line-height:1.5">${derniereNote.suite}</div>
+        <div style="font-size:11px;opacity:0.75;margin-top:6px">D'après la note du ${fmtDate(derniereNote.date)}</div>
+      </div>`;
+  } else if (derniereNote) {
+    prochaineEtapeHtml = `
+      <div style="background:var(--teal-light);color:var(--teal-dark);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:1rem;font-size:12px">
+        <i class="ti ti-notes"></i> Aucune prochaine étape définie dans la dernière note (${fmtDate(derniereNote.date)})
+      </div>`;
+  } else {
+    prochaineEtapeHtml = `
+      <div style="background:var(--lavender-light);color:var(--lavender-dark);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:1rem;font-size:12px">
+        <i class="ti ti-notes-off"></i> Aucune note de séance pour ce client
+      </div>`;
+  }
+
+  // Contenu de la dernière note
+  let derniereNoteHtml = '';
+  if (derniereNote && derniereNote.contenu) {
+    derniereNoteHtml = `
+      <div style="margin-top:0.75rem">
+        <div style="font-size:11px;font-weight:700;color:var(--text-hint);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Dernière séance · ${derniereNote.type||''}</div>
+        <div style="font-size:13px;line-height:1.7;color:var(--text-muted);padding:0.75rem;background:var(--warm-cream);border-radius:var(--radius-sm)">${derniereNote.contenu}</div>
+      </div>`;
+  }
+
   document.getElementById('detail-title').textContent = `${c ? c.prenom+' '+c.nom : '?'} — ${r.type}`;
   document.getElementById('detail-content').innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:8px">
+    ${prochaineEtapeHtml}
+    <div style="display:flex;flex-direction:column;gap:7px;font-size:13px;color:var(--text-muted)">
       <div><i class="ti ti-calendar" style="color:var(--teal);margin-right:6px"></i>${dateStr}</div>
       <div><i class="ti ti-clock" style="color:var(--teal);margin-right:6px"></i>${r.heure} · ${r.duree} min</div>
       ${r.lieu ? `<div><i class="ti ti-map-pin" style="color:var(--teal);margin-right:6px"></i>${r.lieu}</div>` : ''}
       ${tt > 0 ? `<div><i class="ti ti-car" style="color:var(--amber);margin-right:6px"></i>${r.trajetAller||0} min aller · ${r.trajetRetour||0} min retour</div>` : ''}
       ${r.premiere ? `<div><i class="ti ti-star" style="color:var(--lavender-dark);margin-right:6px"></i>Première séance</div>` : ''}
       ${r.notes ? `<div style="margin-top:4px;padding:8px;background:var(--warm-cream);border-radius:6px;font-style:italic">${r.notes}</div>` : ''}
-    </div>`;
+    </div>
+    ${derniereNoteHtml}`;
   document.getElementById('detail-delete-btn').onclick = () => { closeModal('rdv-detail'); confirmDeleteRdv(id); };
   document.getElementById('detail-edit-btn').onclick = () => { closeModal('rdv-detail'); editRdv(id); };
   document.getElementById('detail-note-btn').onclick = () => { closeModal('rdv-detail'); openNoteFromRdv(id); };
@@ -1903,7 +1940,7 @@ function buildDevisData() {
 
 function saveDevisBrouillon() {
   const d = buildDevisData();
-  d.brouillon = true;
+  d.statut = 'brouillon';
   const idx = devisList.findIndex(x => x.id === d.id);
   if (idx >= 0) devisList[idx] = d;
   else devisList.unshift(d);
@@ -1917,6 +1954,8 @@ function saveDevis() {
   const d = buildDevisData();
   if (!d.clientId) { alert('Veuillez sélectionner un client.'); return; }
   if (!d.objet) { alert('Veuillez renseigner un objet.'); return; }
+  const existing = devisList.find(x => x.id === d.id);
+  d.statut = existing?.statut || 'finalise';
   d.brouillon = false;
   const idx = devisList.findIndex(x => x.id === d.id);
   if (idx >= 0) devisList[idx] = d;
@@ -1927,6 +1966,23 @@ function saveDevis() {
   toast('Devis enregistré ✓');
 }
 
+function setDevisStatut(id, statut) {
+  const idx = devisList.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  devisList[idx].statut = statut;
+  if (statut === 'accepte') {
+    toast('Devis accepté ! Pense à créer la facture sur Kolecto 📋');
+  } else if (statut === 'envoye') {
+    toast('Devis marqué comme envoyé ✓');
+  } else if (statut === 'refuse') {
+    toast('Devis marqué comme refusé');
+  } else if (statut === 'brouillon') {
+    toast('Devis repassé en brouillon');
+  }
+  saveDevisLocal();
+  renderDevisList();
+}
+
 function renderDevisList() {
   const el = document.getElementById('devis-list');
   if (!devisList.length) {
@@ -1934,38 +1990,82 @@ function renderDevisList() {
     return;
   }
 
-  const brouillons = devisList.filter(d => d.brouillon);
-  const finalises = devisList.filter(d => !d.brouillon);
+  const STATUTS = {
+    brouillon: { label:'Brouillon', color:'var(--text-hint)', bg:'#f0f0f0', icon:'ti-pencil' },
+    finalise:  { label:'Finalisé',  color:'var(--teal-dark)', bg:'var(--teal-light)', icon:'ti-file-check' },
+    envoye:    { label:'Envoyé',    color:'var(--amber)',     bg:'var(--amber-light)', icon:'ti-mail' },
+    accepte:   { label:'Accepté ✓', color:'#2d7a2d',         bg:'#e6f4e6',           icon:'ti-circle-check' },
+    refuse:    { label:'Refusé',    color:'var(--danger)',    bg:'var(--danger-light)', icon:'ti-circle-x' },
+  };
 
   const devisCard = (d) => {
     const c = d.client || clients.find(x => x.id === d.clientId);
     const nom = c ? `${c.prenom} ${c.nom}` : 'Client inconnu';
-    const badge = d.brouillon
-      ? `<span style="background:var(--lavender-light);color:var(--lavender-dark);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px">BROUILLON</span>`
+    const statut = d.statut || (d.brouillon ? 'brouillon' : 'finalise');
+    const st = STATUTS[statut] || STATUTS.finalise;
+    const locked = statut === 'accepte' || statut === 'envoye';
+
+    // Boutons de changement de statut
+    let statutBtns = '';
+    if (statut === 'brouillon' || statut === 'finalise') {
+      statutBtns = `<button class="btn" onclick="setDevisStatut(${d.id},'envoye')" style="font-size:11px;padding:3px 8px;border-color:var(--amber);color:var(--amber)" title="Marquer comme envoyé"><i class="ti ti-mail"></i> Envoyé</button>`;
+    }
+    if (statut === 'envoye') {
+      statutBtns = `
+        <button class="btn" onclick="setDevisStatut(${d.id},'accepte')" style="font-size:11px;padding:3px 8px;border-color:#2d7a2d;color:#2d7a2d" title="Marquer comme accepté"><i class="ti ti-circle-check"></i> Accepté</button>
+        <button class="btn" onclick="setDevisStatut(${d.id},'refuse')" style="font-size:11px;padding:3px 8px;border-color:var(--danger);color:var(--danger)" title="Marquer comme refusé"><i class="ti ti-circle-x"></i> Refusé</button>`;
+    }
+    if (locked || statut === 'refuse') {
+      statutBtns += `<button class="btn" onclick="setDevisStatut(${d.id},'brouillon')" style="font-size:11px;padding:3px 8px;color:var(--text-hint)" title="Repasser en brouillon"><i class="ti ti-rotate"></i></button>`;
+    }
+
+    const kolectoReminder = statut === 'accepte'
+      ? `<div style="background:#e6f4e6;border-left:3px solid #2d7a2d;padding:6px 10px;font-size:11px;color:#2d7a2d;margin-top:8px;border-radius:0 4px 4px 0"><i class="ti ti-alert-circle"></i> Pense à créer la facture sur Kolecto</div>`
       : '';
-    return `<div class="rdv-card">
-      <div class="rdv-info">
-        <div class="rdv-title">${d.objet || 'Devis sans titre'}${badge}</div>
-        <div class="rdv-meta">${nom} · ${fmtDate(d.date)} · <strong>${d.total.toFixed(2)} €</strong></div>
+
+    return `<div class="rdv-card" style="flex-direction:column;align-items:stretch;gap:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="rdv-info" style="flex:1">
+          <div class="rdv-title" style="display:flex;align-items:center;gap:8px">
+            ${d.objet || 'Devis sans titre'}
+            <span style="background:${st.bg};color:${st.color};font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap"><i class="ti ${st.icon}"></i> ${st.label}</span>
+          </div>
+          <div class="rdv-meta">${nom} · ${fmtDate(d.date)} · <strong>${d.total.toFixed(2)} €</strong></div>
+        </div>
+        <div class="rdv-actions" style="flex-shrink:0">
+          ${!locked ? `<button class="icon-btn" onclick="editDevis(${d.id})" title="Modifier"><i class="ti ti-edit"></i></button>` : ''}
+          <button class="icon-btn" onclick="genDevisPDFById(${d.id})" title="PDF"><i class="ti ti-file-type-pdf"></i></button>
+          <button class="icon-btn danger" onclick="deleteDevis(${d.id})" title="Supprimer"><i class="ti ti-trash"></i></button>
+        </div>
       </div>
-      <div class="rdv-actions">
-        <button class="icon-btn" onclick="editDevis(${d.id})" title="Modifier"><i class="ti ti-edit"></i></button>
-        <button class="icon-btn" onclick="genDevisPDFById(${d.id})" title="PDF"><i class="ti ti-file-type-pdf"></i></button>
-        <button class="icon-btn danger" onclick="deleteDevis(${d.id})" title="Supprimer"><i class="ti ti-trash"></i></button>
-      </div>
+      ${statutBtns ? `<div style="display:flex;gap:6px;flex-wrap:wrap">${statutBtns}</div>` : ''}
+      ${kolectoReminder}
     </div>`;
   };
 
+  // Grouper par statut
+  const groupes = {
+    brouillon: devisList.filter(d => (d.statut||'finalise') === 'brouillon' || d.brouillon),
+    envoye:    devisList.filter(d => d.statut === 'envoye'),
+    finalise:  devisList.filter(d => (d.statut === 'finalise' || (!d.statut && !d.brouillon)) ),
+    accepte:   devisList.filter(d => d.statut === 'accepte'),
+    refuse:    devisList.filter(d => d.statut === 'refuse'),
+  };
+
   let html = '';
-  if (brouillons.length) {
-    html += `<div class="section-title" style="margin-bottom:0.5rem"><i class="ti ti-pencil" style="font-size:13px;margin-right:4px"></i>Brouillons</div>`;
-    html += brouillons.map(devisCard).join('');
-    html += `<div style="margin-bottom:1.5rem"></div>`;
-  }
-  if (finalises.length) {
-    html += `<div class="section-title" style="margin-bottom:0.5rem"><i class="ti ti-file-check" style="font-size:13px;margin-right:4px"></i>Devis finalisés</div>`;
-    html += finalises.map(devisCard).join('');
-  }
+  const ordre = [
+    { key:'brouillon', label:'Brouillons', icon:'ti-pencil' },
+    { key:'finalise',  label:'Finalisés',  icon:'ti-file-description' },
+    { key:'envoye',    label:'Envoyés — en attente de réponse', icon:'ti-mail' },
+    { key:'accepte',   label:'Acceptés',   icon:'ti-circle-check' },
+    { key:'refuse',    label:'Refusés',    icon:'ti-circle-x' },
+  ];
+  ordre.forEach(({ key, label, icon }) => {
+    if (!groupes[key]?.length) return;
+    html += `<div class="section-title" style="margin-bottom:0.5rem"><i class="ti ${icon}" style="font-size:13px;margin-right:4px"></i>${label}</div>`;
+    html += groupes[key].map(devisCard).join('');
+    html += `<div style="margin-bottom:1.25rem"></div>`;
+  });
   el.innerHTML = html;
 }
 
@@ -2042,33 +2142,41 @@ function genDevisPDFFromData(d) {
   const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
 <title>Devis ${numDevis}</title>
 <style>
-  body { font-family: Arial, sans-serif; font-size: 13px; color: #2d2d2d; margin: 0; padding: 40px; }
-  h1 { font-size: 26px; color: #1a7a7a; margin: 0 0 4px; }
-  .subtitle { color: #7a6a9a; font-size: 14px; font-style: italic; }
-  .header { display: flex; justify-content: space-between; margin-bottom: 40px; }
-  .emetteur { max-width: 50%; }
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Nunito:wght@300;400;500;600&display=swap');
+  body { font-family: 'Nunito', Arial, sans-serif; font-size: 13px; color: #2d4a4a; margin: 0; padding: 40px; background: #faf8f5; }
+  h1 { font-family: 'Cormorant Garamond', serif; font-size: 28px; color: #1a7a7a; margin: 0 0 2px; font-weight: 600; letter-spacing: 0.02em; }
+  .subtitle { color: #b8a8d0; font-size: 13px; font-style: italic; margin-bottom: 16px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 2px solid #1a7a7a; }
+  .emetteur { max-width: 55%; }
   .meta { text-align: right; }
-  .meta strong { display: block; font-size: 20px; color: #1a7a7a; }
-  .parties { display: flex; gap: 40px; margin-bottom: 30px; }
-  .partie { flex: 1; background: #f5f5f5; border-radius: 6px; padding: 14px 16px; font-size: 12px; line-height: 1.7; }
-  .partie-title { font-weight: 700; color: #1a7a7a; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
-  .objet { background: #e8f4f4; border-left: 3px solid #1a7a7a; padding: 10px 14px; margin-bottom: 20px; font-weight: 600; }
-  .periode { margin-bottom: 20px; color: #555; font-size: 12px; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-  th { background: #1a7a7a; color: white; padding: 8px 10px; text-align: left; font-size: 12px; }
-  td { padding: 7px 10px; border-bottom: 0.5px solid #e0e0e0; font-size: 12px; }
-  tr:nth-child(even) td { background: #f9f9f9; }
-  .total-row td { font-weight: 700; font-size: 14px; color: #1a7a7a; border-top: 2px solid #1a7a7a; background: #e8f4f4; }
-  .tva { font-size: 11px; color: #888; margin: -10px 0 20px; font-style: italic; }
-  .notes { background: #fdf0e6; border-radius: 6px; padding: 12px 14px; font-size: 12px; color: #555; margin-bottom: 20px; }
-  .footer { font-size: 10px; color: #aaa; border-top: 0.5px solid #ddd; padding-top: 12px; text-align: center; margin-top: 40px; }
-  @media print { body { padding: 20px; } }
+  .meta .num { font-family: 'Cormorant Garamond', serif; font-size: 22px; color: #1a7a7a; font-weight: 600; }
+  .meta .info { font-size: 12px; color: #7a9a9a; line-height: 1.9; margin-top: 4px; }
+  .emetteur-info { font-size: 12px; color: #5a7a7a; line-height: 1.9; }
+  .parties { display: flex; gap: 24px; margin-bottom: 28px; }
+  .partie { flex: 1; border-radius: 8px; padding: 16px 18px; font-size: 12px; line-height: 1.8; }
+  .partie-emetteur { background: #e8f4f4; border-left: 3px solid #1a7a7a; }
+  .partie-client { background: #f0eaf8; border-left: 3px solid #b8a8d0; }
+  .partie-title { font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .partie-emetteur .partie-title { color: #1a7a7a; }
+  .partie-client .partie-title { color: #7a6a9a; }
+  .objet { background: #1a7a7a; color: white; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-weight: 600; font-size: 14px; }
+  .periode { margin-bottom: 22px; background: #fdf0e6; border-left: 3px solid #d4956a; padding: 8px 14px; border-radius: 0 6px 6px 0; font-size: 12px; color: #8a5a3a; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 6px; border-radius: 8px; overflow: hidden; }
+  th { background: #1a7a7a; color: white; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  td { padding: 9px 12px; border-bottom: 1px solid #e8f0f0; font-size: 12px; }
+  tr:nth-child(even) td { background: #f5fafa; }
+  .total-row td { font-weight: 700; font-size: 14px; color: white; background: #145f5f; border-top: none; }
+  .tva { font-size: 11px; color: #9ab0b0; margin: 6px 0 22px; font-style: italic; }
+  .notes { background: #fdf0e6; border-radius: 6px; padding: 12px 16px; font-size: 12px; color: #7a5a3a; margin-bottom: 22px; border-left: 3px solid #d4956a; }
+  .validity { font-size: 11px; color: #b8a8d0; text-align: center; margin-bottom: 20px; font-style: italic; }
+  .footer { font-size: 10px; color: #b0c8c8; border-top: 1px solid #d8eaea; padding-top: 14px; text-align: center; margin-top: 30px; line-height: 1.8; }
+  @media print { body { padding: 20px; background: white; } }
 </style></head><body>
 <div class="header">
   <div class="emetteur">
     <h1>${p.enseigne || 'Prendre Soin de Son Être'}</h1>
     <div class="subtitle">Hypnothérapie · Coaching · Relaxation</div>
-    <div style="margin-top:10px;font-size:12px;line-height:1.8;color:#555">
+    <div class="emetteur-info">
       ${p.prenom || ''} ${p.nom || ''}<br>
       ${p.adresse ? p.adresse+'<br>' : ''}
       ${p.tel ? p.tel+'<br>' : ''}
@@ -2077,43 +2185,48 @@ function genDevisPDFFromData(d) {
     </div>
   </div>
   <div class="meta">
-    <strong>DEVIS</strong>
-    N° ${numDevis}<br>
-    Date : ${dateStr}<br>
-    Valable 30 jours
+    <div class="num">DEVIS</div>
+    <div class="info">
+      N° ${numDevis}<br>
+      Date : ${dateStr}<br>
+      Valable 30 jours
+    </div>
   </div>
 </div>
 
 <div class="parties">
-  <div class="partie">
-    <div class="partie-title">Émetteur</div>
+  <div class="partie partie-emetteur">
+    <div class="partie-title">Prestataire</div>
     ${p.prenom || ''} ${p.nom || ''}<br>
     ${p.enseigne || ''}<br>
     ${p.adresse || ''}<br>
     ${p.siret ? 'SIRET : '+p.siret : ''}
   </div>
-  <div class="partie">
+  <div class="partie partie-client">
     <div class="partie-title">Client</div>
     ${clientAddr.join('<br>')}
   </div>
 </div>
 
-<div class="objet">Objet : ${d.objet || 'Accompagnement'}</div>
-<div class="periode">Durée : ${d.duree} mois · Fréquence : ${freqLabel} · Nombre total de séances : <strong>${d.nbSeances}</strong></div>
+<div class="objet">📋 ${d.objet || 'Accompagnement'}</div>
+<div class="periode">Durée : <strong>${d.duree} mois</strong> · Fréquence : <strong>${freqLabel}</strong> · Total : <strong>${d.nbSeances} séances</strong></div>
 
 <table>
-  <thead><tr><th>Prestation</th><th style="text-align:center">Qté</th><th style="text-align:right">P.U.</th><th style="text-align:right">Total</th></tr></thead>
+  <thead><tr><th>Prestation</th><th style="text-align:center;width:60px">Qté</th><th style="text-align:right;width:80px">P.U.</th><th style="text-align:right;width:90px">Total</th></tr></thead>
   <tbody>${prestationsRows}
-  <tr class="total-row"><td colspan="3">TOTAL</td><td style="text-align:right">${d.total.toFixed(2)} €</td></tr>
+  <tr class="total-row"><td colspan="3" style="text-align:right;padding-right:16px">TOTAL</td><td style="text-align:right">${d.total.toFixed(2)} €</td></tr>
   </tbody>
 </table>
 <div class="tva">${p.tva || 'TVA non applicable — article 293 B du CGI'}</div>
 
-${d.notes ? `<div class="notes"><strong>Notes :</strong> ${d.notes}</div>` : ''}
+${d.notes ? `<div class="notes"><strong>Notes :</strong><br>${d.notes}</div>` : ''}
+
+<div class="validity">Ce devis est valable 30 jours à compter de sa date d'émission.</div>
 
 <div class="footer">
-  ${p.enseigne || 'Prendre Soin de Son Être'} — ${p.prenom || ''} ${p.nom || ''} — SIRET : ${p.siret || ''}
-  <br>Ce document est un devis. Il ne constitue pas une facture.
+  ${p.enseigne || 'Prendre Soin de Son Être'} — ${p.prenom || ''} ${p.nom || ''}<br>
+  ${p.siret ? 'SIRET : '+p.siret+' — ' : ''}${p.tva || 'TVA non applicable — article 293 B du CGI'}<br>
+  Ce document est un devis. Il ne constitue pas une facture.
 </div>
 </body></html>`;
 
