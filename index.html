@@ -1027,6 +1027,7 @@ function renderDashboard() {
       <div class="upcoming-info" style="cursor:pointer" onclick="openRdvDetail(${r.id})">
         <div class="upcoming-name">${c ? c.prenom+' '+c.nom : '?'} — ${r.type}</div>
         <div class="upcoming-detail">${r.heure} · ${r.duree} min · ${r.lieu||''}${trajetTxt?'<br>'+trajetTxt.slice(4):''}</div>
+        ${getProchaineEtape(r.clientId) ? `<div style="margin-top:4px;font-size:11px;color:var(--teal);font-weight:600"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
         <div class="upcoming-time" style="margin-right:4px">${fmtDate(r.date)}</div>
@@ -1059,7 +1060,7 @@ function renderCalendar() {
     const evHtml = dayRdvs.slice(0,3).map(r => {
       const c = getClient(r.clientId);
       const hasT = (r.trajetAller||0)+(r.trajetRetour||0)>0;
-      return `<div class="cal-event ${hasT?'ev-trajet':'ev-seance'}" title="${c?c.prenom+' '+c.nom:''} — ${r.type}" onclick="event.stopPropagation();editRdv(${r.id})">${r.heure} ${c?c.prenom:''}</div>`;
+      return `<div class="cal-event ${hasT?'ev-trajet':'ev-seance'}" title="${c?c.prenom+' '+c.nom:''} — ${r.type}${getProchaineEtape(r.clientId) ? '\n→ '+getProchaineEtape(r.clientId) : ''}" onclick="event.stopPropagation();openRdvDetail(${r.id})">${r.heure} ${c?c.prenom:''}${getProchaineEtape(r.clientId)?` <span style="opacity:0.7">→</span>`:''}</div>`;
     }).join('') + (dayRdvs.length>3?`<div style="font-size:10px;color:var(--text-hint)">+${dayRdvs.length-3} autres</div>`:'');
     grid.innerHTML += `<div class="cal-cell${other?' other-month':''}${isToday?' today':''}" onclick="calClick('${dateStr}')">
       <div class="cal-num">${day}</div>${evHtml}</div>`;
@@ -1187,6 +1188,7 @@ function renderRdvs() {
       <div class="rdv-info">
         <div class="rdv-title">${c?c.prenom+' '+c.nom:'?'} — ${r.type}${r.premiere?' <span style="font-size:10px;background:var(--lavender-light);color:var(--lavender-dark);padding:1px 6px;border-radius:8px;font-weight:600">1ère séance</span>':''}</div>
         <div class="rdv-detail">${r.heure} · ${r.duree} min${tt>0?' · '+tt+' min trajet':''} · ${r.lieu||''}</div>
+        ${getProchaineEtape(r.clientId) ? `<div style="margin-top:3px;font-size:11px;color:var(--teal);font-weight:600"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <div class="rdv-time">${fmtDate(r.date)}</div>
@@ -1201,6 +1203,10 @@ function renderRdvs() {
 }
 
 // --- DURÉES PRÉDÉFINIES ---
+function getProchaineEtape(clientId) {
+  const clientNotes = notes.filter(n => n.clientId === clientId).sort((a,b) => b.date.localeCompare(a.date));
+  return clientNotes[0]?.suite || null;
+}
 const DUREES_TYPE = {
   'Relaxation': 30,
   'Méditation': 60,
