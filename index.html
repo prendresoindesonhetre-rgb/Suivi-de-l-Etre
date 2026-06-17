@@ -782,7 +782,10 @@ html, body {
       </div>
 
       <!-- Infos client auto-remplies -->
-      <div id="devis-client-info" style="display:none;background:var(--teal-light);border-radius:var(--radius-sm);padding:0.6rem 0.85rem;font-size:12px;color:var(--teal-dark);margin-bottom:1rem;line-height:1.7"></div>
+      <div id="devis-client-info" style="display:none;background:var(--teal-light);border-radius:var(--radius-sm);padding:0.6rem 0.85rem;font-size:12px;color:var(--teal-dark);margin-bottom:0.5rem;line-height:1.7"></div>
+      <div id="devis-client-edit-btn" style="display:none;margin-bottom:1rem">
+        <button class="btn" style="font-size:11px;padding:0.25rem 0.75rem" onclick="editClientFromDevis()"><i class="ti ti-edit"></i> Modifier la fiche client</button>
+      </div>
 
       <!-- Objet -->
       <div class="form-row"><label>Objet du devis</label>
@@ -1707,8 +1710,8 @@ function deleteNote(id) {
   notes = notes.filter(n=>n.id!==id); persistAndSync(); toast('Note supprimée','#993C1D'); showFiche(currentClientId);
 }
 
-// Fermer modal en cliquant dehors
-document.querySelectorAll('.overlay').forEach(el => el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open'); }));
+// Fermer modal en cliquant dehors — désactivé pour éviter la fermeture accidentelle
+// document.querySelectorAll('.overlay').forEach(el => el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open'); }));
 
 // ---- PARAMÈTRES ----
 const PARAM_KEY = 'mac_parametres';
@@ -1769,9 +1772,10 @@ function saveDevisLocal() {
 function onDevisClientChange() {
   const id = parseInt(document.getElementById('devis-client').value);
   const infoEl = document.getElementById('devis-client-info');
-  if (!id) { infoEl.style.display = 'none'; return; }
+  const editBtn = document.getElementById('devis-client-edit-btn');
+  if (!id) { infoEl.style.display = 'none'; editBtn.style.display = 'none'; return; }
   const c = clients.find(x => x.id === id);
-  if (!c) { infoEl.style.display = 'none'; return; }
+  if (!c) { infoEl.style.display = 'none'; editBtn.style.display = 'none'; return; }
   let lines = [];
   if (c.adresse) lines.push(`<i class="ti ti-map-pin"></i> ${c.adresse}`);
   if (c.tel) lines.push(`<i class="ti ti-phone"></i> ${c.tel}`);
@@ -1782,7 +1786,43 @@ function onDevisClientChange() {
     if (c.structure) lines.push(`<i class="ti ti-building"></i> ${c.structure}${c.structureResp ? ' — '+c.structureResp : ''}`);
   }
   infoEl.innerHTML = lines.join('<br>');
-  infoEl.style.display = lines.length ? 'block' : 'none';
+  infoEl.style.display = 'block';
+  editBtn.style.display = 'block';
+}
+
+function editClientFromDevis() {
+  const id = parseInt(document.getElementById('devis-client').value);
+  if (!id) return;
+  // Fermer le modal devis temporairement et ouvrir la fiche client
+  closeModal('devis');
+  // Stocker l'id du devis pour retrouver où on en était
+  window._devisRetourClientId = id;
+  showFiche(id);
+  // Ajouter un bouton "Retour au devis" dans la fiche
+  setTimeout(() => {
+    const topbar = document.getElementById('topbar-title');
+    if (topbar) {
+      const existingBtn = document.getElementById('retour-devis-btn');
+      if (!existingBtn) {
+        const btn = document.createElement('button');
+        btn.id = 'retour-devis-btn';
+        btn.className = 'btn';
+        btn.style.cssText = 'font-size:11px;padding:0.25rem 0.75rem;margin-left:12px';
+        btn.innerHTML = '<i class="ti ti-arrow-left"></i> Retour au devis';
+        btn.onclick = () => {
+          btn.remove();
+          openModal('devis');
+          setTimeout(() => {
+            if (window._devisRetourClientId) {
+              document.getElementById('devis-client').value = window._devisRetourClientId;
+              onDevisClientChange();
+            }
+          }, 100);
+        };
+        topbar.parentNode.insertBefore(btn, topbar.nextSibling);
+      }
+    }
+  }, 100);
 }
 
 let devisPrestationIdx = 0;
