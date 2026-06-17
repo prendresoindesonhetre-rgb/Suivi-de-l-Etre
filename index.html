@@ -104,7 +104,7 @@ html, body {
 .upcoming-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .dot-annule { background: var(--danger) !important; }
 .dot-seance { background: var(--teal); }
-.dot-trajet { background: var(--lavender-dark); }
+.dot-trajet { background: #7A4F3A; }
 .upcoming-info { flex: 1; min-width: 0; }
 .upcoming-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--teal-dark); }
 .upcoming-detail { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
@@ -1028,8 +1028,8 @@ function renderDashboard() {
       <div class="upcoming-dot ${r.annule?'dot-annule':hasTrajet?'dot-trajet':'dot-seance'}"></div>
       <div class="upcoming-info" style="cursor:pointer" onclick="openRdvDetail(${r.id})">
         <div class="upcoming-name"><strong>${r.heure}–${calcEndTime(r.heure, r.duree)}</strong> · ${c ? c.prenom+' '+c.nom : '?'} — ${r.type} <span style="font-weight:400;color:var(--text-muted);font-style:italic">(${r.duree} min)</span>${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600;text-decoration:none">Annulé</span>':''}</div>
-        <div class="upcoming-detail">${(r.trajetAller||0) > 0 ? `<i class="ti ti-car" style="font-size:11px;margin-right:3px;color:var(--lavender-dark)"></i><strong>Départ à ${calcEndTime(r.heure, -(r.trajetAller||0))}</strong> pour ${r.lieu||(c&&c.adresse)||'?'}<br>` : (r.lieu ? `<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px"></i>${r.lieu}<br>` : (c&&c.adresse ? `<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px"></i>${c.adresse}<br>` : ''))}${(r.trajetRetour||0) > 0 ? `<i class="ti ti-arrow-back-up" style="font-size:11px;margin-right:3px;color:var(--lavender-dark)"></i>Retour : ${r.trajetRetour} min` : ''}</div>
-        ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:4px;font-size:11px;color:var(--teal);font-weight:600"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
+        <div class="upcoming-detail">${(r.trajetAller||0) > 0 ? `<i class="ti ti-car" style="font-size:11px;margin-right:3px;color:#7A4F3A"></i><span style="color:#7A4F3A;font-weight:500;text-decoration:underline">Départ à ${calcEndTime(r.heure, -(r.trajetAller||0))}</span> <span style="color:#D4A5B5">pour ${r.lieu||(c&&c.adresse)||'?'}</span><br>` : (r.lieu ? `<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px;color:#D4A5B5"></i><span style="color:#D4A5B5">${r.lieu}</span><br>` : (c&&c.adresse ? `<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px;color:#D4A5B5"></i><span style="color:#D4A5B5">${c.adresse}</span><br>` : ''))}${(r.trajetRetour||0) > 0 ? `<i class="ti ti-arrow-back-up" style="font-size:11px;margin-right:3px;color:#6B7A8D"></i><span style="color:#6B7A8D">Retour : ${r.trajetRetour} min</span>` : ''}</div>
+        ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:4px;font-size:11px;color:#7A9E7E;font-weight:500"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
         <div class="upcoming-time" style="margin-right:4px">${fmtDate(r.date)}</div>
@@ -1190,8 +1190,8 @@ function renderRdvs() {
       <div class="upcoming-dot ${r.annule?'dot-annule':tt>0?'dot-trajet':'dot-seance'}"></div>
       <div class="rdv-info">
         <div class="rdv-title"><strong>${r.heure}–${calcEndTime(r.heure, r.duree)}</strong> · ${c?c.prenom+' '+c.nom:'?'} — ${r.type} <span style="font-weight:400;color:var(--text-muted);font-style:italic">(${r.duree} min)</span>${r.premiere?' <span style="font-size:10px;background:var(--lavender-light);color:var(--lavender-dark);padding:1px 6px;border-radius:8px;font-weight:600">1ère séance</span>':''}${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600">Annulé</span>':''}</div>
-        <div class="rdv-detail">${(r.trajetAller||0) > 0 ? `🚗 Départ à ${calcEndTime(r.heure, -(r.trajetAller||0))} pour ${r.lieu||(c&&c.adresse)||'?'}` : (r.lieu||'')}${tt>0 && !(r.trajetAller>0) ?' · '+tt+' min trajet':''}</div>
-        ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:3px;font-size:11px;color:var(--teal);font-weight:600"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
+        <div class="rdv-detail">${(r.trajetAller||0) > 0 ? `<i class="ti ti-car" style="font-size:11px;margin-right:3px;color:#7A4F3A"></i><span style="color:#7A4F3A;font-weight:500;text-decoration:underline">Départ à ${calcEndTime(r.heure, -(r.trajetAller||0))}</span> <span style="color:#D4A5B5">pour ${r.lieu||(c&&c.adresse)||'?'}</span>` : (r.lieu ? `<span style="color:#D4A5B5">${r.lieu}</span>` : (c&&c.adresse ? `<span style="color:#D4A5B5">${c.adresse}</span>` : ''))}${tt>0 && !(r.trajetAller>0) ? `<span style="color:#6B7A8D"> · ${tt} min trajet</span>` : ''}</div>
+        ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:3px;font-size:11px;color:#7A9E7E;font-weight:500"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <div class="rdv-time">${fmtDate(r.date)}</div>
