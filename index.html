@@ -1027,8 +1027,8 @@ function renderDashboard() {
     return `<div class="upcoming-item" style="${r.annule?'opacity:0.5;text-decoration:line-through;':''}">
       <div class="upcoming-dot ${r.annule?'dot-annule':hasTrajet?'dot-trajet':'dot-seance'}"></div>
       <div class="upcoming-info" style="cursor:pointer" onclick="openRdvDetail(${r.id})">
-        <div class="upcoming-name">${r.heure} · ${c ? c.prenom+' '+c.nom : '?'} — ${r.type} (${r.duree} min)${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600;text-decoration:none">Annulé</span>':''}</div>
-        <div class="upcoming-detail">${r.lieu ? '<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px"></i>'+r.lieu : (c && c.adresse ? '<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px"></i>'+c.adresse : '')}${trajetTxt ? '<br>'+trajetTxt.slice(4) : ''}</div>
+        <div class="upcoming-name"><strong>${r.heure} — ${calcEndTime(r.heure, r.duree)}</strong> · ${c ? c.prenom+' '+c.nom : '?'} — ${r.type} · <em>${r.duree} min</em>${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600;text-decoration:none">Annulé</span>':''}</div>
+        <div class="upcoming-detail">${(r.trajetAller||0) > 0 ? `<i class="ti ti-car" style="font-size:11px;margin-right:3px;color:var(--amber)"></i><strong>Départ à ${calcEndTime(r.heure, -(r.trajetAller||0))}</strong> pour ${r.lieu||(c&&c.adresse)||'?'}<br>` : (r.lieu ? `<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px"></i>${r.lieu}<br>` : (c&&c.adresse ? `<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px"></i>${c.adresse}<br>` : ''))}${(r.trajetRetour||0) > 0 ? `<i class="ti ti-arrow-back-up" style="font-size:11px;margin-right:3px;color:var(--amber)"></i>Retour : ${r.trajetRetour} min` : ''}</div>
         ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:4px;font-size:11px;color:var(--teal);font-weight:600"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
@@ -1189,8 +1189,8 @@ function renderRdvs() {
     return `<div class="rdv-item" style="${r.annule?'opacity:0.5;':''}">
       <div class="upcoming-dot ${r.annule?'dot-annule':tt>0?'dot-trajet':'dot-seance'}"></div>
       <div class="rdv-info">
-        <div class="rdv-title">${r.heure} · ${c?c.prenom+' '+c.nom:'?'} — ${r.type} (${r.duree} min)${r.premiere?' <span style="font-size:10px;background:var(--lavender-light);color:var(--lavender-dark);padding:1px 6px;border-radius:8px;font-weight:600">1ère séance</span>':''}${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600">Annulé</span>':''}</div>
-        <div class="rdv-detail">${r.lieu ? r.lieu : (c && c.adresse ? c.adresse : '')}${tt>0?' · '+tt+' min trajet':''}</div>
+        <div class="rdv-title"><strong>${r.heure} — ${calcEndTime(r.heure, r.duree)}</strong> · ${c?c.prenom+' '+c.nom:'?'} — ${r.type} · <em>${r.duree} min</em>${r.premiere?' <span style="font-size:10px;background:var(--lavender-light);color:var(--lavender-dark);padding:1px 6px;border-radius:8px;font-weight:600">1ère séance</span>':''}${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600">Annulé</span>':''}</div>
+        <div class="rdv-detail">${(r.trajetAller||0) > 0 ? `🚗 Départ à ${calcEndTime(r.heure, -(r.trajetAller||0))} pour ${r.lieu||(c&&c.adresse)||'?'}` : (r.lieu||'')}${tt>0 && !(r.trajetAller>0) ?' · '+tt+' min trajet':''}</div>
         ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:3px;font-size:11px;color:var(--teal);font-weight:600"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -1207,6 +1207,11 @@ function renderRdvs() {
 }
 
 // --- DURÉES PRÉDÉFINIES ---
+function calcEndTime(heure, dureeMin) {
+  const [h, m] = heure.split(':').map(Number);
+  const total = ((h * 60 + m + dureeMin) % (24*60) + 24*60) % (24*60);
+  return `${String(Math.floor(total/60)).padStart(2,'0')}h${String(total%60).padStart(2,'0')}`;
+}
 function cancelRdv(id) {
   const r = rdvs.find(x => x.id === id);
   if (!r) return;
@@ -1531,28 +1536,32 @@ function rdvToMinutes(date, heure) {
 }
 
 function checkConflict(data, excludeId) {
-  // Début réel = heure de départ (trajet aller avant la séance)
-  const newStart = rdvToMinutes(data.date, data.heure) - (data.trajetAller || 0);
-  // Fin réelle = heure de fin de séance + trajet retour
-  const newEnd = rdvToMinutes(data.date, data.heure) + data.duree + (data.trajetRetour || 0);
+  const MARGE = 5; // minutes de marge avant et après chaque séance
+  const newStart = rdvToMinutes(data.date, data.heure) - (data.trajetAller || 0) - MARGE;
+  const newEnd = rdvToMinutes(data.date, data.heure) + data.duree + (data.trajetRetour || 0) + MARGE;
 
   for (const r of rdvs) {
     if (excludeId && r.id == excludeId) continue;
     if (r.date !== data.date) continue;
-    const rStart = rdvToMinutes(r.date, r.heure) - (r.trajetAller || 0);
-    const rEnd = rdvToMinutes(r.date, r.heure) + r.duree + (r.trajetRetour || 0);
-    // Chevauchement si les plages se croisent
+    if (r.annule) continue;
+    const rStart = rdvToMinutes(r.date, r.heure) - (r.trajetAller || 0) - MARGE;
+    const rEnd = rdvToMinutes(r.date, r.heure) + r.duree + (r.trajetRetour || 0) + MARGE;
     if (newStart < rEnd && newEnd > rStart) {
       const c = getClient(r.clientId);
       const nom = c ? c.prenom + ' ' + c.nom : '?';
-      // Calcul des heures d'affichage
-      const debutReel = new Date(r.date + 'T00:00:00');
-      const heureDebut = r.heure;
-      const minFin = rdvToMinutes(r.date, r.heure) + r.duree + (r.trajetRetour || 0);
-      const hFin = Math.floor(minFin % (24*60) / 60);
-      const mFin = Math.floor(minFin % 60);
-      const heureFin = String(hFin).padStart(2,'0') + 'h' + String(mFin).padStart(2,'0');
-      return `Conflit avec le RDV de ${nom} à ${heureDebut} (occupé jusqu'à ${heureFin} trajet inclus)`;
+      const finSeance = calcEndTime(r.heure, r.duree);
+      const finAvecTrajet = calcEndTime(r.heure, r.duree + (r.trajetRetour || 0));
+      let msg = `Conflit avec le RDV de ${nom} (${r.heure} — ${finSeance}).`;
+      if (r.trajetRetour > 0) {
+        msg += `\n\nVous aviez prévu ${r.trajetRetour} min de trajet retour, ce qui vous occupe jusqu'à ${finAvecTrajet}.`;
+        msg += `\n\nSi votre trajet réel est inférieur, vous pouvez quand même accepter ce rendez-vous.`;
+      } else if (r.trajetAller > 0) {
+        msg += `\n\nAttention, vous aviez prévu ${r.trajetAller} min de trajet aller pour ce RDV.`;
+        msg += `\n\nSi votre trajet réel est inférieur, vous pouvez quand même accepter ce rendez-vous.`;
+      } else {
+        msg += `\n\nUne marge de ${MARGE} min est prévue après chaque séance. Si vous avez le temps, vous pouvez quand même accepter ce rendez-vous.`;
+      }
+      return msg;
     }
   }
   return null;
@@ -1610,11 +1619,11 @@ function saveRdv() {
 
   const conflit = checkConflict(data, editId || null);
   if (conflit) {
-    // Si on a créé un client, on l'annule
-    if (premiere) clients = clients.filter(c => c.id !== clientId);
-    toast('⚠️ ' + conflit, '#c05070');
-    setTimeout(() => alert('⚠️ Créneau impossible !\n\n' + conflit + '\n\nModifie l\'heure ou la durée.'), 100);
-    return;
+    const continuer = confirm('⚠️ Avertissement : ' + conflit + '\n\nVeux-tu quand même enregistrer ce rendez-vous ?');
+    if (!continuer) {
+      if (premiere) clients = clients.filter(c => c.id !== clientId);
+      return;
+    }
   }
 
   if (editId) {
