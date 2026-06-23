@@ -2,10 +2,18 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#f2eef8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Suivi de l'Être">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prendre soin de son Hêtre</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Nunito:wght@300;400;500;600;800&family=Dancing+Script:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Nunito:wght@300;400;500;600&family=Dancing+Script:wght@500;600&display=swap" rel="stylesheet">
 <style>
 :root {
   /* Palette inspirée de la carte de visite */
@@ -51,9 +59,7 @@ html, body {
   font-size: 14px;
 }
 
-.app { display: none; height: 100vh; }
-.access-gate { position: fixed; inset: 0; background: var(--warm-cream); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1rem; }
-.login-card { background: var(--cream-card); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 2rem 1.75rem; width: 380px; max-width: 100%; box-shadow: 0 8px 30px rgba(26,122,122,0.15); }
+.app { display: flex; height: 100vh; }
 
 /* SIDEBAR */
 .sidebar { width: 230px; min-width: 230px; background: var(--cream-sidebar); border-right: 0.5px solid var(--border); display: flex; flex-direction: column; }
@@ -102,9 +108,8 @@ html, body {
 .upcoming-list { display: flex; flex-direction: column; gap: 8px; }
 .upcoming-item { background: var(--cream-card); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 0.8rem 1rem; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow); }
 .upcoming-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.dot-annule { background: var(--danger) !important; }
 .dot-seance { background: var(--teal); }
-.dot-trajet { background: #7A4F3A; }
+.dot-trajet { background: var(--amber); }
 .upcoming-info { flex: 1; min-width: 0; }
 .upcoming-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--teal-dark); }
 .upcoming-detail { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
@@ -168,11 +173,17 @@ html, body {
 .seance-actions { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--border); }
 
 /* MODAL */
-.overlay { position: fixed; inset: 0; background: rgba(20,60,60,0.35); display: none; align-items: center; justify-content: center; z-index: 200; padding: 1rem; }
+.overlay { position: fixed; inset: 0; background: rgba(20,60,60,0.35); display: none; align-items: flex-end; justify-content: center; z-index: 200; padding: 0; }
 .overlay.open { display: flex; }
-.modal { background: var(--cream-card); border: 0.5px solid var(--border); border-radius: var(--radius); width: 460px; max-width: 100%; max-height: 90vh; box-shadow: 0 8px 30px rgba(26,122,122,0.15); display: flex; flex-direction: column; overflow: hidden; }
-.modal-title { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; color: var(--teal); padding: 1.5rem 1.5rem 0; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-.modal-body { padding: 0 1.5rem; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+.modal { background: var(--cream-card); border: 0.5px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; padding: 1rem 1rem 0; width: 100%; max-width: 500px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 -4px 30px rgba(26,122,122,0.15); }
+.modal-title { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; color: var(--teal); margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.modal-scroll { overflow-y: auto; flex: 1; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; padding: 0.75rem 0 max(1rem, env(safe-area-inset-bottom)); border-top: 0.5px solid var(--border); flex-shrink: 0; background: var(--cream-card); position: sticky; bottom: 0; }
+@media (min-width: 700px) {
+  .overlay { align-items: center; padding: 1rem; }
+  .modal { border-radius: var(--radius); max-width: 460px; padding: 1.5rem 1.5rem 0; max-height: 90vh; }
+  .modal-actions { padding: 1rem 0 1.5rem; }
+}
 .modal-close { background: none; border: none; cursor: pointer; color: var(--text-hint); font-size: 20px; display: flex; }
 .form-row { margin-bottom: 1rem; }
 .form-row label { display: block; font-size: 12px; color: var(--teal); margin-bottom: 5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
@@ -182,7 +193,6 @@ html, body {
 .form-grid { display: grid; gap: 10px; }
 .form-grid-2 { grid-template-columns: 1fr 1fr; }
 .form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
-.modal-actions { display: flex; gap: 8px; justify-content: flex-end; padding: 1rem 1.5rem 1.5rem; margin-top: 1.25rem; border-top: 0.5px solid var(--border); flex-shrink: 0; }
 
 /* TOAST */
 .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--teal); color: white; padding: 0.7rem 1.2rem; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; box-shadow: 0 4px 16px rgba(26,122,122,0.25); z-index: 999; transform: translateY(20px); opacity: 0; transition: all 0.22s; pointer-events: none; display: flex; align-items: center; gap: 7px; }
@@ -231,7 +241,7 @@ html, body {
   .clients-grid { grid-template-columns: 1fr; }
 
   /* Formulaires modal plein écran */
-  .modal { width: 100%; max-width: 100%; max-height: 92dvh; max-height: 92vh; border-radius: var(--radius) var(--radius) 0 0; margin-top: auto; }
+  .modal { width: 100%; max-width: 100%; max-height: 100vh; border-radius: var(--radius) var(--radius) 0 0; margin-top: auto; }
   .overlay { align-items: flex-end; padding: 0; }
   .form-grid-2 { grid-template-columns: 1fr; }
   .form-grid-3 { grid-template-columns: 1fr 1fr; }
@@ -273,17 +283,6 @@ html, body {
 </style>
 </head>
 <body>
-<div id="access-gate" class="access-gate">
-  <div class="login-card">
-    <div class="sidebar-logo-name" style="font-size:24px;text-align:center;margin-bottom:1.25rem">Suivi de l'Être</div>
-    <form id="login-form" onsubmit="handleLogin(event)">
-      <div class="form-row"><label>Email</label><input type="email" id="login-email" autocomplete="username" required></div>
-      <div class="form-row"><label>Mot de passe</label><input type="password" id="login-password" autocomplete="current-password" required></div>
-      <div id="login-error" style="display:none;color:var(--danger);font-size:12px;margin-bottom:0.75rem"></div>
-      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center" id="login-btn">Se connecter</button>
-    </form>
-  </div>
-</div>
 
 <div class="app">
   <nav class="sidebar">
@@ -311,13 +310,6 @@ html, body {
     <div class="nav-item" onclick="showView('rdvs')" id="nav-rdvs">
       <i class="ti ti-list-details"></i> Tous les RDV
     </div>
-    <div class="nav-section">Outils</div>
-    <div class="nav-item" onclick="showView('devis')" id="nav-devis">
-      <i class="ti ti-file-invoice"></i> Devis
-    </div>
-    <div class="nav-item" onclick="showView('parametres')" id="nav-parametres">
-      <i class="ti ti-settings"></i> Mes informations
-    </div>
     <div class="sidebar-footer">
       <div style="margin-bottom:8px;font-size:11px;color:var(--text-hint);display:flex;align-items:center;gap:4px">
         <i class="ti ti-device-floppy" style="font-size:13px"></i> Sauvegarde auto activée
@@ -339,9 +331,6 @@ html, body {
         <i class="ti ti-upload" style="font-size:15px"></i> Importer des données
         <input type="file" accept=".json" onchange="importData(event)" style="display:none">
       </label>
-      <button class="btn" onclick="sbLogout()" style="width:100%;justify-content:center;margin-top:6px;font-size:11px;padding:0.3rem 0.5rem;color:var(--danger)">
-        <i class="ti ti-logout"></i> Se déconnecter
-      </button>
     </div>
   </nav>
 
@@ -405,10 +394,7 @@ html, body {
 
       <!-- FICHE CLIENT -->
       <div class="view" id="view-fiche">
-        <div style="display:flex;gap:8px;margin-bottom:0.5rem">
-          <button class="back-btn" onclick="showView('clients')" style="margin-bottom:0"><i class="ti ti-arrow-left"></i> Retour aux clients</button>
-          <button class="btn" id="retour-devis-btn" style="display:none;font-size:12px;border-color:var(--amber);color:var(--amber)" onclick="retourAuDevis()"><i class="ti ti-file-invoice"></i> Retour au devis</button>
-        </div>
+        <button class="back-btn" onclick="showView('clients')"><i class="ti ti-arrow-left"></i> Retour</button>
         <div id="fiche-header"></div>
         <div class="section-title">Historique des séances</div>
         <div class="seances-list" id="seances-list"></div>
@@ -429,55 +415,6 @@ html, body {
         <div id="rdvs-past" class="rdv-list"></div>
       </div>
 
-      <!-- VUE DEVIS -->
-      <div class="view" id="view-devis">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-          <div></div>
-          <button class="btn btn-primary" onclick="openModal('devis')"><i class="ti ti-plus"></i> Nouveau devis</button>
-        </div>
-        <div id="devis-list"></div>
-      </div>
-
-      <!-- VUE PARAMÈTRES -->
-      <div class="view" id="view-parametres">
-        <div style="max-width:560px">
-          <div class="section-title" style="margin-bottom:1rem">Mes informations professionnelles</div>
-          <div class="form-grid form-grid-2">
-            <div class="form-row"><label>Prénom</label><input type="text" id="param-prenom" placeholder="Yoann"></div>
-            <div class="form-row"><label>Nom</label><input type="text" id="param-nom" placeholder="Pageot"></div>
-          </div>
-          <div class="form-row"><label>SIRET</label><input type="text" id="param-siret" placeholder="000 000 000 00000"></div>
-          <div class="form-row"><label>Adresse professionnelle</label><input type="text" id="param-adresse" placeholder="10 rue des Lilas, 10600 La Chapelle-Saint-Luc"></div>
-          <div class="form-grid form-grid-2">
-            <div class="form-row"><label>Email professionnel</label><input type="email" id="param-email" placeholder="yoann.pageot@prendresoindesonhetre.fr"></div>
-            <div class="form-row"><label>Téléphone</label><input type="tel" id="param-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
-          </div>
-          <div class="form-row"><label>Nom de l'activité / Enseigne</label><input type="text" id="param-enseigne" placeholder="Prendre Soin de Son Être"></div>
-
-          <div class="section-title" style="margin:1.5rem 0 1rem">Facturation</div>
-          <div class="form-grid form-grid-2">
-            <div class="form-row"><label>Prix de séance par défaut (€)</label><input type="number" id="param-prix" placeholder="60" min="0" step="0.01"></div>
-            <div class="form-row"><label>Taux kilométrique (€/km)</label><input type="number" id="param-taux-km" value="0.518" min="0" step="0.001"></div>
-          </div>
-          <div class="form-row"><label>Mention TVA</label><input type="text" id="param-tva" value="TVA non applicable — article 293 B du CGI"></div>
-
-          <div class="section-title" style="margin:1.5rem 0 1rem">Envoi d'emails (EmailJS)</div>
-          <div class="form-row" style="background:var(--amber-light);border-radius:var(--radius-sm);padding:0.75rem 1rem;font-size:12px;color:var(--amber);margin-bottom:1rem">
-            <i class="ti ti-info-circle"></i> Pour envoyer des emails depuis l'appli, vous devez créer un compte gratuit sur <strong>emailjs.com</strong> et renseigner vos identifiants ci-dessous.
-          </div>
-          <div class="form-grid form-grid-2">
-            <div class="form-row"><label>Service ID</label><input type="text" id="param-ejs-service" placeholder="service_xxxxxxx"></div>
-            <div class="form-row"><label>Template ID</label><input type="text" id="param-ejs-template" placeholder="template_xxxxxxx"></div>
-          </div>
-          <div class="form-row"><label>Public Key</label><input type="text" id="param-ejs-pubkey" placeholder="xxxxxxxxxxxxxxx"></div>
-
-          <div style="margin-top:1.5rem;display:flex;gap:8px">
-            <button class="btn btn-primary" onclick="saveParametres()"><i class="ti ti-check"></i> Enregistrer</button>
-            <button class="btn" onclick="loadParametres()"><i class="ti ti-refresh"></i> Annuler</button>
-          </div>
-        </div>
-      </div>
-
     </div>
   </div>
 </div>
@@ -487,12 +424,13 @@ html, body {
   <div class="modal">
     <div class="modal-title">
       <span id="rdv-modal-title">Nouveau rendez-vous</span>
+      <button class="modal-close" onclick="closeModal('rdv')"><i class="ti ti-x"></i></button>
     </div>
-    <div class="modal-body">
+    <div class="modal-scroll">
     <input type="hidden" id="rdv-edit-id">
     <div class="form-grid form-grid-2">
       <div class="form-row"><label>Type de séance</label>
-        <select id="rdv-type" onchange="updateDureeFromType()">
+        <select id="rdv-type" onchange="updateDureeFromType(); toggleAutreType()">
           <option value="Relaxation">Relaxation</option>
           <option value="Méditation">Méditation</option>
           <option value="Hypnose">Hypnose</option>
@@ -501,6 +439,10 @@ html, body {
           <option value="Atelier groupe">Atelier groupe</option>
           <option value="Autre">Autre</option>
         </select>
+      </div>
+      <div class="form-row" id="rdv-autre-row" style="display:none">
+        <label>Précisez le type <span style="color:var(--text-hint);font-weight:400">(obligatoire)</span></label>
+        <input type="text" id="rdv-type-autre" placeholder="Ex: Hypno-tapping, EFT...">
       </div>
       <div class="form-row" style="display:flex;flex-direction:column;justify-content:flex-end">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 10px;background:var(--lavender-light);border:0.5px solid var(--lavender);border-radius:var(--radius-sm)">
@@ -515,87 +457,17 @@ html, body {
       <div style="background:var(--lavender-light);border:0.5px solid var(--lavender);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:0.5rem">
         <div style="font-size:11px;font-weight:700;color:var(--lavender-dark);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem"><i class="ti ti-user-plus" style="font-size:13px;vertical-align:-1px;margin-right:4px"></i>Nouveau client</div>
         <div class="form-grid form-grid-2">
+          <div class="form-row"><label>Prénom</label><input type="text" id="rdv-nc-prenom" placeholder="Prénom"></div>
+          <div class="form-row"><label>Nom <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="text" id="rdv-nc-nom" placeholder="Nom"></div>
+        </div>
+        <div class="form-grid form-grid-2">
+          <div class="form-row"><label>Téléphone <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="tel" id="rdv-nc-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatTel(this)"></div>
           <div class="form-row"><label>Profil</label>
-            <select id="rdv-nc-profil" onchange="toggleRdvNcEnfantFields()">
+            <select id="rdv-nc-profil">
               <option value="adulte">Adulte</option>
               <option value="enfant">Enfant</option>
               <option value="structure">Structure</option>
             </select>
-          </div>
-          <div class="form-row"><label>Prénom</label><input type="text" id="rdv-nc-prenom" placeholder="Prénom"></div>
-        </div>
-        <div class="form-grid form-grid-2">
-          <div class="form-row"><label>Nom <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="text" id="rdv-nc-nom" placeholder="Nom"></div>
-          <div class="form-row" id="rdv-nc-tel-row"><label>Téléphone <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="tel" id="rdv-nc-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
-        </div>
-
-        <!-- Champs enfant (visibles si profil = enfant) -->
-        <div id="rdv-nc-enfant-fields" style="display:none">
-          <div class="form-grid form-grid-2">
-            <div class="form-row"><label>Date de naissance <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="date" id="rdv-nc-naissance" onchange="updateRdvNcAge()"></div>
-            <div class="form-row"><label>Âge</label><input type="text" id="rdv-nc-age" placeholder="calculé auto" readonly style="background:var(--lavender-light);color:var(--lavender-dark);font-weight:600"></div>
-          </div>
-
-          <!-- Situation familiale -->
-          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);text-transform:uppercase;letter-spacing:0.06em;margin:0.75rem 0 0.5rem">Situation familiale</div>
-          <div style="display:flex;gap:8px;margin-bottom:0.75rem;flex-wrap:wrap">
-            <button type="button" id="rdv-nc-sit-btn-ensemble" class="btn" onclick="setRdvNcSituation('ensemble')" style="flex:1;justify-content:center;font-size:12px">👨‍👩‍👦 Parents ensemble</button>
-            <button type="button" id="rdv-nc-sit-btn-separes" class="btn" onclick="setRdvNcSituation('separes')" style="flex:1;justify-content:center;font-size:12px">↔ Parents séparés</button>
-            <button type="button" id="rdv-nc-sit-btn-recompose" class="btn" onclick="setRdvNcSituation('recompose')" style="flex:1;justify-content:center;font-size:12px">🏠 Famille recomposée</button>
-          </div>
-          <input type="hidden" id="rdv-nc-situation" value="">
-
-          <!-- Parents ensemble -->
-          <div id="rdv-nc-sit-ensemble" style="display:none">
-            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.4rem 0">Père</div>
-            <div class="form-grid form-grid-2">
-              <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-ens-pere-nom" placeholder="Ex: Dupont Jean"></div>
-              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-ens-pere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
-            </div>
-            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.4rem 0">Mère</div>
-            <div class="form-grid form-grid-2">
-              <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-ens-mere-nom" placeholder="Ex: Dupont Sophie"></div>
-              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-ens-mere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
-            </div>
-            <div class="form-row"><label>Email commun <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="email" id="rdv-nc-ens-email" placeholder="email@famille.fr"></div>
-          </div>
-
-          <!-- Parents séparés -->
-          <div id="rdv-nc-sit-separes" style="display:none">
-            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.4rem 0">Père</div>
-            <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-sep-pere-nom" placeholder="Ex: Dupont Jean"></div>
-            <div class="form-grid form-grid-2">
-              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-sep-pere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
-              <div class="form-row"><label>Email</label><input type="email" id="rdv-nc-sep-pere-email" placeholder="email@exemple.fr"></div>
-            </div>
-            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.5rem 0 0.4rem">Mère</div>
-            <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-sep-mere-nom" placeholder="Ex: Dupont Sophie"></div>
-            <div class="form-grid form-grid-2">
-              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-sep-mere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
-              <div class="form-row"><label>Email</label><input type="email" id="rdv-nc-sep-mere-email" placeholder="email@exemple.fr"></div>
-            </div>
-          </div>
-
-          <!-- Famille recomposée -->
-          <div id="rdv-nc-sit-recompose" style="display:none">
-            <div id="rdv-nc-recompose-membres"></div>
-            <button type="button" class="btn" onclick="addRdvNcMembre()" style="font-size:12px;margin-top:4px"><i class="ti ti-plus"></i> Ajouter un membre</button>
-          </div>
-
-          <!-- Structure -->
-          <div style="margin:0.75rem 0 0.4rem;display:flex;align-items:center;gap:8px">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:0.06em">
-              <input type="checkbox" id="rdv-nc-avec-structure" onchange="toggleRdvNcStructure()" style="width:16px;height:16px;accent-color:var(--teal);cursor:pointer">
-              Accompagné par un établissement
-            </label>
-          </div>
-          <div id="rdv-nc-structure-fields" style="display:none">
-            <div class="form-row"><label>Nom de la structure</label><input type="text" id="rdv-nc-structure" placeholder="Ex: IME Les Pins, École Jules Ferry..."></div>
-            <div class="form-row"><label>Nom du responsable / référent</label><input type="text" id="rdv-nc-structure-resp" placeholder="Ex: Mme Martin — Éducatrice spécialisée"></div>
-            <div class="form-grid form-grid-2">
-              <div class="form-row"><label>Téléphone du référent</label><input type="tel" id="rdv-nc-structure-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
-              <div class="form-row"><label>Email du référent</label><input type="email" id="rdv-nc-structure-email" placeholder="email@structure.fr"></div>
-            </div>
           </div>
         </div>
       </div>
@@ -617,7 +489,7 @@ html, body {
     </div>
     <div class="form-row"><label>Lieu <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="text" id="rdv-lieu" placeholder="Adresse ou domicile du client"></div>
     <div class="form-row"><label>Notes <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><textarea id="rdv-notes" placeholder="Rappels, particularités..."></textarea></div>
-    </div>
+        </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal('rdv')">Annuler</button>
       <button class="btn btn-primary" onclick="saveRdv()">Enregistrer</button>
@@ -632,14 +504,11 @@ html, body {
       <span id="detail-title">Détail du rendez-vous</span>
       <button class="modal-close" onclick="closeModal('rdv-detail')"><i class="ti ti-x"></i></button>
     </div>
-    <div class="modal-body">
     <div id="detail-content" style="font-size:13px;line-height:1.8;color:var(--text-muted)"></div>
-    </div>
-    <div class="modal-actions" style="margin-top:1rem;flex-wrap:wrap;gap:6px">
-      <button class="btn btn-danger" id="detail-delete-btn" style="flex:1;min-width:90px;justify-content:center"><i class="ti ti-trash"></i> Supprimer</button>
-      <button class="btn" id="detail-cancel-btn" style="flex:1;min-width:90px;justify-content:center"><i class="ti ti-calendar-off"></i> Annuler</button>
-      <button class="btn" id="detail-edit-btn" style="flex:1;min-width:90px;justify-content:center"><i class="ti ti-edit"></i> Modifier</button>
-      <button class="btn btn-primary" id="detail-note-btn" style="flex:1;min-width:90px;justify-content:center"><i class="ti ti-notes"></i> Note de séance</button>
+    <div class="modal-actions" style="margin-top:1rem">
+      <button class="btn btn-danger" id="detail-delete-btn"><i class="ti ti-trash"></i> Supprimer</button>
+      <button class="btn" id="detail-edit-btn"><i class="ti ti-edit"></i> Modifier</button>
+      <button class="btn btn-primary" id="detail-note-btn"><i class="ti ti-notes"></i> Note de séance</button>
     </div>
   </div>
 </div>
@@ -651,14 +520,12 @@ html, body {
       <span style="display:flex;align-items:center;gap:8px"><i class="ti ti-brand-whatsapp" style="color:#25D366;font-size:20px"></i> Confirmation WhatsApp</span>
       <button class="modal-close" onclick="closeModal('whatsapp')"><i class="ti ti-x"></i></button>
     </div>
-    <div class="modal-body">
     <div class="form-row">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px">
         <input type="checkbox" id="wa-avec-lieu" onchange="updateWaPreview()" checked style="width:16px;height:16px;accent-color:var(--teal);cursor:pointer">
         <span style="font-size:13px;font-weight:600">Inclure le lieu dans le message</span>
       </label>
       <div style="background:var(--teal-light);border-radius:var(--radius-sm);padding:0.85rem 1rem;font-size:13px;line-height:1.6;color:var(--teal-dark);border:0.5px solid var(--border-md)" id="wa-preview"></div>
-    </div>
     </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal('whatsapp')">Annuler</button>
@@ -676,7 +543,7 @@ html, body {
       <span id="client-modal-title">Nouveau client</span>
       <button class="modal-close" onclick="closeModal('client')"><i class="ti ti-x"></i></button>
     </div>
-    <div class="modal-body">
+    <div class="modal-scroll">
     <input type="hidden" id="client-edit-id">
     <div class="form-grid form-grid-2">
       <div class="form-row"><label>Prénom</label><input type="text" id="cl-prenom" placeholder="Prénom"></div>
@@ -690,7 +557,7 @@ html, body {
           <option value="structure">Structure</option>
         </select>
       </div>
-      <div class="form-row"><label>Téléphone <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="tel" id="cl-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+      <div class="form-row"><label>Téléphone <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="tel" id="cl-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatTel(this)"></div>
     </div>
 
     <!-- Champs enfant (masqués par défaut) -->
@@ -709,19 +576,19 @@ html, body {
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:0.6rem;font-style:italic">Tous les champs sont optionnels</div>
 
         <div style="background:white;border-radius:6px;padding:0.6rem 0.75rem;margin-bottom:0.6rem;border:0.5px solid var(--border)">
-          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin-bottom:0.5rem">Père</div>
-          <div class="form-row"><label>Nom & prénom</label><input type="text" id="cl-resp1" placeholder="Ex: Dupont Sophie"></div>
+          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin-bottom:0.5rem">Parent / Responsable 1</div>
+          <div class="form-row"><label>Nom & prénom</label><input type="text" id="cl-resp1" placeholder="Ex: Dupont Jean (Père)"></div>
           <div class="form-grid form-grid-2">
-            <div class="form-row"><label>Téléphone</label><input type="tel" id="cl-resp1-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+            <div class="form-row"><label>Téléphone</label><input type="tel" id="cl-resp1-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatTel(this)"></div>
             <div class="form-row"><label>Email</label><input type="email" id="cl-resp1-email" placeholder="email@exemple.fr"></div>
           </div>
         </div>
 
         <div style="background:white;border-radius:6px;padding:0.6rem 0.75rem;border:0.5px solid var(--border)">
-          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin-bottom:0.5rem">Mère</div>
-          <div class="form-row"><label>Nom & prénom</label><input type="text" id="cl-resp2" placeholder="Ex: Dupont Jean"></div>
+          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin-bottom:0.5rem">Parent / Responsable 2</div>
+          <div class="form-row"><label>Nom & prénom</label><input type="text" id="cl-resp2" placeholder="Ex: Dupont Sophie (Mère)"></div>
           <div class="form-grid form-grid-2">
-            <div class="form-row"><label>Téléphone</label><input type="tel" id="cl-resp2-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+            <div class="form-row"><label>Téléphone</label><input type="tel" id="cl-resp2-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatTel(this)"></div>
             <div class="form-row"><label>Email</label><input type="email" id="cl-resp2-email" placeholder="email@exemple.fr"></div>
           </div>
         </div>
@@ -734,7 +601,7 @@ html, body {
         <div class="form-row"><label>Nom de la structure</label><input type="text" id="cl-structure" placeholder="Ex: IME Les Pins, École Jules Ferry..."></div>
         <div class="form-row"><label>Nom du responsable / référent de suivi</label><input type="text" id="cl-structure-resp" placeholder="Ex: Mme Martin — Éducatrice spécialisée"></div>
         <div class="form-grid form-grid-2">
-          <div class="form-row"><label>Téléphone du référent</label><input type="tel" id="cl-structure-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+          <div class="form-row"><label>Téléphone du référent</label><input type="tel" id="cl-structure-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatTel(this)"></div>
           <div class="form-row"><label>Email du référent</label><input type="email" id="cl-structure-email" placeholder="email@structure.fr"></div>
         </div>
       </div>
@@ -756,7 +623,7 @@ html, body {
           <div class="form-row"><label>Fonction</label><input type="text" id="cl-structure-fonction" placeholder="Directeur, Éducateur..."></div>
         </div>
         <div class="form-grid form-grid-2">
-          <div class="form-row"><label>Téléphone</label><input type="tel" id="cl-structure-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+          <div class="form-row"><label>Téléphone</label><input type="tel" id="cl-structure-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatTel(this)"></div>
           <div class="form-row"><label>Email</label><input type="email" id="cl-structure-email" placeholder="email@structure.fr"></div>
         </div>
         <div style="font-size:12px;font-weight:600;color:var(--amber);margin:0.6rem 0 0.4rem">Participants</div>
@@ -768,7 +635,7 @@ html, body {
         </div>
       </div>
     </div>
-    </div>
+        </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal('client')">Annuler</button>
       <button class="btn btn-primary" onclick="saveClient()">Enregistrer</button>
@@ -783,7 +650,7 @@ html, body {
       <span>Note de séance</span>
       <button class="modal-close" onclick="closeModal('note')"><i class="ti ti-x"></i></button>
     </div>
-    <div class="modal-body">
+    <div class="modal-scroll">
     <input type="hidden" id="note-edit-id">
     <div class="form-grid form-grid-2">
       <div class="form-row"><label>Date</label><input type="date" id="note-date"></div>
@@ -801,7 +668,7 @@ html, body {
     <div class="form-row"><label>Prochaine étape</label>
       <input type="text" id="note-suite" placeholder="Point à travailler lors de la prochaine séance...">
     </div>
-    </div>
+        </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal('note')">Annuler</button>
       <button class="btn btn-primary" onclick="saveNote()">Enregistrer</button>
@@ -810,87 +677,6 @@ html, body {
 </div>
 
 <div class="toast" id="toast"><i class="ti ti-check"></i> <span id="toast-msg"></span></div>
-
-<!-- MODAL DEVIS -->
-<div class="overlay" id="modal-devis">
-  <div class="modal" style="width:600px">
-    <div class="modal-title">
-      <span id="devis-modal-title">Nouveau devis</span>
-      <button class="modal-close" onclick="closeModal('devis')"><i class="ti ti-x"></i></button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="devis-edit-id">
-
-      <!-- Client -->
-      <div class="form-row"><label>Client</label>
-        <div style="display:flex;gap:8px;align-items:center">
-          <select id="devis-client" onchange="onDevisClientChange()" style="flex:1">
-            <option value="">— Sélectionner un client —</option>
-          </select>
-          <button class="btn" type="button" onclick="createClientFromDevis()" title="Créer un nouveau client" style="flex-shrink:0;border-color:var(--teal);color:var(--teal)">
-            <i class="ti ti-user-plus"></i> Nouveau
-          </button>
-        </div>
-      </div>
-
-      <!-- Infos client auto-remplies -->
-      <div id="devis-client-info" style="display:none;background:var(--teal-light);border-radius:var(--radius-sm);padding:0.6rem 0.85rem;font-size:12px;color:var(--teal-dark);margin-bottom:0.5rem;line-height:1.7"></div>
-      <div id="devis-client-edit-btn" style="display:none;margin-bottom:1rem">
-        <button class="btn" style="font-size:11px;padding:0.25rem 0.75rem" onclick="editClientFromDevis()"><i class="ti ti-edit"></i> Modifier la fiche client</button>
-      </div>
-
-      <!-- Objet -->
-      <div class="form-row"><label>Objet du devis</label>
-        <input type="text" id="devis-objet" placeholder="Ex: Suivi en hypnothérapie — 3 mois">
-      </div>
-
-      <!-- Période -->
-      <div class="form-grid form-grid-2">
-        <div class="form-row"><label>Durée (mois)</label>
-          <input type="number" id="devis-duree" min="1" max="24" value="3" oninput="calcDevisTotal()">
-        </div>
-        <div class="form-row"><label>Fréquence</label>
-          <select id="devis-frequence" onchange="calcDevisTotal()">
-            <option value="4">1 séance / semaine (~4/mois)</option>
-            <option value="2" selected>1 séance / 15 jours (~2/mois)</option>
-            <option value="1">1 séance / mois</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Prestations -->
-      <div style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;margin:0.75rem 0 0.5rem">Prestations</div>
-      <div id="devis-prestations"></div>
-      <button class="btn" onclick="addDevisPrestation()" style="font-size:12px;margin-bottom:1rem"><i class="ti ti-plus"></i> Ajouter une prestation</button>
-
-      <!-- Km -->
-      <div style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem">Déplacements</div>
-      <div class="form-grid form-grid-2">
-        <div class="form-row"><label>Distance aller (km)</label>
-          <input type="number" id="devis-km" min="0" value="0" oninput="calcDevisTotal()">
-        </div>
-        <div class="form-row"><label>Taux km (€/km)</label>
-          <input type="number" id="devis-taux-km" min="0" step="0.001" oninput="calcDevisTotal()">
-        </div>
-      </div>
-
-      <!-- Résumé -->
-      <div id="devis-resume" style="background:var(--lavender-light);border-radius:var(--radius-sm);padding:0.85rem 1rem;font-size:13px;margin-bottom:1rem;line-height:1.9"></div>
-
-      <!-- Notes -->
-      <div class="form-row"><label>Notes <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label>
-        <textarea id="devis-notes" placeholder="Informations complémentaires..."></textarea>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal('devis')">Annuler</button>
-      <button class="btn" onclick="saveDevisBrouillon()" style="border-color:var(--text-hint);color:var(--text-hint)"><i class="ti ti-pencil"></i> Brouillon</button>
-      <button class="btn" onclick="genDevisPDF()" style="border-color:var(--teal);color:var(--teal)"><i class="ti ti-file-type-pdf"></i> PDF</button>
-      <button class="btn" onclick="sendDevisEmail()" style="border-color:var(--amber);color:var(--amber)"><i class="ti ti-mail"></i> Envoyer</button>
-      <button class="btn btn-primary" onclick="saveDevis('finalise')"><i class="ti ti-check"></i> Finaliser</button>
-    </div>
-  </div>
-</div>
 
 <!-- Navigation mobile en bas -->
 <nav class="mobile-nav">
@@ -910,9 +696,9 @@ html, body {
     <i class="ti ti-list-details"></i>
     <span>RDV</span>
   </div>
-  <div class="mobile-nav-item" id="mnav-devis" onclick="showView('devis')">
-    <i class="ti ti-file-invoice"></i>
-    <span>Devis</span>
+  <div class="mobile-nav-item" id="mnav-plus" onclick="openModal('rdv')">
+    <i class="ti ti-circle-plus"></i>
+    <span>Nouveau</span>
   </div>
 </nav>
 
@@ -988,63 +774,6 @@ function initials(c) { return (c.prenom[0]+(c.nom[0]||'')).toUpperCase(); }
 function getClient(id) { return clients.find(c => c.id == id); }
 function newId() { return Date.now() + Math.floor(Math.random()*1000); }
 
-function formatPhone(el) {
-  const digits = el.value.replace(/\D/g, '').slice(0, 15);
-  el.value = digits.replace(/(\d{2})(?=\d)/g, '$1 ');
-}
-
-function toggleRdvNcStructure() {
-  const checked = document.getElementById('rdv-nc-avec-structure').checked;
-  document.getElementById('rdv-nc-structure-fields').style.display = checked ? 'block' : 'none';
-}
-
-function toggleRdvNcEnfantFields() {
-  const profil = document.getElementById('rdv-nc-profil').value;
-  document.getElementById('rdv-nc-enfant-fields').style.display = profil === 'enfant' ? 'block' : 'none';
-  // Masquer le téléphone si enfant
-  document.getElementById('rdv-nc-tel-row').style.display = profil === 'enfant' ? 'none' : '';
-}
-
-function setRdvNcSituation(sit) {
-  document.getElementById('rdv-nc-situation').value = sit;
-  ['ensemble','separes','recompose'].forEach(s => {
-    document.getElementById(`rdv-nc-sit-${s}`).style.display = s === sit ? 'block' : 'none';
-    const btn = document.getElementById(`rdv-nc-sit-btn-${s}`);
-    btn.style.background = s === sit ? 'var(--teal)' : '';
-    btn.style.color = s === sit ? 'white' : '';
-    btn.style.borderColor = s === sit ? 'var(--teal)' : '';
-  });
-  if (sit === 'recompose' && !document.getElementById('rdv-nc-recompose-membres').children.length) {
-    addRdvNcMembre(); addRdvNcMembre();
-  }
-}
-
-let rdvNcMembreIdx = 0;
-function addRdvNcMembre() {
-  const idx = rdvNcMembreIdx++;
-  const container = document.getElementById('rdv-nc-recompose-membres');
-  const div = document.createElement('div');
-  div.id = `rdv-nc-membre-${idx}`;
-  div.style.marginBottom = '0.75rem';
-  div.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-      <input type="text" id="rdv-nc-mb-titre-${idx}" placeholder="Ex: Père, Belle-mère..." style="flex:1;padding:6px 10px;font-size:12px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif">
-      <button type="button" class="icon-btn danger" onclick="document.getElementById('rdv-nc-membre-${idx}').remove()"><i class="ti ti-trash"></i></button>
-    </div>
-    <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-mb-nom-${idx}" placeholder="Ex: Dupont Jean"></div>
-    <div class="form-grid form-grid-2">
-      <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-mb-tel-${idx}" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
-      <div class="form-row"><label>Email</label><input type="email" id="rdv-nc-mb-email-${idx}" placeholder="email@exemple.fr"></div>
-    </div>`;
-  container.appendChild(div);
-}
-
-function updateRdvNcAge() {
-  const naissance = document.getElementById('rdv-nc-naissance').value;
-  const age = calcAge(naissance);
-  document.getElementById('rdv-nc-age').value = age !== null ? age + ' ans' : '';
-}
-
 function fmtDate(d) {
   const dt = new Date(d+'T12:00:00');
   const diff = Math.round((dt - new Date(fmt(today)+'T12:00:00'))/86400000);
@@ -1076,14 +805,12 @@ function showView(v) {
   if (nav) nav.classList.add('active');
   const mnav = document.getElementById('mnav-'+v);
   if (mnav) mnav.classList.add('active');
-  const titles = { dashboard:'Tableau de bord', calendrier:'Calendrier', clients:'Clients', fiche:'Fiche client', rdvs:'Tous les rendez-vous', devis:'Devis', parametres:'Mes informations' };
+  const titles = { dashboard:'Tableau de bord', calendrier:'Calendrier', clients:'Clients', fiche:'Fiche client', rdvs:'Tous les rendez-vous' };
   document.getElementById('topbar-title').textContent = titles[v] || v;
   if (v==='calendrier') renderCalendar();
   if (v==='clients') renderClients();
   if (v==='dashboard') renderDashboard();
   if (v==='rdvs') renderRdvs();
-  if (v==='devis') renderDevisList();
-  if (v==='parametres') loadParametres();
 }
 
 // --- DASHBOARD ---
@@ -1107,18 +834,16 @@ function renderDashboard() {
     const c = getClient(r.clientId);
     const hasTrajet = (r.trajetAller||0)+(r.trajetRetour||0) > 0;
     const trajetTxt = hasTrajet ? `<br><i class="ti ti-car" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>${(r.trajetAller||0)+(r.trajetRetour||0)} min de trajet · ` : '';
-    return `<div class="upcoming-item" style="${r.annule?'opacity:0.5;text-decoration:line-through;':''}">
-      <div class="upcoming-dot ${r.annule?'dot-annule':hasTrajet?'dot-trajet':'dot-seance'}"></div>
+    return `<div class="upcoming-item">
+      <div class="upcoming-dot ${hasTrajet?'dot-trajet':'dot-seance'}"></div>
       <div class="upcoming-info" style="cursor:pointer" onclick="openRdvDetail(${r.id})">
-        <div class="upcoming-name"><strong style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800">${r.heure}–${calcEndTime(r.heure, r.duree)} :</strong> · <span style="color:#6B7A8D">${c ? c.prenom+' '+c.nom : '?'} — ${r.type}</span> <span style="font-weight:400;color:var(--text-muted);font-style:italic">(${r.duree} min)</span>${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600;text-decoration:none">Annulé</span>':''}</div>
-        <div class="upcoming-detail">${(r.trajetAller||0) > 0 ? `<i class="ti ti-car" style="font-size:11px;margin-right:3px;color:#7A4F3A"></i><span style="color:#7A4F3A;font-weight:500;text-decoration:underline">Départ à ${calcEndTime(r.heure, -(r.trajetAller||0))}</span> <span style="color:#9B8EC4">pour ${r.lieu||(c&&c.adresse)||'?'}</span><br>` : (r.lieu ? `<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px;color:#D4A5B5"></i><span style="color:#9B8EC4">${r.lieu}</span><br>` : (c&&c.adresse ? `<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px;color:#D4A5B5"></i><span style="color:#9B8EC4">${c.adresse}</span><br>` : ''))}${(r.trajetRetour||0) > 0 ? `<i class="ti ti-arrow-back-up" style="font-size:11px;margin-right:3px;color:#6B7A8D"></i><span style="color:#6B7A8D">Retour : ${r.trajetRetour} min</span>` : ''}</div>
-        ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:4px;font-size:11px;color:#7A9E7E;font-weight:500"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
+        <div class="upcoming-name">${c ? c.prenom+' '+c.nom : '?'} — ${r.type}</div>
+        <div class="upcoming-detail">${r.heure} · ${r.duree} min · ${r.lieu||''}${trajetTxt?'<br>'+trajetTxt.slice(4):''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
         <div class="upcoming-time" style="margin-right:4px">${fmtDate(r.date)}</div>
-        ${!r.annule ? `<button class="icon-btn" onclick="openNoteFromRdv(${r.id})" title="Ajouter une note" style="color:var(--teal-mid)"><i class="ti ti-notes"></i></button>` : ''}
-        ${c && c.tel && !r.annule ? `<button class="icon-btn" onclick="openWhatsapp(${r.id})" title="WhatsApp" style="color:#25D366"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
-        <button class="icon-btn" onclick="cancelRdv(${r.id})" title="${r.annule?'Réactiver':'Annuler le RDV'}" style="color:${r.annule?'var(--teal)':'var(--danger)'}"><i class="ti ti-${r.annule?'rotate':'calendar-off'}"></i></button>
+        <button class="icon-btn" onclick="openNoteFromRdv(${r.id})" title="Ajouter une note" style="color:var(--teal-mid)"><i class="ti ti-notes"></i></button>
+        ${c && c.tel ? `<button class="icon-btn" onclick="openWhatsapp(${r.id})" title="WhatsApp" style="color:#25D366"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
         <button class="icon-btn danger" onclick="confirmDeleteRdv(${r.id})" title="Supprimer"><i class="ti ti-trash"></i></button>
       </div>
     </div>`;
@@ -1146,7 +871,7 @@ function renderCalendar() {
     const evHtml = dayRdvs.slice(0,3).map(r => {
       const c = getClient(r.clientId);
       const hasT = (r.trajetAller||0)+(r.trajetRetour||0)>0;
-      return `<div class="cal-event ${hasT?'ev-trajet':'ev-seance'}" title="${c?c.prenom+' '+c.nom:''} — ${r.type}${getProchaineEtape(r.clientId) ? '\n→ '+getProchaineEtape(r.clientId) : ''}" onclick="event.stopPropagation();openRdvDetail(${r.id})">${r.heure} ${c?c.prenom:''}${getProchaineEtape(r.clientId)?` <span style="opacity:0.7">→</span>`:''}</div>`;
+      return `<div class="cal-event ${hasT?'ev-trajet':'ev-seance'}" title="${c?c.prenom+' '+c.nom:''} — ${r.type}" onclick="event.stopPropagation();editRdv(${r.id})">${r.heure} ${c?c.prenom:''}</div>`;
     }).join('') + (dayRdvs.length>3?`<div style="font-size:10px;color:var(--text-hint)">+${dayRdvs.length-3} autres</div>`:'');
     grid.innerHTML += `<div class="cal-cell${other?' other-month':''}${isToday?' today':''}" onclick="calClick('${dateStr}')">
       <div class="cal-num">${day}</div>${evHtml}</div>`;
@@ -1169,7 +894,7 @@ function renderClients() {
     return `<div class="client-card" onclick="showFiche(${c.id})">
       <div class="client-avatar">${initials(c)}</div>
       <div class="client-name">${c.prenom} ${c.nom}</div>
-      ${c.tel ? `<div class="client-meta"><i class="ti ti-phone"></i>${c.tel}</div>` : ''}
+      ${c.tel ? `<div class="client-meta"><i class="ti ti-phone"></i>${telLink(c.tel)}</div>` : ''}
       <div class="client-meta"><i class="ti ti-map-pin"></i>${c.adresse||'—'}</div>
       <div class="client-meta" style="margin-top:3px"><i class="ti ti-notes"></i>${nb} note${nb>1?'s':''} · ${next?'Prochain : '+fmtDate(next.date):'Pas de RDV à venir'}</div>
       <div style="display:flex;gap:5px;flex-wrap:wrap">
@@ -1190,15 +915,15 @@ function showFiche(id) {
       <div class="fiche-avatar">${initials(c)}</div>
       <div class="fiche-info" style="flex:1">
         <h2>${c.prenom} ${c.nom}</h2>
-        ${c.tel ? `<div class="fiche-meta"><i class="ti ti-phone"></i>${c.tel}</div>` : ''}
+        ${c.tel ? `<div class="fiche-meta"><i class="ti ti-phone"></i>${telLink(c.tel)}</div>` : ''}
         ${c.email ? `<div class="fiche-meta"><i class="ti ti-mail"></i>${c.email}</div>` : ''}
         <div class="fiche-meta"><i class="ti ti-map-pin"></i>${c.adresse||'—'}</div>
         ${c.motif ? `<div class="fiche-meta" style="margin-top:5px"><i class="ti ti-target"></i>${c.motif}</div>` : ''}
         ${c.profil === 'enfant' && c.naissance ? `<div class="fiche-meta"><i class="ti ti-cake"></i>${new Date(c.naissance+'T12:00:00').toLocaleDateString('fr-FR')} · <strong>${calcAge(c.naissance)} ans</strong></div>` : ''}
-        ${c.profil === 'enfant' && (c.resp1||c.resp1Tel||c.resp1Email) ? `<div class="fiche-meta"><i class="ti ti-user"></i><span><strong>${c.resp1||'Responsable 1'}</strong>${c.resp1Tel?' · '+c.resp1Tel:''}${c.resp1Email?' · '+c.resp1Email:''}</span></div>` : ''}
-        ${c.profil === 'enfant' && (c.resp2||c.resp2Tel||c.resp2Email) ? `<div class="fiche-meta"><i class="ti ti-user"></i><span><strong>${c.resp2||'Responsable 2'}</strong>${c.resp2Tel?' · '+c.resp2Tel:''}${c.resp2Email?' · '+c.resp2Email:''}</span></div>` : ''}
-        ${c.profil === 'enfant' && c.structure ? `<div class="fiche-meta"><i class="ti ti-building"></i><span><strong>${c.structure}</strong>${c.structureResp?' · '+c.structureResp:''}${c.structureTel?' · '+c.structureTel:''}${c.structureEmail?' · '+c.structureEmail:''}</span></div>` : ''}
-        ${c.profil === 'structure' && c.structureResp ? `<div class="fiche-meta"><i class="ti ti-id-badge"></i><span><strong>${c.structureResp}</strong>${c.structureFonction?' — '+c.structureFonction:''}${c.structureTel?' · '+c.structureTel:''}${c.structureEmail?' · '+c.structureEmail:''}</span></div>` : ''}
+        ${c.profil === 'enfant' && (c.resp1||c.resp1Tel||c.resp1Email) ? `<div class="fiche-meta"><i class="ti ti-user"></i><span><strong>${c.resp1||'Responsable 1'}</strong>${c.resp1Tel?' · '+telLink(c.resp1Tel):''}${c.resp1Email?' · '+c.resp1Email:''}</span></div>` : ''}
+        ${c.profil === 'enfant' && (c.resp2||c.resp2Tel||c.resp2Email) ? `<div class="fiche-meta"><i class="ti ti-user"></i><span><strong>${c.resp2||'Responsable 2'}</strong>${c.resp2Tel?' · '+telLink(c.resp2Tel):''}${c.resp2Email?' · '+c.resp2Email:''}</span></div>` : ''}
+        ${c.profil === 'enfant' && c.structure ? `<div class="fiche-meta"><i class="ti ti-building"></i><span><strong>${c.structure}</strong>${c.structureResp?' · '+c.structureResp:''}${c.structureTel?' · '+telLink(c.structureTel):''}${c.structureEmail?' · '+c.structureEmail:''}</span></div>` : ''}
+        ${c.profil === 'structure' && c.structureResp ? `<div class="fiche-meta"><i class="ti ti-id-badge"></i><span><strong>${c.structureResp}</strong>${c.structureFonction?' — '+c.structureFonction:''}${c.structureTel?' · '+telLink(c.structureTel):''}${c.structureEmail?' · '+c.structureEmail:''}</span></div>` : ''}
         ${c.profil === 'structure' && c.participants && c.participants.length ? `<div class="fiche-meta" style="flex-wrap:wrap;gap:4px;margin-top:4px"><i class="ti ti-users" style="flex-shrink:0"></i>${c.participants.map(p=>`<span style="background:var(--amber-light);color:var(--amber);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${p}</span>`).join('')}</div>` : ''}
         <div class="fiche-badges">
           <span class="badge badge-${c.profil}">${c.profil.charAt(0).toUpperCase()+c.profil.slice(1)}</span>
@@ -1269,87 +994,25 @@ function renderRdvs() {
   function rdvHtml(r) {
     const c = getClient(r.clientId);
     const tt = (r.trajetAller||0)+(r.trajetRetour||0);
-    return `<div class="rdv-item" style="${r.annule?'opacity:0.5;':''}">
-      <div class="upcoming-dot ${r.annule?'dot-annule':tt>0?'dot-trajet':'dot-seance'}"></div>
+    return `<div class="rdv-item">
+      <div class="upcoming-dot ${tt>0?'dot-trajet':'dot-seance'}"></div>
       <div class="rdv-info">
-        <div class="rdv-title"><strong style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800">${r.heure}–${calcEndTime(r.heure, r.duree)} :</strong> · <span style="color:#6B7A8D">${c?c.prenom+' '+c.nom:'?'} — ${r.type}</span> <span style="font-weight:400;color:var(--text-muted);font-style:italic">(${r.duree} min)</span>${r.premiere?' <span style="font-size:10px;background:var(--lavender-light);color:var(--lavender-dark);padding:1px 6px;border-radius:8px;font-weight:600">1ère séance</span>':''}${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600">Annulé</span>':''}</div>
-        <div class="rdv-detail">${(r.trajetAller||0) > 0 ? `<i class="ti ti-car" style="font-size:11px;margin-right:3px;color:#7A4F3A"></i><span style="color:#7A4F3A;font-weight:500;text-decoration:underline">Départ à ${calcEndTime(r.heure, -(r.trajetAller||0))}</span> <span style="color:#9B8EC4">pour ${r.lieu||(c&&c.adresse)||'?'}</span>` : (r.lieu ? `<span style="color:#9B8EC4">${r.lieu}</span>` : (c&&c.adresse ? `<span style="color:#9B8EC4">${c.adresse}</span>` : ''))}${tt>0 && !(r.trajetAller>0) ? `<span style="color:#6B7A8D"> · ${tt} min trajet</span>` : ''}</div>
-        ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:3px;font-size:11px;color:#7A9E7E;font-weight:500"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
+        <div class="rdv-title">${c?c.prenom+' '+c.nom:'?'} — ${r.type}${r.premiere?' <span style="font-size:10px;background:var(--lavender-light);color:var(--lavender-dark);padding:1px 6px;border-radius:8px;font-weight:600">1ère séance</span>':''}</div>
+        <div class="rdv-detail">${r.heure} · ${r.duree} min${tt>0?' · '+tt+' min trajet':''} · ${r.lieu||''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <div class="rdv-time">${fmtDate(r.date)}</div>
-        ${c && c.tel && !r.annule ? `<button class="icon-btn" onclick="openWhatsapp(${r.id})" title="Confirmation WhatsApp" style="color:#25D366"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
-        ${!r.annule ? `<button class="icon-btn" onclick="editRdv(${r.id})" title="Modifier"><i class="ti ti-edit"></i></button>` : ''}
-        <button class="icon-btn" onclick="cancelRdv(${r.id})" title="${r.annule?'Réactiver':'Annuler'}" style="color:${r.annule?'var(--teal)':'var(--danger)'}"><i class="ti ti-${r.annule?'rotate':'calendar-off'}"></i></button>
+        ${c && c.tel ? `<button class="icon-btn" onclick="openWhatsapp(${r.id})" title="Confirmation WhatsApp" style="color:#25D366"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
+        <button class="icon-btn" onclick="editRdv(${r.id})" title="Modifier"><i class="ti ti-edit"></i></button>
         <button class="icon-btn danger" onclick="deleteRdv(${r.id})" title="Supprimer"><i class="ti ti-trash"></i></button>
       </div>
     </div>`;
   }
-  function groupLabel(dateStr, isPast) {
-    const d = new Date(dateStr + 'T12:00:00');
-    const todayD = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const diff = Math.round((d - todayD) / 86400000);
-    if (!isPast) {
-      if (diff === 0) return { label: "Aujourd'hui", color: '#2E7D8C' };
-      if (diff === 1) return { label: 'Demain', color: '#7A4F3A' };
-      if (diff <= 7) return { label: 'Cette semaine', color: '#7A9E7E' };
-      if (diff <= 31) return { label: 'Ce mois-ci', color: '#9B8EC4' };
-      return { label: 'Plus tard', color: '#6B7A8D' };
-    } else {
-      if (diff === -1) return { label: 'Hier', color: '#D4A5B5' };
-      if (diff >= -7) return { label: 'Cette semaine', color: '#6B7A8D' };
-      return { label: 'Plus ancien', color: '#6B7A8D' };
-    }
-  }
-
-  function renderGrouped(list, isPast) {
-    if (!list.length) return `<div class="empty-state"><i class="ti ti-${isPast?'clock-off':'calendar-off'}"></i>Aucun RDV ${isPast?'passé':'à venir'}</div>`;
-    let html = '';
-    let lastLabel = null;
-    list.forEach(r => {
-      const g = groupLabel(r.date, isPast);
-      if (g.label !== lastLabel) {
-        html += `<div style="font-size:11px;font-weight:700;color:${g.color};text-transform:uppercase;letter-spacing:0.07em;margin:${lastLabel?'1.25rem':'0'} 0 0.4rem;display:flex;align-items:center;gap:6px"><span style="flex:1;height:0.5px;background:${g.color};opacity:0.3;display:inline-block"></span>${g.label}<span style="flex:1;height:0.5px;background:${g.color};opacity:0.3;display:inline-block"></span></div>`;
-        lastLabel = g.label;
-      }
-      html += rdvHtml(r);
-    });
-    return html;
-  }
-
-  document.getElementById('rdvs-upcoming').innerHTML = renderGrouped(up, false);
-  document.getElementById('rdvs-past').innerHTML = renderGrouped(past.slice(0, 20), true);
+  document.getElementById('rdvs-upcoming').innerHTML = up.length ? up.map(rdvHtml).join('') : '<div class="empty-state"><i class="ti ti-calendar-off"></i>Aucun RDV à venir</div>';
+  document.getElementById('rdvs-past').innerHTML = past.length ? past.slice(0,20).map(rdvHtml).join('') : '<div class="empty-state"><i class="ti ti-clock-off"></i>Aucun RDV passé</div>';
 }
 
 // --- DURÉES PRÉDÉFINIES ---
-function calcEndTime(heure, dureeMin) {
-  const [h, m] = heure.split(':').map(Number);
-  const total = ((h * 60 + m + dureeMin) % (24*60) + 24*60) % (24*60);
-  return `${String(Math.floor(total/60)).padStart(2,'0')}h${String(total%60).padStart(2,'0')}`;
-}
-function cancelRdv(id) {
-  const r = rdvs.find(x => x.id === id);
-  if (!r) return;
-  if (r.annule) {
-    // Réactiver
-    r.annule = false;
-    toast('RDV réactivé ✓');
-  } else {
-    if (!confirm('Marquer ce rendez-vous comme annulé ?')) return;
-    r.annule = true;
-    toast('RDV marqué comme annulé');
-  }
-  persistAndSync();
-  renderDashboard();
-  renderRdvs();
-  if (document.getElementById('modal-rdv-detail').classList.contains('open')) {
-    closeModal('rdv-detail');
-  }
-}
-function getProchaineEtape(clientId) {
-  const clientNotes = notes.filter(n => n.clientId === clientId).sort((a,b) => b.date.localeCompare(a.date));
-  return clientNotes[0]?.suite || null;
-}
 const DUREES_TYPE = {
   'Relaxation': 30,
   'Méditation': 60,
@@ -1360,6 +1023,22 @@ const DUREES_TYPE = {
   'Autre': 60,
 };
 
+function formatTel(input) {
+  let v = input.value.replace(/\D/g, '').slice(0, 10);
+  let formatted = '';
+  for (let i = 0; i < v.length; i++) {
+    if (i > 0 && i % 2 === 0) formatted += ' ';
+    formatted += v[i];
+  }
+  input.value = formatted;
+}
+
+function telLink(tel) {
+  if (!tel) return '';
+  const clean = tel.replace(/\s/g, '');
+  return `<a href="tel:${clean}" style="color:inherit;text-decoration:none" onclick="event.stopPropagation()">${tel}</a>`;
+}
+
 function togglePremiereFields() {
   const premiere = document.getElementById('rdv-premiere').checked;
   document.getElementById('rdv-nouveau-client').style.display = premiere ? 'block' : 'none';
@@ -1369,26 +1048,13 @@ function togglePremiereFields() {
     document.getElementById('rdv-nc-prenom').value = '';
     document.getElementById('rdv-nc-nom').value = '';
     document.getElementById('rdv-nc-tel').value = '';
-    document.getElementById('rdv-nc-profil').value = 'adulte';
-    document.getElementById('rdv-nc-tel-row').style.display = '';
-    document.getElementById('rdv-nc-naissance').value = '';
-    document.getElementById('rdv-nc-age').value = '';
-    document.getElementById('rdv-nc-situation').value = '';
-    ['ensemble','separes','recompose'].forEach(s => {
-      document.getElementById(`rdv-nc-sit-${s}`).style.display = 'none';
-      const btn = document.getElementById(`rdv-nc-sit-btn-${s}`);
-      btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
-    });
-    document.getElementById('rdv-nc-recompose-membres').innerHTML = '';
-    document.getElementById('rdv-nc-structure').value = '';
-    document.getElementById('rdv-nc-structure-resp').value = '';
-    document.getElementById('rdv-nc-structure-tel').value = '';
-    document.getElementById('rdv-nc-structure-email').value = '';
-    document.getElementById('rdv-nc-avec-structure').checked = false;
-    document.getElementById('rdv-nc-structure-fields').style.display = 'none';
-    document.getElementById('rdv-nc-enfant-fields').style.display = 'none';
   }
 }
+function toggleAutreType() {
+  const type = document.getElementById('rdv-type').value;
+  document.getElementById('rdv-autre-row').style.display = type === 'Autre' ? 'block' : 'none';
+}
+
 function updateDureeFromType() {
   const type = document.getElementById('rdv-type').value;
   const premiere = document.getElementById('rdv-premiere').checked;
@@ -1460,59 +1126,17 @@ function openRdvDetail(id) {
   const c = getClient(r.clientId);
   const tt = (r.trajetAller||0) + (r.trajetRetour||0);
   const dateStr = new Date(r.date+'T12:00:00').toLocaleDateString('fr-FR', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
-
-  // Dernière note du client + prochaine étape
-  const clientNotes = notes.filter(n => n.clientId === r.clientId).sort((a,b) => b.date.localeCompare(a.date));
-  const derniereNote = clientNotes[0] || null;
-
-  let prochaineEtapeHtml = '';
-  if (derniereNote && derniereNote.suite) {
-    prochaineEtapeHtml = `
-      <div style="background:var(--teal);color:white;border-radius:var(--radius-sm);padding:1rem 1.1rem;margin-bottom:1rem">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;opacity:0.85;margin-bottom:6px"><i class="ti ti-target"></i> Objectif / Travail pour cette séance</div>
-        <div style="font-size:15px;font-weight:600;line-height:1.5">${derniereNote.suite}</div>
-        <div style="font-size:11px;opacity:0.75;margin-top:6px">D'après la note du ${fmtDate(derniereNote.date)}</div>
-      </div>`;
-  } else if (derniereNote) {
-    prochaineEtapeHtml = `
-      <div style="background:var(--teal-light);color:var(--teal-dark);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:1rem;font-size:12px">
-        <i class="ti ti-notes"></i> Aucune prochaine étape définie dans la dernière note (${fmtDate(derniereNote.date)})
-      </div>`;
-  } else {
-    prochaineEtapeHtml = `
-      <div style="background:var(--lavender-light);color:var(--lavender-dark);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:1rem;font-size:12px">
-        <i class="ti ti-notes-off"></i> Aucune note de séance pour ce client
-      </div>`;
-  }
-
-  // Contenu de la dernière note
-  let derniereNoteHtml = '';
-  if (derniereNote && derniereNote.contenu) {
-    derniereNoteHtml = `
-      <div style="margin-top:0.75rem">
-        <div style="font-size:11px;font-weight:700;color:var(--text-hint);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Dernière séance · ${derniereNote.type||''}</div>
-        <div style="font-size:13px;line-height:1.7;color:var(--text-muted);padding:0.75rem;background:var(--warm-cream);border-radius:var(--radius-sm)">${derniereNote.contenu}</div>
-      </div>`;
-  }
-
   document.getElementById('detail-title').textContent = `${c ? c.prenom+' '+c.nom : '?'} — ${r.type}`;
   document.getElementById('detail-content').innerHTML = `
-    ${prochaineEtapeHtml}
-    <div style="display:flex;flex-direction:column;gap:7px;font-size:13px;color:var(--text-muted)">
+    <div style="display:flex;flex-direction:column;gap:8px">
       <div><i class="ti ti-calendar" style="color:var(--teal);margin-right:6px"></i>${dateStr}</div>
       <div><i class="ti ti-clock" style="color:var(--teal);margin-right:6px"></i>${r.heure} · ${r.duree} min</div>
-      ${r.lieu ? `<div><i class="ti ti-map-pin" style="color:var(--teal);margin-right:6px"></i>${r.lieu}</div>` : (c && c.adresse ? `<div><i class="ti ti-map-pin" style="color:var(--teal);margin-right:6px"></i>${c.adresse}</div>` : '')}
+      ${r.lieu ? `<div><i class="ti ti-map-pin" style="color:var(--teal);margin-right:6px"></i>${r.lieu}</div>` : ''}
       ${tt > 0 ? `<div><i class="ti ti-car" style="color:var(--amber);margin-right:6px"></i>${r.trajetAller||0} min aller · ${r.trajetRetour||0} min retour</div>` : ''}
       ${r.premiere ? `<div><i class="ti ti-star" style="color:var(--lavender-dark);margin-right:6px"></i>Première séance</div>` : ''}
       ${r.notes ? `<div style="margin-top:4px;padding:8px;background:var(--warm-cream);border-radius:6px;font-style:italic">${r.notes}</div>` : ''}
-    </div>
-    ${derniereNoteHtml}`;
-  const cancelBtn = document.getElementById('detail-cancel-btn');
-  cancelBtn.innerHTML = r.annule ? '<i class="ti ti-rotate"></i> Réactiver' : '<i class="ti ti-calendar-off"></i> Annuler';
-  cancelBtn.style.borderColor = r.annule ? 'var(--teal)' : 'var(--danger)';
-  cancelBtn.style.color = r.annule ? 'var(--teal)' : 'var(--danger)';
+    </div>`;
   document.getElementById('detail-delete-btn').onclick = () => { closeModal('rdv-detail'); confirmDeleteRdv(id); };
-  document.getElementById('detail-cancel-btn').onclick = () => { cancelRdv(id); };
   document.getElementById('detail-edit-btn').onclick = () => { closeModal('rdv-detail'); editRdv(id); };
   document.getElementById('detail-note-btn').onclick = () => { closeModal('rdv-detail'); openNoteFromRdv(id); };
   document.getElementById('modal-rdv-detail').classList.add('open');
@@ -1587,35 +1211,15 @@ function calcAge(naissance) {
   return age;
 }
 function openModal(type) {
-  if (type === 'devis') {
-    const p = getParams();
-    const sel = document.getElementById('devis-client');
-    sel.innerHTML = '<option value="">— Sélectionner un client —</option>' + clients.map(c=>`<option value="${c.id}">${c.prenom} ${c.nom}</option>`).join('');
-    document.getElementById('devis-edit-id').value = '';
-    document.getElementById('devis-modal-title').textContent = 'Nouveau devis';
-    document.getElementById('devis-client').value = '';
-    document.getElementById('devis-objet').value = '';
-    document.getElementById('devis-duree').value = 3;
-    document.getElementById('devis-frequence').value = '2';
-    document.getElementById('devis-km').value = 0;
-    document.getElementById('devis-taux-km').value = p.tauxKm || 0.518;
-    document.getElementById('devis-notes').value = '';
-    document.getElementById('devis-client-info').style.display = 'none';
-    document.getElementById('devis-client-info').innerHTML = '';
-    document.getElementById('devis-prestations').innerHTML = '';
-    devisPrestationIdx = 0;
-    addDevisPrestation();
-    calcDevisTotal();
-    document.getElementById('modal-devis').classList.add('open');
-    return;
-  }
   if (type==='rdv') {
     const sel = document.getElementById('rdv-client');
     sel.innerHTML = '<option value="">— Sélectionner un client —</option>' + clients.map(c=>`<option value="${c.id}">${c.prenom} ${c.nom}</option>`).join('');
-    if (!document.getElementById('rdv-date').value) document.getElementById('rdv-date').value=fmt(today);
+    document.getElementById('rdv-date').value = fmt(today);
     document.getElementById('rdv-premiere').checked = false;
     document.getElementById('rdv-nouveau-client').style.display = 'none';
     document.getElementById('rdv-client-row').style.display = 'block';
+    document.getElementById('rdv-autre-row').style.display = 'none';
+    document.getElementById('rdv-type-autre').value = '';
     updateDureeFromType();
   }
   if (type==='note') document.getElementById('note-date').value=fmt(today);
@@ -1655,32 +1259,28 @@ function rdvToMinutes(date, heure) {
 }
 
 function checkConflict(data, excludeId) {
-  const MARGE = 5; // minutes de marge avant et après chaque séance
-  const newStart = rdvToMinutes(data.date, data.heure) - (data.trajetAller || 0) - MARGE;
-  const newEnd = rdvToMinutes(data.date, data.heure) + data.duree + (data.trajetRetour || 0) + MARGE;
+  // Début réel = heure de départ (trajet aller avant la séance)
+  const newStart = rdvToMinutes(data.date, data.heure) - (data.trajetAller || 0);
+  // Fin réelle = heure de fin de séance + trajet retour
+  const newEnd = rdvToMinutes(data.date, data.heure) + data.duree + (data.trajetRetour || 0);
 
   for (const r of rdvs) {
     if (excludeId && r.id == excludeId) continue;
     if (r.date !== data.date) continue;
-    if (r.annule) continue;
-    const rStart = rdvToMinutes(r.date, r.heure) - (r.trajetAller || 0) - MARGE;
-    const rEnd = rdvToMinutes(r.date, r.heure) + r.duree + (r.trajetRetour || 0) + MARGE;
+    const rStart = rdvToMinutes(r.date, r.heure) - (r.trajetAller || 0);
+    const rEnd = rdvToMinutes(r.date, r.heure) + r.duree + (r.trajetRetour || 0);
+    // Chevauchement si les plages se croisent
     if (newStart < rEnd && newEnd > rStart) {
       const c = getClient(r.clientId);
       const nom = c ? c.prenom + ' ' + c.nom : '?';
-      const finSeance = calcEndTime(r.heure, r.duree);
-      const finAvecTrajet = calcEndTime(r.heure, r.duree + (r.trajetRetour || 0));
-      let msg = `Conflit avec le RDV de ${nom} (${r.heure} — ${finSeance}).`;
-      if (r.trajetRetour > 0) {
-        msg += `\n\nVous aviez prévu ${r.trajetRetour} min de trajet retour, ce qui vous occupe jusqu'à ${finAvecTrajet}.`;
-        msg += `\n\nSi votre trajet réel est inférieur, vous pouvez quand même accepter ce rendez-vous.`;
-      } else if (r.trajetAller > 0) {
-        msg += `\n\nAttention, vous aviez prévu ${r.trajetAller} min de trajet aller pour ce RDV.`;
-        msg += `\n\nSi votre trajet réel est inférieur, vous pouvez quand même accepter ce rendez-vous.`;
-      } else {
-        msg += `\n\nUne marge de ${MARGE} min est prévue après chaque séance. Si vous avez le temps, vous pouvez quand même accepter ce rendez-vous.`;
-      }
-      return msg;
+      // Calcul des heures d'affichage
+      const debutReel = new Date(r.date + 'T00:00:00');
+      const heureDebut = r.heure;
+      const minFin = rdvToMinutes(r.date, r.heure) + r.duree + (r.trajetRetour || 0);
+      const hFin = Math.floor(minFin % (24*60) / 60);
+      const mFin = Math.floor(minFin % 60);
+      const heureFin = String(hFin).padStart(2,'0') + 'h' + String(mFin).padStart(2,'0');
+      return `Conflit avec le RDV de ${nom} à ${heureDebut} (occupé jusqu'à ${heureFin} trajet inclus)`;
     }
   }
   return null;
@@ -1693,54 +1293,17 @@ function saveRdv() {
   if (premiere) {
     const prenom = document.getElementById('rdv-nc-prenom').value.trim();
     if (!prenom) { alert('Le prénom du nouveau client est requis'); return; }
-    const sit = document.getElementById('rdv-nc-situation').value;
-    let resp1='', resp1Tel='', resp1Email='', resp2='', resp2Tel='', resp2Email='', emailCommun='';
-    let membres = [];
-    if (sit === 'ensemble') {
-      resp1 = document.getElementById('rdv-nc-ens-pere-nom').value.trim();
-      resp1Tel = document.getElementById('rdv-nc-ens-pere-tel').value.trim();
-      resp2 = document.getElementById('rdv-nc-ens-mere-nom').value.trim();
-      resp2Tel = document.getElementById('rdv-nc-ens-mere-tel').value.trim();
-      emailCommun = document.getElementById('rdv-nc-ens-email').value.trim();
-      resp1Email = emailCommun; resp2Email = emailCommun;
-    } else if (sit === 'separes') {
-      resp1 = document.getElementById('rdv-nc-sep-pere-nom').value.trim();
-      resp1Tel = document.getElementById('rdv-nc-sep-pere-tel').value.trim();
-      resp1Email = document.getElementById('rdv-nc-sep-pere-email').value.trim();
-      resp2 = document.getElementById('rdv-nc-sep-mere-nom').value.trim();
-      resp2Tel = document.getElementById('rdv-nc-sep-mere-tel').value.trim();
-      resp2Email = document.getElementById('rdv-nc-sep-mere-email').value.trim();
-    } else if (sit === 'recompose') {
-      document.querySelectorAll('#rdv-nc-recompose-membres > div').forEach(div => {
-        const idx = div.id.replace('rdv-nc-membre-','');
-        membres.push({
-          titre: document.getElementById(`rdv-nc-mb-titre-${idx}`)?.value.trim()||'',
-          nom: document.getElementById(`rdv-nc-mb-nom-${idx}`)?.value.trim()||'',
-          tel: document.getElementById(`rdv-nc-mb-tel-${idx}`)?.value.trim()||'',
-          email: document.getElementById(`rdv-nc-mb-email-${idx}`)?.value.trim()||'',
-        });
-      });
-      if (membres[0]) { resp1=membres[0].titre+' '+membres[0].nom; resp1Tel=membres[0].tel; resp1Email=membres[0].email; }
-      if (membres[1]) { resp2=membres[1].titre+' '+membres[1].nom; resp2Tel=membres[1].tel; resp2Email=membres[1].email; }
-    }
     const nouveauClient = {
       id: newId(),
       prenom,
       nom: document.getElementById('rdv-nc-nom').value.trim(),
       profil: document.getElementById('rdv-nc-profil').value,
       tel: document.getElementById('rdv-nc-tel').value.trim(),
-      adresse: '', email: emailCommun || resp1Email || '', motif: '',
-      naissance: document.getElementById('rdv-nc-naissance').value,
-      situationFamiliale: sit,
-      membres,
-      resp1, resp1Tel, resp1Email,
-      resp2, resp2Tel, resp2Email,
-      structure: document.getElementById('rdv-nc-structure').value.trim(),
-      structureResp: document.getElementById('rdv-nc-structure-resp').value.trim(),
-      structureFonction: '',
-      structureTel: document.getElementById('rdv-nc-structure-tel').value.trim(),
-      structureEmail: document.getElementById('rdv-nc-structure-email').value.trim(),
-      participants: [],
+      adresse: '', email: '', motif: '',
+      naissance: '', resp1: '', resp1Tel: '', resp1Email: '',
+      resp2: '', resp2Tel: '', resp2Email: '',
+      structure: '', structureResp: '', structureFonction: '',
+      structureTel: '', structureEmail: '', participants: [],
     };
     clients.push(nouveauClient);
     clientId = nouveauClient.id;
@@ -1753,7 +1316,9 @@ function saveRdv() {
   const editId = document.getElementById('rdv-edit-id').value;
   const data = {
     clientId,
-    type: document.getElementById('rdv-type').value,
+    type: document.getElementById('rdv-type').value === 'Autre' 
+      ? (document.getElementById('rdv-type-autre').value.trim() || 'Autre')
+      : document.getElementById('rdv-type').value,
     date: document.getElementById('rdv-date').value,
     heure: document.getElementById('rdv-heure').value,
     duree: parseInt(document.getElementById('rdv-duree').value)||60,
@@ -1766,11 +1331,11 @@ function saveRdv() {
 
   const conflit = checkConflict(data, editId || null);
   if (conflit) {
-    const continuer = confirm('⚠️ Avertissement : ' + conflit + '\n\nVeux-tu quand même enregistrer ce rendez-vous ?');
-    if (!continuer) {
-      if (premiere) clients = clients.filter(c => c.id !== clientId);
-      return;
-    }
+    // Si on a créé un client, on l'annule
+    if (premiere) clients = clients.filter(c => c.id !== clientId);
+    toast('⚠️ ' + conflit, '#c05070');
+    setTimeout(() => alert('⚠️ Créneau impossible !\n\n' + conflit + '\n\nModifie l\'heure ou la durée.'), 100);
+    return;
   }
 
   if (editId) {
@@ -1865,12 +1430,6 @@ function saveClient() {
   renderClients();
   renderDashboard();
   if (editId && currentClientId == editId) showFiche(editId);
-  // Si on vient du devis, retourner au devis avec le nouveau client sélectionné
-  if (window._devisRetourNewClient || window._devisRetourClientId) {
-    if (!editId) window._devisRetourNewClient = true;
-    retourAuDevis();
-    document.getElementById('retour-devis-btn').style.display = 'none';
-  }
 }
 
 function editClient(id) {
@@ -1952,564 +1511,8 @@ function deleteNote(id) {
   notes = notes.filter(n=>n.id!==id); persistAndSync(); toast('Note supprimée','#993C1D'); showFiche(currentClientId);
 }
 
-// Fermer modal en cliquant dehors — désactivé pour éviter la fermeture accidentelle
-// document.querySelectorAll('.overlay').forEach(el => el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open'); }));
-
-// ---- PARAMÈTRES ----
-const PARAM_KEY = 'mac_parametres';
-const DEFAULT_PARAMS = {
-  prenom:'', nom:'', siret:'', adresse:'', email:'', tel:'', enseigne:'Prendre Soin de Son Être',
-  prix: 60, tauxKm: 0.518, tva: 'TVA non applicable — article 293 B du CGI',
-  ejsService:'', ejsTemplate:'', ejsPubkey:''
-};
-
-function loadParametres() {
-  const p = JSON.parse(localStorage.getItem(PARAM_KEY) || 'null') || DEFAULT_PARAMS;
-  document.getElementById('param-prenom').value = p.prenom || '';
-  document.getElementById('param-nom').value = p.nom || '';
-  document.getElementById('param-siret').value = p.siret || '';
-  document.getElementById('param-adresse').value = p.adresse || '';
-  document.getElementById('param-email').value = p.email || '';
-  document.getElementById('param-tel').value = p.tel || '';
-  document.getElementById('param-enseigne').value = p.enseigne || '';
-  document.getElementById('param-prix').value = p.prix || 60;
-  document.getElementById('param-taux-km').value = p.tauxKm || 0.518;
-  document.getElementById('param-tva').value = p.tva || DEFAULT_PARAMS.tva;
-  document.getElementById('param-ejs-service').value = p.ejsService || '';
-  document.getElementById('param-ejs-template').value = p.ejsTemplate || '';
-  document.getElementById('param-ejs-pubkey').value = p.ejsPubkey || '';
-}
-
-function saveParametres() {
-  const p = {
-    prenom: document.getElementById('param-prenom').value.trim(),
-    nom: document.getElementById('param-nom').value.trim(),
-    siret: document.getElementById('param-siret').value.trim(),
-    adresse: document.getElementById('param-adresse').value.trim(),
-    email: document.getElementById('param-email').value.trim(),
-    tel: document.getElementById('param-tel').value.trim(),
-    enseigne: document.getElementById('param-enseigne').value.trim(),
-    prix: parseFloat(document.getElementById('param-prix').value) || 60,
-    tauxKm: parseFloat(document.getElementById('param-taux-km').value) || 0.518,
-    tva: document.getElementById('param-tva').value.trim(),
-    ejsService: document.getElementById('param-ejs-service').value.trim(),
-    ejsTemplate: document.getElementById('param-ejs-template').value.trim(),
-    ejsPubkey: document.getElementById('param-ejs-pubkey').value.trim(),
-  };
-  localStorage.setItem(PARAM_KEY, JSON.stringify(p));
-  toast('Informations enregistrées ✓');
-}
-
-function getParams() {
-  return JSON.parse(localStorage.getItem(PARAM_KEY) || 'null') || DEFAULT_PARAMS;
-}
-
-// ---- DEVIS ----
-let devisList = JSON.parse(localStorage.getItem('mac_devis') || '[]');
-
-function saveDevisLocal() {
-  localStorage.setItem('mac_devis', JSON.stringify(devisList));
-}
-
-function onDevisClientChange() {
-  const id = parseInt(document.getElementById('devis-client').value);
-  const infoEl = document.getElementById('devis-client-info');
-  const editBtn = document.getElementById('devis-client-edit-btn');
-  if (!id) { infoEl.style.display = 'none'; editBtn.style.display = 'none'; return; }
-  const c = clients.find(x => x.id === id);
-  if (!c) { infoEl.style.display = 'none'; editBtn.style.display = 'none'; return; }
-  let lines = [];
-  if (c.adresse) lines.push(`<i class="ti ti-map-pin"></i> ${c.adresse}`);
-  if (c.tel) lines.push(`<i class="ti ti-phone"></i> ${c.tel}`);
-  if (c.email) lines.push(`<i class="ti ti-mail"></i> ${c.email}`);
-  if (c.profil === 'enfant') {
-    if (c.resp1) lines.push(`<i class="ti ti-user"></i> Père : ${c.resp1}${c.resp1Tel ? ' · '+c.resp1Tel : ''}`);
-    if (c.resp2) lines.push(`<i class="ti ti-user"></i> Mère : ${c.resp2}${c.resp2Tel ? ' · '+c.resp2Tel : ''}`);
-    if (c.structure) lines.push(`<i class="ti ti-building"></i> ${c.structure}${c.structureResp ? ' — '+c.structureResp : ''}`);
-  }
-  infoEl.innerHTML = lines.join('<br>');
-  infoEl.style.display = 'block';
-  editBtn.style.display = 'block';
-}
-
-function createClientFromDevis() {
-  closeModal('devis');
-  window._devisRetourClientId = null;
-  window._devisRetourNewClient = true;
-  // Ouvrir le modal client vierge
-  openModal('client');
-  // Après la sauvegarde du client, on reviendra au devis
-  // On surcharge temporairement saveClient pour intercepter
-  window._saveClientOriginal = window._saveClientOriginal || null;
-  document.getElementById('retour-devis-btn').style.display = '';
-}
-
-function retourAuDevis() {
-  document.getElementById('retour-devis-btn').style.display = 'none';
-  openModal('devis');
-  setTimeout(() => {
-    // Rafraîchir la liste des clients dans le select
-    const sel = document.getElementById('devis-client');
-    sel.innerHTML = '<option value="">— Sélectionner un client —</option>' + clients.map(c=>`<option value="${c.id}">${c.prenom} ${c.nom}</option>`).join('');
-    if (window._devisRetourClientId) {
-      sel.value = window._devisRetourClientId;
-      onDevisClientChange();
-    } else if (window._devisRetourNewClient) {
-      // Sélectionner le client le plus récemment créé
-      if (clients.length) {
-        const lastClient = clients[clients.length - 1];
-        sel.value = lastClient.id;
-        onDevisClientChange();
-      }
-      window._devisRetourNewClient = false;
-    }
-  }, 100);
-}
-
-function editClientFromDevis() {
-  const id = parseInt(document.getElementById('devis-client').value);
-  if (!id) return;
-  closeModal('devis');
-  window._devisRetourClientId = id;
-  showFiche(id);
-  document.getElementById('retour-devis-btn').style.display = '';
-}
-
-let devisPrestationIdx = 0;
-function addDevisPrestation() {
-  const p = getParams();
-  const idx = devisPrestationIdx++;
-  const container = document.getElementById('devis-prestations');
-  const div = document.createElement('div');
-  div.id = `dp-${idx}`;
-  div.style.cssText = 'display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:end;margin-bottom:8px';
-  div.innerHTML = `
-    <div class="form-row" style="margin:0"><label>Prestation</label>
-      <input type="text" id="dp-label-${idx}" placeholder="Ex: Séance d'hypnothérapie" oninput="calcDevisTotal()">
-    </div>
-    <div class="form-row" style="margin:0"><label>Prix (€)</label>
-      <input type="number" id="dp-prix-${idx}" value="${p.prix||60}" min="0" step="0.01" style="width:90px" oninput="calcDevisTotal()">
-    </div>
-    <button class="icon-btn danger" onclick="removeDevisPrestation(${idx})" style="margin-bottom:1px"><i class="ti ti-trash"></i></button>
-  `;
-  container.appendChild(div);
-  calcDevisTotal();
-}
-
-function removeDevisPrestation(idx) {
-  const el = document.getElementById(`dp-${idx}`);
-  if (el) el.remove();
-  calcDevisTotal();
-}
-
-function getDevisPrestations() {
-  const items = [];
-  document.querySelectorAll('#devis-prestations > div').forEach(div => {
-    const idx = div.id.replace('dp-', '');
-    const label = document.getElementById(`dp-label-${idx}`)?.value.trim() || 'Séance';
-    const prix = parseFloat(document.getElementById(`dp-prix-${idx}`)?.value) || 0;
-    items.push({ label, prix });
-  });
-  return items;
-}
-
-function calcDevisTotal() {
-  const duree = parseInt(document.getElementById('devis-duree').value) || 1;
-  const freq = parseInt(document.getElementById('devis-frequence').value) || 2;
-  const nbSeances = duree * freq;
-  const km = parseFloat(document.getElementById('devis-km').value) || 0;
-  const tauxKm = parseFloat(document.getElementById('devis-taux-km').value) || 0.518;
-  const prestations = getDevisPrestations();
-
-  const totalPrestations = prestations.reduce((s, p) => s + p.prix * nbSeances, 0);
-  const totalKm = km > 0 ? (km * 2 * nbSeances * tauxKm) : 0;
-  const total = totalPrestations + totalKm;
-
-  const freqLabel = { '4': '1/semaine', '2': '1/15 jours', '1': '1/mois' }[String(freq)] || '';
-  let html = `<strong>Durée :</strong> ${duree} mois · ${freqLabel} · <strong>${nbSeances} séances au total</strong><br>`;
-  prestations.forEach(p => {
-    html += `${p.label} : ${nbSeances} × ${p.prix.toFixed(2)} € = <strong>${(p.prix*nbSeances).toFixed(2)} €</strong><br>`;
-  });
-  if (km > 0) {
-    html += `Déplacements : ${nbSeances} × ${km*2} km × ${tauxKm} €/km = <strong>${totalKm.toFixed(2)} €</strong><br>`;
-  }
-  html += `<strong style="font-size:14px;color:var(--teal)">Total : ${total.toFixed(2)} €</strong>`;
-  document.getElementById('devis-resume').innerHTML = html;
-}
-
-function buildDevisData() {
-  const clientId = parseInt(document.getElementById('devis-client').value);
-  const client = clients.find(c => c.id === clientId);
-  const duree = parseInt(document.getElementById('devis-duree').value) || 1;
-  const freq = parseInt(document.getElementById('devis-frequence').value) || 2;
-  const nbSeances = duree * freq;
-  const km = parseFloat(document.getElementById('devis-km').value) || 0;
-  const tauxKm = parseFloat(document.getElementById('devis-taux-km').value) || 0.518;
-  const prestations = getDevisPrestations();
-  const totalPrestations = prestations.reduce((s, p) => s + p.prix * nbSeances, 0);
-  const totalKm = km > 0 ? km * 2 * nbSeances * tauxKm : 0;
-  return {
-    id: parseInt(document.getElementById('devis-edit-id').value) || newId(),
-    date: fmt(today),
-    clientId, client,
-    objet: document.getElementById('devis-objet').value.trim(),
-    duree, freq, nbSeances,
-    prestations,
-    km, tauxKm,
-    totalPrestations, totalKm,
-    total: totalPrestations + totalKm,
-    notes: document.getElementById('devis-notes').value.trim(),
-  };
-}
-
-function saveDevisBrouillon() {
-  const d = buildDevisData();
-  d.statut = 'brouillon';
-  const idx = devisList.findIndex(x => x.id === d.id);
-  if (idx >= 0) devisList[idx] = d;
-  else devisList.unshift(d);
-  saveDevisLocal();
-  closeModal('devis');
-  renderDevisList();
-  toast('Brouillon enregistré ✓');
-}
-
-function saveDevis() {
-  const d = buildDevisData();
-  if (!d.clientId) { alert('Veuillez sélectionner un client.'); return; }
-  if (!d.objet) { alert('Veuillez renseigner un objet.'); return; }
-  const existing = devisList.find(x => x.id === d.id);
-  d.statut = existing?.statut || 'finalise';
-  d.brouillon = false;
-  const idx = devisList.findIndex(x => x.id === d.id);
-  if (idx >= 0) devisList[idx] = d;
-  else devisList.unshift(d);
-  saveDevisLocal();
-  closeModal('devis');
-  renderDevisList();
-  toast('Devis enregistré ✓');
-}
-
-function setDevisStatut(id, statut) {
-  const idx = devisList.findIndex(x => x.id === id);
-  if (idx < 0) return;
-  devisList[idx].statut = statut;
-  if (statut === 'accepte') {
-    toast('Devis accepté ! Pense à créer la facture sur Kolecto 📋');
-  } else if (statut === 'envoye') {
-    toast('Devis marqué comme envoyé ✓');
-  } else if (statut === 'refuse') {
-    toast('Devis marqué comme refusé');
-  } else if (statut === 'brouillon') {
-    toast('Devis repassé en brouillon');
-  }
-  saveDevisLocal();
-  renderDevisList();
-}
-
-function renderDevisList() {
-  const el = document.getElementById('devis-list');
-  if (!devisList.length) {
-    el.innerHTML = '<div class="empty-state"><i class="ti ti-file-off"></i>Aucun devis</div>';
-    return;
-  }
-
-  const STATUTS = {
-    brouillon: { label:'Brouillon', color:'var(--text-hint)', bg:'#f0f0f0', icon:'ti-pencil' },
-    finalise:  { label:'Finalisé',  color:'var(--teal-dark)', bg:'var(--teal-light)', icon:'ti-file-check' },
-    envoye:    { label:'Envoyé',    color:'var(--amber)',     bg:'var(--amber-light)', icon:'ti-mail' },
-    accepte:   { label:'Accepté ✓', color:'#2d7a2d',         bg:'#e6f4e6',           icon:'ti-circle-check' },
-    refuse:    { label:'Refusé',    color:'var(--danger)',    bg:'var(--danger-light)', icon:'ti-circle-x' },
-  };
-
-  const devisCard = (d) => {
-    const c = d.client || clients.find(x => x.id === d.clientId);
-    const nom = c ? `${c.prenom} ${c.nom}` : 'Client inconnu';
-    const statut = d.statut || (d.brouillon ? 'brouillon' : 'finalise');
-    const st = STATUTS[statut] || STATUTS.finalise;
-    const locked = statut === 'accepte' || statut === 'envoye';
-
-    // Boutons de changement de statut
-    let statutBtns = '';
-    if (statut === 'brouillon' || statut === 'finalise') {
-      statutBtns = `<button class="btn" onclick="setDevisStatut(${d.id},'envoye')" style="font-size:11px;padding:3px 8px;border-color:var(--amber);color:var(--amber)" title="Marquer comme envoyé"><i class="ti ti-mail"></i> Envoyé</button>`;
-    }
-    if (statut === 'envoye') {
-      statutBtns = `
-        <button class="btn" onclick="setDevisStatut(${d.id},'accepte')" style="font-size:11px;padding:3px 8px;border-color:#2d7a2d;color:#2d7a2d" title="Marquer comme accepté"><i class="ti ti-circle-check"></i> Accepté</button>
-        <button class="btn" onclick="setDevisStatut(${d.id},'refuse')" style="font-size:11px;padding:3px 8px;border-color:var(--danger);color:var(--danger)" title="Marquer comme refusé"><i class="ti ti-circle-x"></i> Refusé</button>`;
-    }
-    if (locked || statut === 'refuse') {
-      statutBtns += `<button class="btn" onclick="setDevisStatut(${d.id},'brouillon')" style="font-size:11px;padding:3px 8px;color:var(--text-hint)" title="Repasser en brouillon"><i class="ti ti-rotate"></i></button>`;
-    }
-
-    const kolectoReminder = statut === 'accepte'
-      ? `<div style="background:#e6f4e6;border-left:3px solid #2d7a2d;padding:6px 10px;font-size:11px;color:#2d7a2d;margin-top:8px;border-radius:0 4px 4px 0"><i class="ti ti-alert-circle"></i> Pense à créer la facture sur Kolecto</div>`
-      : '';
-
-    return `<div class="rdv-card" style="flex-direction:column;align-items:stretch;gap:8px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div class="rdv-info" style="flex:1">
-          <div class="rdv-title" style="display:flex;align-items:center;gap:8px">
-            ${d.objet || 'Devis sans titre'}
-            <span style="background:${st.bg};color:${st.color};font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap"><i class="ti ${st.icon}"></i> ${st.label}</span>
-          </div>
-          <div class="rdv-meta">${nom} · ${fmtDate(d.date)} · <strong>${d.total.toFixed(2)} €</strong></div>
-        </div>
-        <div class="rdv-actions" style="flex-shrink:0">
-        ${statut !== 'accepte' && statut !== 'envoye' ? `<button class="icon-btn" onclick="editDevis(${d.id})" title="Modifier"><i class="ti ti-edit"></i></button>` : ''}
-          <button class="icon-btn" onclick="genDevisPDFById(${d.id})" title="PDF"><i class="ti ti-file-type-pdf"></i></button>
-          <button class="icon-btn danger" onclick="deleteDevis(${d.id})" title="Supprimer"><i class="ti ti-trash"></i></button>
-        </div>
-      </div>
-      ${statutBtns ? `<div style="display:flex;gap:6px;flex-wrap:wrap">${statutBtns}</div>` : ''}
-      ${kolectoReminder}
-    </div>`;
-  };
-
-  // Grouper par statut
-  const groupes = {
-    brouillon: devisList.filter(d => (d.statut||'finalise') === 'brouillon' || d.brouillon),
-    envoye:    devisList.filter(d => d.statut === 'envoye'),
-    finalise:  devisList.filter(d => (d.statut === 'finalise' || (!d.statut && !d.brouillon)) ),
-    accepte:   devisList.filter(d => d.statut === 'accepte'),
-    refuse:    devisList.filter(d => d.statut === 'refuse'),
-  };
-
-  let html = '';
-  const ordre = [
-    { key:'brouillon', label:'Brouillons', icon:'ti-pencil' },
-    { key:'finalise',  label:'Finalisés',  icon:'ti-file-description' },
-    { key:'envoye',    label:'Envoyés — en attente de réponse', icon:'ti-mail' },
-    { key:'accepte',   label:'Acceptés',   icon:'ti-circle-check' },
-    { key:'refuse',    label:'Refusés',    icon:'ti-circle-x' },
-  ];
-  ordre.forEach(({ key, label, icon }) => {
-    if (!groupes[key]?.length) return;
-    html += `<div class="section-title" style="margin-bottom:0.5rem"><i class="ti ${icon}" style="font-size:13px;margin-right:4px"></i>${label}</div>`;
-    html += groupes[key].map(devisCard).join('');
-    html += `<div style="margin-bottom:1.25rem"></div>`;
-  });
-  el.innerHTML = html;
-}
-
-function editDevis(id) {
-  const d = devisList.find(x => x.id === id);
-  if (!d) return;
-  const p = getParams();
-  const sel = document.getElementById('devis-client');
-  sel.innerHTML = '<option value="">— Sélectionner un client —</option>' + clients.map(c=>`<option value="${c.id}">${c.prenom} ${c.nom}</option>`).join('');
-  document.getElementById('devis-edit-id').value = d.id;
-  document.getElementById('devis-modal-title').textContent = 'Modifier le devis';
-  document.getElementById('devis-client').value = d.clientId;
-  onDevisClientChange();
-  document.getElementById('devis-objet').value = d.objet || '';
-  document.getElementById('devis-duree').value = d.duree;
-  document.getElementById('devis-frequence').value = String(d.freq);
-  document.getElementById('devis-km').value = d.km;
-  document.getElementById('devis-taux-km').value = d.tauxKm;
-  document.getElementById('devis-notes').value = d.notes || '';
-  document.getElementById('devis-client-info').style.display = 'none';
-  document.getElementById('devis-prestations').innerHTML = '';
-  devisPrestationIdx = 0;
-  (d.prestations || []).forEach(pr => {
-    addDevisPrestation();
-    const idx = devisPrestationIdx - 1;
-    document.getElementById(`dp-label-${idx}`).value = pr.label;
-    document.getElementById(`dp-prix-${idx}`).value = pr.prix;
-  });
-  calcDevisTotal();
-  document.getElementById('modal-devis').classList.add('open');
-}
-
-// ---- GÉNÉRATION PDF ----
-function genDevisPDFById(id) {
-  const d = devisList.find(x => x.id === id);
-  if (!d) return;
-  genDevisPDFFromData(d);
-}
-
-function genDevisPDF() {
-  const d = buildDevisData();
-  if (!d.clientId) { alert('Veuillez sélectionner un client.'); return; }
-  genDevisPDFFromData(d);
-}
-
-function genDevisPDFFromData(d) {
-  const p = getParams();
-  const c = d.client || clients.find(x => x.id === d.clientId) || {};
-  const freqLabel = { '4': '1 séance par semaine', '2': '1 séance tous les 15 jours', '1': '1 séance par mois' }[String(d.freq)] || '';
-  const numDevis = `DEV-${d.id}`;
-  const dateStr = fmtDate(d.date);
-
-  let prestationsRows = (d.prestations || []).map(pr =>
-    `<tr><td>${pr.label}</td><td style="text-align:center">${d.nbSeances}</td><td style="text-align:right">${pr.prix.toFixed(2)} €</td><td style="text-align:right">${(pr.prix*d.nbSeances).toFixed(2)} €</td></tr>`
-  ).join('');
-
-  if (d.km > 0) {
-    const kmTotal = d.km * 2 * d.nbSeances * d.tauxKm;
-    prestationsRows += `<tr><td>Déplacements (${d.km}km A/R × ${d.nbSeances} séances × ${d.tauxKm} €/km)</td><td style="text-align:center">${d.nbSeances}</td><td style="text-align:right">${(d.km*2*d.tauxKm).toFixed(2)} €</td><td style="text-align:right">${kmTotal.toFixed(2)} €</td></tr>`;
-  }
-
-  let clientAddr = [c.prenom+' '+c.nom];
-  if (c.adresse) clientAddr.push(c.adresse);
-  if (c.profil === 'enfant') {
-    if (c.resp1) clientAddr.push(`Père : ${c.resp1}${c.resp1Tel ? ' · '+c.resp1Tel : ''}`);
-    if (c.resp2) clientAddr.push(`Mère : ${c.resp2}${c.resp2Tel ? ' · '+c.resp2Tel : ''}`);
-    if (c.structure) clientAddr.push(`Structure : ${c.structure}`);
-    if (c.structureResp) clientAddr.push(`Référent : ${c.structureResp}${c.structureTel ? ' · '+c.structureTel : ''}`);
-  } else {
-    if (c.tel) clientAddr.push(c.tel);
-    if (c.email) clientAddr.push(c.email);
-  }
-
-  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
-<title>Devis ${numDevis}</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Nunito:wght@300;400;500;600;800&display=swap');
-  body { font-family: 'Nunito', Arial, sans-serif; font-size: 13px; color: #2d4a4a; margin: 0; padding: 40px; background: #faf8f5; }
-  h1 { font-family: 'Cormorant Garamond', serif; font-size: 28px; color: #1a7a7a; margin: 0 0 2px; font-weight: 600; letter-spacing: 0.02em; }
-  .subtitle { color: #b8a8d0; font-size: 13px; font-style: italic; margin-bottom: 16px; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 2px solid #1a7a7a; }
-  .emetteur { max-width: 55%; }
-  .meta { text-align: right; }
-  .meta .num { font-family: 'Cormorant Garamond', serif; font-size: 22px; color: #1a7a7a; font-weight: 600; }
-  .meta .info { font-size: 12px; color: #7a9a9a; line-height: 1.9; margin-top: 4px; }
-  .emetteur-info { font-size: 12px; color: #5a7a7a; line-height: 1.9; }
-  .parties { display: flex; gap: 24px; margin-bottom: 28px; }
-  .partie { flex: 1; border-radius: 8px; padding: 16px 18px; font-size: 12px; line-height: 1.8; }
-  .partie-emetteur { background: #e8f4f4; border-left: 3px solid #1a7a7a; }
-  .partie-client { background: #f0eaf8; border-left: 3px solid #b8a8d0; }
-  .partie-title { font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
-  .partie-emetteur .partie-title { color: #1a7a7a; }
-  .partie-client .partie-title { color: #7a6a9a; }
-  .objet { background: #1a7a7a; color: white; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-weight: 600; font-size: 14px; }
-  .periode { margin-bottom: 22px; background: #fdf0e6; border-left: 3px solid #d4956a; padding: 8px 14px; border-radius: 0 6px 6px 0; font-size: 12px; color: #8a5a3a; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 6px; border-radius: 8px; overflow: hidden; }
-  th { background: #1a7a7a; color: white; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-  td { padding: 9px 12px; border-bottom: 1px solid #e8f0f0; font-size: 12px; }
-  tr:nth-child(even) td { background: #f5fafa; }
-  .total-row td { font-weight: 700; font-size: 14px; color: white; background: #145f5f; border-top: none; }
-  .tva { font-size: 11px; color: #9ab0b0; margin: 6px 0 22px; font-style: italic; }
-  .notes { background: #fdf0e6; border-radius: 6px; padding: 12px 16px; font-size: 12px; color: #7a5a3a; margin-bottom: 22px; border-left: 3px solid #d4956a; }
-  .validity { font-size: 11px; color: #b8a8d0; text-align: center; margin-bottom: 20px; font-style: italic; }
-  .footer { font-size: 10px; color: #b0c8c8; border-top: 1px solid #d8eaea; padding-top: 14px; text-align: center; margin-top: 30px; line-height: 1.8; }
-  @media print { body { padding: 20px; background: white; } }
-</style></head><body>
-<div class="header">
-  <div class="emetteur">
-    <h1>${p.enseigne || 'Prendre Soin de Son Être'}</h1>
-    <div class="subtitle">Hypnothérapie · Coaching · Relaxation</div>
-    <div class="emetteur-info">
-      ${p.prenom || ''} ${p.nom || ''}<br>
-      ${p.adresse ? p.adresse+'<br>' : ''}
-      ${p.tel ? p.tel+'<br>' : ''}
-      ${p.email ? p.email+'<br>' : ''}
-      ${p.siret ? 'SIRET : '+p.siret : ''}
-    </div>
-  </div>
-  <div class="meta">
-    <div class="num">DEVIS</div>
-    <div class="info">
-      N° ${numDevis}<br>
-      Date : ${dateStr}<br>
-      Valable 30 jours
-    </div>
-  </div>
-</div>
-
-<div class="parties">
-  <div class="partie partie-emetteur">
-    <div class="partie-title">Prestataire</div>
-    ${p.prenom || ''} ${p.nom || ''}<br>
-    ${p.enseigne || ''}<br>
-    ${p.adresse || ''}<br>
-    ${p.siret ? 'SIRET : '+p.siret : ''}
-  </div>
-  <div class="partie partie-client">
-    <div class="partie-title">Client</div>
-    ${clientAddr.join('<br>')}
-  </div>
-</div>
-
-<div class="objet">📋 ${d.objet || 'Accompagnement'}</div>
-<div class="periode">Durée : <strong>${d.duree} mois</strong> · Fréquence : <strong>${freqLabel}</strong> · Total : <strong>${d.nbSeances} séances</strong></div>
-
-<table>
-  <thead><tr><th>Prestation</th><th style="text-align:center;width:60px">Qté</th><th style="text-align:right;width:80px">P.U.</th><th style="text-align:right;width:90px">Total</th></tr></thead>
-  <tbody>${prestationsRows}
-  <tr class="total-row"><td colspan="3" style="text-align:right;padding-right:16px">TOTAL</td><td style="text-align:right">${d.total.toFixed(2)} €</td></tr>
-  </tbody>
-</table>
-<div class="tva">${p.tva || 'TVA non applicable — article 293 B du CGI'}</div>
-
-${d.notes ? `<div class="notes"><strong>Notes :</strong><br>${d.notes}</div>` : ''}
-
-<div class="validity">Ce devis est valable 30 jours à compter de sa date d'émission.</div>
-
-<div class="footer">
-  ${p.enseigne || 'Prendre Soin de Son Être'} — ${p.prenom || ''} ${p.nom || ''}<br>
-  ${p.siret ? 'SIRET : '+p.siret+' — ' : ''}${p.tva || 'TVA non applicable — article 293 B du CGI'}<br>
-  Ce document est un devis. Il ne constitue pas une facture.
-</div>
-</body></html>`;
-
-  const w = window.open('', '_blank');
-  w.document.write(html);
-  w.document.close();
-  setTimeout(() => w.print(), 500);
-}
-
-// ---- ENVOI EMAIL ----
-async function sendDevisEmail() {
-  const p = getParams();
-  if (!p.ejsService || !p.ejsTemplate || !p.ejsPubkey) {
-    alert('Veuillez d\'abord configurer EmailJS dans "Mes informations" (Service ID, Template ID, Public Key).');
-    showView('parametres');
-    closeModal('devis');
-    return;
-  }
-  const d = buildDevisData();
-  if (!d.clientId) { alert('Veuillez sélectionner un client.'); return; }
-  const c = d.client || clients.find(x => x.id === d.clientId) || {};
-  const emailDest = c.email || (c.profil==='enfant' ? c.resp1Email || c.resp2Email || '' : '');
-  if (!emailDest) { alert(`Aucun email trouvé pour ${c.prenom} ${c.nom}. Veuillez renseigner son email dans la fiche client.`); return; }
-
-  const freqLabel = { '4': '1/semaine', '2': '1/15 jours', '1': '1/mois' }[String(d.freq)] || '';
-  const lignesPrest = (d.prestations||[]).map(pr => `${pr.label} × ${d.nbSeances} = ${(pr.prix*d.nbSeances).toFixed(2)} €`).join('\n');
-  const ligneKm = d.km > 0 ? `\nDéplacements : ${(d.km*2*d.nbSeances*d.tauxKm).toFixed(2)} €` : '';
-
-  const templateParams = {
-    to_email: emailDest,
-    to_name: `${c.prenom} ${c.nom}`,
-    from_name: `${p.prenom} ${p.nom} — ${p.enseigne || 'Prendre Soin de Son Être'}`,
-    reply_to: p.email,
-    objet: d.objet || 'Devis accompagnement',
-    duree: `${d.duree} mois · ${freqLabel} · ${d.nbSeances} séances`,
-    prestations: lignesPrest + ligneKm,
-    total: `${d.total.toFixed(2)} €`,
-    tva: p.tva || 'TVA non applicable — article 293 B du CGI',
-    notes: d.notes || '',
-    date: fmtDate(d.date),
-  };
-
-  try {
-    if (!window.emailjs) {
-      await new Promise((res, rej) => {
-        const s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
-        s.onload = res; s.onerror = rej;
-        document.head.appendChild(s);
-      });
-    }
-    emailjs.init(p.ejsPubkey);
-    await emailjs.send(p.ejsService, p.ejsTemplate, templateParams);
-    toast('Devis envoyé par email ✓');
-    closeModal('devis');
-  } catch(e) {
-    alert('Erreur lors de l\'envoi : ' + (e?.text || e?.message || JSON.stringify(e)));
-  }
-}
+// Fermer modal en cliquant dehors
+document.querySelectorAll('.overlay').forEach(el => el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open'); }));
 
 // ---- SUPABASE SYNC ----
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
@@ -2524,90 +1527,16 @@ function sbStatus(text, color) {
 }
 
 async function sbFetch(path, opts={}) {
-  const token = await sbGetValidToken();
   return fetch(`${SB_URL}/rest/v1/${path}`, {
     ...opts,
     headers: {
       'apikey': SB_KEY,
-      'Authorization': `Bearer ${token || SB_KEY}`,
+      'Authorization': `Bearer ${SB_KEY}`,
       'Content-Type': 'application/json',
       'Prefer': 'return=minimal',
       ...(opts.headers || {})
     }
   });
-}
-
-// ---- AUTHENTIFICATION (Supabase Auth) ----
-async function sbAuthLogin(email, password) {
-  const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
-    method: 'POST',
-    headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
-  });
-  if (!res.ok) throw new Error('invalid_credentials');
-  const data = await res.json();
-  localStorage.setItem('sb_access_token', data.access_token);
-  localStorage.setItem('sb_refresh_token', data.refresh_token);
-  localStorage.setItem('sb_expires_at', String(Date.now() + data.expires_in * 1000));
-}
-
-async function sbRefreshToken() {
-  const refresh = localStorage.getItem('sb_refresh_token');
-  if (!refresh) return null;
-  try {
-    const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`, {
-      method: 'POST',
-      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refresh })
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    localStorage.setItem('sb_access_token', data.access_token);
-    localStorage.setItem('sb_refresh_token', data.refresh_token);
-    localStorage.setItem('sb_expires_at', String(Date.now() + data.expires_in * 1000));
-    return data.access_token;
-  } catch(e) { return null; }
-}
-
-async function sbGetValidToken() {
-  const token = localStorage.getItem('sb_access_token');
-  const expiresAt = parseInt(localStorage.getItem('sb_expires_at') || '0');
-  if (token && Date.now() < expiresAt - 60000) return token;
-  return await sbRefreshToken();
-}
-
-function sbLogout() {
-  localStorage.removeItem('sb_access_token');
-  localStorage.removeItem('sb_refresh_token');
-  localStorage.removeItem('sb_expires_at');
-  location.reload();
-}
-
-async function handleLogin(e) {
-  e.preventDefault();
-  const email = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value;
-  const errEl = document.getElementById('login-error');
-  const btn = document.getElementById('login-btn');
-  errEl.style.display = 'none';
-  btn.disabled = true; btn.textContent = 'Connexion...';
-  try {
-    await sbAuthLogin(email, password);
-    showApp();
-  } catch(err) {
-    errEl.textContent = 'Email ou mot de passe incorrect.';
-    errEl.style.display = 'block';
-  }
-  btn.disabled = false; btn.textContent = 'Se connecter';
-}
-
-function showApp() {
-  document.getElementById('access-gate').style.display = 'none';
-  document.querySelector('.app').style.display = 'flex';
-  renderDashboard();
-  renderCalendar();
-  sbStatus('Connexion...', 'var(--teal)');
-  sbPull();
 }
 
 async function sbPull() {
@@ -2654,14 +1583,21 @@ function persistAndSync() {
   window._sbPushTimer = setTimeout(sbPush, 1500);
 }
 
-// Init : on vérifie si une session valide existe déjà
-(async function initAccess() {
-  const token = await sbGetValidToken();
-  if (token) {
-    showApp();
-  }
-  // Sinon, le formulaire de connexion (#access-gate) reste affiché
-})();
+// Init Supabase au chargement
+window.addEventListener('load', () => {
+  sbStatus('Connexion...', 'var(--teal)');
+  sbPull();
+});
+
+
+// Service Worker pour PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
+}
+
+// Init
+renderDashboard();
+renderCalendar();
 </script>
 </body>
 </html>
