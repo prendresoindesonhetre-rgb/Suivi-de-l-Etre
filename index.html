@@ -883,6 +883,10 @@ html, body {
     <div class="form-row"><label>Prochaine étape</label>
       <input type="text" id="note-suite" placeholder="Point à travailler lors de la prochaine séance...">
     </div>
+    <div class="form-row"><label>Prochain rendez-vous <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label>
+      <input type="date" id="note-prochain-rdv">
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Cette date sera affichée dans la fiche client</div>
+    </div>
     </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal('note')">Annuler</button>
@@ -1224,6 +1228,7 @@ function renderDashboard() {
       <div class="upcoming-dot ${r.annule?'dot-annule':hasTrajet?'dot-trajet':'dot-seance'}"></div>
       <div class="upcoming-info" style="cursor:pointer" onclick="openRdvDetail(${r.id})">
         <div class="upcoming-name"><strong style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800">${fmtDate(r.date)} · ${r.heure}–${calcEndTime(r.heure, r.duree)} :</strong> · <span style="color:#6B7A8D">${c ? c.prenom+' '+c.nom : '?'} — ${r.type}</span> <span style="font-weight:400;color:var(--text-muted);font-style:italic">(${r.duree} min)</span>${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600;text-decoration:none">Annulé</span>':''}</div>
+        ${r.enfantsIds && r.enfantsIds.length ? `<div style="margin-top:3px;font-size:11px;color:#8890c0;font-weight:500"><i class="ti ti-users" style="font-size:11px;margin-right:3px"></i>Pour : ${r.enfantsIds.map(id=>{const e=getClient(id);return e?e.prenom+' '+e.nom:'?';}).join(', ')}</div>` : ''}
         <div class="upcoming-detail">${(r.trajetAller||0) > 0 ? `<i class="ti ti-car" style="font-size:11px;margin-right:3px;color:#7A4F3A"></i><span style="color:#7A4F3A;font-weight:500;text-decoration:underline">Départ à ${calcEndTime(r.heure, -(r.trajetAller||0))}</span> <span style="color:#9B8EC4">pour ${r.lieu||(c&&c.adresse)||'?'}</span><br>` : (r.lieu ? `<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px;color:#D4A5B5"></i><span style="color:#9B8EC4">${r.lieu}</span><br>` : (c&&c.adresse ? `<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px;color:#D4A5B5"></i><span style="color:#9B8EC4">${c.adresse}</span><br>` : ''))}${(r.trajetRetour||0) > 0 ? `<i class="ti ti-arrow-back-up" style="font-size:11px;margin-right:3px;color:#6B7A8D"></i><span style="color:#6B7A8D">Retour : ${r.trajetRetour} min</span>` : ''}</div>
         ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:4px;font-size:11px;color:#7A9E7E;font-weight:500"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
       </div>
@@ -1365,6 +1370,7 @@ function showFiche(id) {
       </div>
       <div class="seance-notes">${n.contenu}</div>
       ${n.suite ? `<div class="seance-suite"><i class="ti ti-arrow-right" style="font-size:14px;flex-shrink:0;margin-top:1px"></i>${n.suite}</div>` : ''}
+      ${n.prochainRdv ? `<div style="font-size:12px;color:var(--teal);margin-top:6px;display:flex;align-items:center;gap:5px;font-weight:600"><i class="ti ti-calendar-plus"></i>Prochain RDV : ${new Date(n.prochainRdv+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div>` : ''}
       ${tt>0 ? `<div class="seance-trajet"><i class="ti ti-car"></i>${tt} min de trajet · ${rdv.lieu||''}</div>` : ''}
       <div class="seance-actions">
         <button class="btn" onclick="editNote(${n.id})"><i class="ti ti-edit"></i> Modifier</button>
@@ -1899,6 +1905,7 @@ function closeModal(type) {
     document.getElementById('note-edit-id').value='';
     document.getElementById('note-autre-row').style.display = 'none';
     document.getElementById('note-type-autre').value = '';
+    document.getElementById('note-prochain-rdv').value = '';
   }
 }
 
@@ -2219,6 +2226,7 @@ function saveNote() {
       : document.getElementById('note-type').value,
     contenu: document.getElementById('note-contenu').value,
     suite: document.getElementById('note-suite').value,
+    prochainRdv: document.getElementById('note-prochain-rdv').value,
   };
   if (editId) {
     const idx = notes.findIndex(n=>n.id==editId);
