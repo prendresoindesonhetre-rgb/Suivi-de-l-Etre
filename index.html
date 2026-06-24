@@ -1978,6 +1978,12 @@ function editRdv(id) {
   document.getElementById('rdv-trajet-retour').value=r.trajetRetour||0;
   document.getElementById('rdv-lieu').value=r.lieu||'';
   document.getElementById('rdv-notes').value=r.notes||'';
+  // Décocher "Première séance" et afficher le sélecteur client
+  document.getElementById('rdv-premiere').checked = false;
+  document.getElementById('rdv-nouveau-client').style.display = 'none';
+  document.getElementById('rdv-client-row').style.display = 'block';
+  // Gérer le champ Autre
+  toggleAutreType();
   document.getElementById('modal-rdv').classList.add('open');
 }
 
@@ -2074,6 +2080,21 @@ function editClient(id) {
     document.getElementById('cl-structure-email').value=c.structureEmail||'';
     structureParticipants = c.participants ? [...c.participants] : [];
     renderParticipants();
+  }
+  if (c.profil === 'professionnel') {
+    document.getElementById('cl-pro-fonction').value = c.proFonction||'';
+    document.getElementById('cl-pro-structure').value = c.proStructure||'';
+    document.getElementById('cl-pro-tel').value = c.proTel||'';
+    document.getElementById('cl-pro-email').value = c.proEmail||'';
+    proEnfants = c.proEnfants ? [...c.proEnfants] : [];
+    renderProEnfants();
+    // Peupler le select enfants existants
+    const sel = document.getElementById('pro-enfant-select');
+    if (sel) {
+      const enfants = clients.filter(x => x.profil === 'enfant');
+      sel.innerHTML = '<option value="">— Sélectionner un enfant existant —</option>' +
+        enfants.map(x => `<option value="${x.prenom} ${x.nom}">👶 ${x.prenom} ${x.nom}</option>`).join('');
+    }
   }
   document.getElementById('modal-client').classList.add('open');
 }
