@@ -1054,6 +1054,7 @@ const today = new Date();
 let calYear = today.getFullYear(), calMonth = today.getMonth();
 let currentClientId = null;
 let currentRdvId = null;
+function getNowTime() { return today.getHours() * 60 + today.getMinutes(); }
 
 // --- STORAGE ---
 function load(key, def) { try { return JSON.parse(localStorage.getItem(key)) || def; } catch(e) { return def; } }
@@ -1259,9 +1260,8 @@ function renderDashboard() {
     if (r.annule) return false;
     if (r.date > nowStr) return true;
     if (r.date < nowStr) return false;
-    // Aujourd'hui : seulement si pas encore terminé
     const [h, m] = r.heure.split(':').map(Number);
-    return (h * 60 + m + (r.duree || 60)) > nowTime;
+    return (h * 60 + m + (r.duree || 60)) > getNowTime();
   }).sort((a,b) => a.date.localeCompare(b.date)||a.heure.localeCompare(b.heure))[0];
   const nextClient = next ? getClient(next.clientId) : null;
 
@@ -1278,12 +1278,11 @@ function renderDashboard() {
 
   // RDV passés sans note de séance (à remplir)
   // Un RDV est "passé" si sa date est avant aujourd'hui, OU si c'est aujourd'hui mais l'heure est passée
-  const nowTime = today.getHours() * 60 + today.getMinutes();
   const rdvsSansNote = rdvs.filter(r => {
     if (r.annule) return false;
     const estPasse = r.date < nowStr || (r.date === nowStr && (() => {
       const [h, m] = r.heure.split(':').map(Number);
-      return (h * 60 + m + (r.duree || 60)) < nowTime;
+      return (h * 60 + m + (r.duree || 60)) < getNowTime();
     })());
     if (!estPasse) return false;
     return !notes.some(n => n.clientId === r.clientId && n.date === r.date);
@@ -1318,7 +1317,7 @@ function renderDashboard() {
     // Même jour : afficher seulement si pas encore terminé
     const [h, m] = r.heure.split(':').map(Number);
     const finMinutes = h * 60 + m + (r.duree || 60);
-    return finMinutes > nowTime;
+    return finMinutes > getNowTime();
   }).sort((a,b) => a.date.localeCompare(b.date)||a.heure.localeCompare(b.heure)).slice(0,6);
   const ul = document.getElementById('upcoming-list');
   if (!upcoming.length) { ul.innerHTML = '<div class="empty-state"><i class="ti ti-calendar-off"></i>Aucun rendez-vous à venir</div>'; return; }
