@@ -861,12 +861,21 @@ html, body {
     <div class="form-grid form-grid-2">
       <div class="form-row"><label>Date</label><input type="date" id="note-date"></div>
       <div class="form-row"><label>Type de séance</label>
-        <select id="note-type">
-          <option>Relaxation</option><option>Méditation</option>
-          <option>Hypnose</option><option>Accompagnement émotionnel</option>
-          <option>Atelier groupe</option><option>Autre</option>
+        <select id="note-type" onchange="toggleNoteAutreType()">
+          <option>Relaxation</option>
+          <option>Méditation</option>
+          <option>Hypnose</option>
+          <option>Accompagnement émotionnel</option>
+          <option>Coaching</option>
+          <option>Atelier groupe</option>
+          <option>Point de situation</option>
+          <option>Autre (préciser)</option>
         </select>
       </div>
+    </div>
+    <div class="form-row" id="note-autre-row" style="display:none">
+      <label>Préciser le type</label>
+      <input type="text" id="note-type-autre" placeholder="Ex: Hypno-tapping, EFT, Bilan...">
     </div>
     <div class="form-row"><label>Ce qui s'est dit / observé</label>
       <textarea id="note-contenu" placeholder="Notes, observations, éléments clés échangés durant la séance..." style="min-height:130px"></textarea>
@@ -1671,6 +1680,11 @@ function addProEnfantFromSelect() {
   sel.value = '';
 }
 
+function toggleNoteAutreType() {
+  const type = document.getElementById('note-type').value;
+  document.getElementById('note-autre-row').style.display = type === 'Autre (préciser)' ? 'block' : 'none';
+}
+
 function toggleAutreType() {
   const type = document.getElementById('rdv-type').value;
   document.getElementById('rdv-autre-row').style.display = type === 'Autre' ? 'block' : 'none';
@@ -1881,7 +1895,11 @@ function closeModal(type) {
   document.getElementById('modal-'+type).classList.remove('open');
   if (type==='rdv') { document.getElementById('rdv-edit-id').value=''; document.getElementById('rdv-modal-title').textContent='Nouveau rendez-vous'; }
   if (type==='client') { document.getElementById('client-edit-id').value=''; document.getElementById('client-modal-title').textContent='Nouveau client'; }
-  if (type==='note') document.getElementById('note-edit-id').value='';
+  if (type==='note') {
+    document.getElementById('note-edit-id').value='';
+    document.getElementById('note-autre-row').style.display = 'none';
+    document.getElementById('note-type-autre').value = '';
+  }
 }
 
 function rdvToMinutes(date, heure) {
@@ -2196,7 +2214,9 @@ function saveNote() {
   const data = {
     clientId: currentClientId,
     date: document.getElementById('note-date').value,
-    type: document.getElementById('note-type').value,
+    type: document.getElementById('note-type').value === 'Autre (préciser)'
+      ? (document.getElementById('note-type-autre').value.trim() || 'Autre')
+      : document.getElementById('note-type').value,
     contenu: document.getElementById('note-contenu').value,
     suite: document.getElementById('note-suite').value,
   };
