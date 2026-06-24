@@ -1198,7 +1198,8 @@ function fmtDate(d) {
   if (diff === 0) return "Aujourd'hui";
   if (diff === 1) return "Demain";
   if (diff === -1) return "Hier";
-  return dt.toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' });
+  const str = dt.toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' });
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 function fmtDateLong(d) {
   return new Date(d+'T12:00:00').toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
