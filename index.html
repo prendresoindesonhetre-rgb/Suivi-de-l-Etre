@@ -316,6 +316,9 @@ html, body {
     <div class="nav-item" onclick="showView('devis')" id="nav-devis">
       <i class="ti ti-file-invoice"></i> Devis
     </div>
+    <div class="nav-item" onclick="showView('facturation')" id="nav-facturation">
+      <i class="ti ti-receipt"></i> Facturation
+    </div>
     <div class="nav-item" onclick="showView('parametres')" id="nav-parametres">
       <i class="ti ti-settings"></i> Mes informations
     </div>
@@ -442,6 +445,19 @@ html, body {
           <button class="btn btn-primary" onclick="openModal('devis')"><i class="ti ti-plus"></i> Nouveau devis</button>
         </div>
         <div id="devis-list"></div>
+      </div>
+
+      <!-- VUE FACTURATION -->
+      <div class="view" id="view-facturation">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <button class="btn" onclick="factMoisPrev()"><i class="ti ti-chevron-left"></i></button>
+            <span id="fact-mois-label" style="font-size:15px;font-weight:700;color:var(--teal-dark)"></span>
+            <button class="btn" onclick="factMoisNext()"><i class="ti ti-chevron-right"></i></button>
+          </div>
+          <button class="btn btn-primary" onclick="toutMarquerEnvoye()" style="font-size:12px"><i class="ti ti-send"></i> Tout marquer "Envoyée"</button>
+        </div>
+        <div id="fact-content"></div>
       </div>
 
       <!-- VUE PARAMÈTRES -->
@@ -1254,6 +1270,7 @@ function showView(v) {
   if (v==='rdvs') renderRdvs();
   if (v==='devis') renderDevisList();
   if (v==='parametres') loadParametres();
+  if (v==='facturation') renderFacturation();
 }
 
 // --- DASHBOARD ---
@@ -1813,6 +1830,109 @@ function toggleNoteAutreType() {
   document.getElementById('note-autre-row').style.display = type === 'Autre (préciser)' ? 'block' : 'none';
 }
 
+// --- FACTURATION ---
+let factMois = today.getMonth();
+let factAnnee = today.getFullYear();
+
+function factMoisPrev() { factMois--; if (factMois < 0) { factMois = 11; factAnnee--; } renderFacturation(); }
+function factMoisNext() { factMois++; if (factMois > 11) { factMois = 0; factAnnee++; } renderFacturation(); }
+
+function renderFacturation() {
+  document.getElementById('fact-mois-label').textContent = MONTHS[factMois] + ' ' + factAnnee;
+  const rdvsMois = rdvs.filter(r => {
+    const d = new Date(r.date+'T12:00:00');
+    return d.getMonth()===factMois && d.getFullYear()===factAnnee && !r.annule;
+  }).sort((a,b) => a.date.localeCompare(b.date));
+
+  if (!rdvsMois.length) {
+    document.getElementById('fact-content').innerHTML = '<div class="empty-state"><i class="ti ti-receipt-off"></i>Aucune séance ce mois</div>';
+    return;
+  }
+
+  // Grouper par client
+  const parClient = {};
+  rdvsMois.forEach(r => {
+    if (!parClient[r.clientId]) parClient[r.clientId] = [];
+    parClient[r.clientId].push(r);
+  });
+
+  let html = '';
+  Object.entries(parClient).forEach(([clientId, clientRdvs]) => {
+    const c = getClient(parseInt(clientId));
+    if (!c) return;
+    const clientNotes = clientRdvs.map(r => notes.find(n => n.clientId===r.clientId && n.date===r.date)).filter(Boolean);
+    const statuts = clientNotes.map(n => n.facture || 'non_envoyee');
+    const tousPayes = statuts.every(s => s === 'payee');
+    const tousEnvoyes = statuts.every(s => s === 'envoyee' || s === 'payee');
+    const globalStatut = tousPayes ? 'payee' : tousEnvoyes ? 'envoyee' : 'non_envoyee';
+    const globalLabel = tousPayes ? '✅ Payée' : tousEnvoyes ? '📤 Envoyée' : '🧾 À envoyer';
+    const globalColor = tousPayes ? '#2d7a2d' : tousEnvoyes ? '#e07b00' : 'var(--amber)';
+    const globalBg = tousPayes ? '#e6f4e6' : tousEnvoyes ? '#fff3e0' : 'var(--amber-light)';
+
+    html += `<div style="background:var(--cream-card);border-radius:var(--radius-sm);border:0.5px solid var(--border);margin-bottom:1rem;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:0.5px solid var(--border)">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--teal-dark)">${c.prenom} ${c.nom}</div>
+          ${c.facturation ? `<div style="font-size:11px;color:var(--amber);margin-top:2px"><i class="ti ti-receipt" style="font-size:11px;margin-right:3px"></i>${c.facturation}</div>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:${globalBg};color:${globalColor}">${globalLabel}</span>
+          <button class="btn" onclick="marquerClientMois(${clientId},'envoyee')" style="font-size:11px;border-color:#e07b00;color:#e07b00" title="Marquer envoyée"><i class="ti ti-send"></i></button>
+          <button class="btn" onclick="marquerClientMois(${clientId},'payee')" style="font-size:11px;border-color:#2d7a2d;color:#2d7a2d" title="Marquer payée"><i class="ti ti-circle-check"></i></button>
+        </div>
+      </div>
+      <div style="padding:8px 14px">
+        ${clientRdvs.map(r => {
+          const n = notes.find(x => x.clientId===r.clientId && x.date===r.date);
+          const fs = n ? (n.facture||'non_envoyee') : null;
+          const fLabel = fs === 'payee' ? '✅' : fs === 'envoyee' ? '📤' : fs ? '🧾' : '—';
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--border-light)">
+            <span style="font-size:12px;color:var(--text)">${fmtDate(r.date)} · ${r.heure} — ${r.type}</span>
+            ${n ? `<span onclick="setFactureEtRefresh(${n.id})" style="cursor:pointer;font-size:12px;font-weight:600;color:${fs==='payee'?'#2d7a2d':fs==='envoyee'?'#e07b00':'var(--amber)'}" title="Cliquer pour changer">${fLabel}</span>` : '<span style="font-size:11px;color:var(--text-muted)">Pas de note</span>'}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('fact-content').innerHTML = html;
+}
+
+function setFactureEtRefresh(noteId) {
+  const n = notes.find(x => x.id == noteId);
+  if (!n) return;
+  const cycle = { non_envoyee: 'envoyee', envoyee: 'payee', payee: 'non_envoyee' };
+  n.facture = cycle[n.facture||'non_envoyee'];
+  persistAndSync();
+  renderFacturation();
+}
+
+function marquerClientMois(clientId, statut) {
+  const rdvsMois = rdvs.filter(r => {
+    const d = new Date(r.date+'T12:00:00');
+    return d.getMonth()===factMois && d.getFullYear()===factAnnee && r.clientId===clientId && !r.annule;
+  });
+  rdvsMois.forEach(r => {
+    const n = notes.find(x => x.clientId===r.clientId && x.date===r.date);
+    if (n) n.facture = statut;
+  });
+  persistAndSync();
+  renderFacturation();
+}
+
+function toutMarquerEnvoye() {
+  const rdvsMois = rdvs.filter(r => {
+    const d = new Date(r.date+'T12:00:00');
+    return d.getMonth()===factMois && d.getFullYear()===factAnnee && !r.annule;
+  });
+  rdvsMois.forEach(r => {
+    const n = notes.find(x => x.clientId===r.clientId && x.date===r.date);
+    if (n && (n.facture||'non_envoyee') === 'non_envoyee') n.facture = 'envoyee';
+  });
+  persistAndSync();
+  renderFacturation();
+}
+
 function openRecapCalMois() {
   const mois = calMonth, annee = calYear;
   const rdvsMois = rdvs.filter(r => {
@@ -1874,7 +1994,10 @@ function openRecapCalMois() {
       </div>`;
     }).join('')}
     </div>
-    <div style="margin-top:0.75rem;font-size:11px;color:var(--text-muted);text-align:right">${avecNote}/${rdvsMois.length} notes remplies</div>`;
+    <div style="margin-top:0.75rem;font-size:11px;color:var(--text-muted);text-align:right">${avecNote}/${rdvsMois.length} notes remplies</div>
+    <div style="margin-top:1rem;padding-top:1rem;border-top:0.5px solid var(--border);text-align:center">
+      <button class="btn" onclick="closeModal('recap');factMois=${mois};factAnnee=${annee};showView('facturation')" style="border-color:var(--amber);color:var(--amber)"><i class="ti ti-receipt"></i> Gérer la facturation de ce mois</button>
+    </div>`;
 
   document.getElementById('recap-content').innerHTML = html;
   document.getElementById('modal-recap').classList.add('open');
@@ -1939,7 +2062,10 @@ function openRecapMois() {
       </div>`;
     }).join('')}
     </div>
-    <div style="margin-top:0.75rem;font-size:11px;color:var(--text-muted);text-align:right">${avecNote}/${rdvsMois.length} notes remplies</div>`;
+    <div style="margin-top:0.75rem;font-size:11px;color:var(--text-muted);text-align:right">${avecNote}/${rdvsMois.length} notes remplies</div>
+    <div style="margin-top:1rem;padding-top:1rem;border-top:0.5px solid var(--border);text-align:center">
+      <button class="btn" onclick="closeModal('recap');factMois=${mois};factAnnee=${annee};showView('facturation')" style="border-color:var(--amber);color:var(--amber)"><i class="ti ti-receipt"></i> Gérer la facturation de ce mois</button>
+    </div>`;
 
   document.getElementById('recap-content').innerHTML = html;
   document.getElementById('modal-recap').classList.add('open');
@@ -2585,17 +2711,13 @@ function saveNote() {
 }
 
 function toggleFactureBtn(noteId, statut) {
-  if (!statut || statut === 'non_envoyee') {
-    return `<button class="btn" onclick="toggleFacture(${noteId},'envoyee')" style="font-size:11px;border-color:var(--amber);color:var(--amber)"><i class="ti ti-receipt"></i> Facture à envoyer</button>`;
-  } else if (statut === 'envoyee') {
-    return `<button class="btn" onclick="toggleFacture(${noteId},'payee')" style="font-size:11px;border-color:#2d7a2d;color:#2d7a2d;background:#e6f4e6"><i class="ti ti-receipt"></i> Facture envoyée ✓</button>`;
-  } else if (statut === 'payee') {
-    return `<button class="btn" onclick="toggleFacture(${noteId},'non_envoyee')" style="font-size:11px;border-color:var(--teal);color:var(--teal);background:var(--teal-light)"><i class="ti ti-circle-check"></i> Payée ✓</button>`;
-  }
-  return '';
+  const s = statut || 'non_envoyee';
+  if (s === 'non_envoyee') return `<button class="btn" onclick="setFacture(${noteId},'envoyee')" style="font-size:11px;border-color:var(--amber);color:var(--amber)"><i class="ti ti-receipt"></i> Facture à envoyer</button>`;
+  if (s === 'envoyee') return `<button class="btn" onclick="setFacture(${noteId},'payee')" style="font-size:11px;border-color:#2d7a2d;color:#2d7a2d;background:#e6f4e6"><i class="ti ti-receipt"></i> Facture envoyée ✓</button>`;
+  return `<button class="btn" onclick="setFacture(${noteId},'non_envoyee')" style="font-size:11px;border-color:var(--teal);color:var(--teal);background:var(--teal-light)"><i class="ti ti-circle-check"></i> Payée ✓</button>`;
 }
 
-function toggleFacture(noteId, newStatut) {
+function setFacture(noteId, newStatut) {
   const idx = notes.findIndex(n => n.id == noteId);
   if (idx < 0) return;
   notes[idx].facture = newStatut;
