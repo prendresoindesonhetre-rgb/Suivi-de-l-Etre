@@ -2159,20 +2159,47 @@ function editRdv(id) {
   document.getElementById('rdv-edit-id').value=id;
   document.getElementById('rdv-modal-title').textContent='Modifier le rendez-vous';
   document.getElementById('rdv-client').value=r.clientId;
-  document.getElementById('rdv-type').value=r.type;
-  document.getElementById('rdv-date').value=r.date;
-  document.getElementById('rdv-heure').value=r.heure;
+  // Gérer le type : si pas dans la liste, mettre Autre et remplir le champ
+  const typeSelect = document.getElementById('rdv-type');
+  const typeOptions = Array.from(typeSelect.options).map(o => o.value);
+  if (typeOptions.includes(r.type)) {
+    typeSelect.value = r.type;
+  } else {
+    typeSelect.value = 'Autre';
+    document.getElementById('rdv-autre-row').style.display = 'block';
+    document.getElementById('rdv-type-autre').value = r.type;
+  }
+  toggleAutreType();
   document.getElementById('rdv-duree').value=r.duree;
   document.getElementById('rdv-trajet-aller').value=r.trajetAller||0;
   document.getElementById('rdv-trajet-retour').value=r.trajetRetour||0;
   document.getElementById('rdv-lieu').value=r.lieu||'';
   document.getElementById('rdv-notes').value=r.notes||'';
-  // Décocher "Première séance" et afficher le sélecteur client
+  // Décocher "Première séance"
   document.getElementById('rdv-premiere').checked = false;
   document.getElementById('rdv-nouveau-client').style.display = 'none';
   document.getElementById('rdv-client-row').style.display = 'block';
   // Gérer le champ Autre
   toggleAutreType();
+  // Recharger les enfants concernés
+  rdvEnfantsSelectionnes = r.enfantsIds ? [...r.enfantsIds] : [];
+  // Afficher le bloc enfants si client professionnel
+  const c = getClient(r.clientId);
+  const enfantsRow = document.getElementById('rdv-enfants-row');
+  if (c && c.profil === 'professionnel') {
+    enfantsRow.style.display = 'block';
+    const enfants = clients.filter(x => x.profil === 'enfant');
+    const proEnfantsNoms = c.proEnfants || [];
+    const lies = enfants.filter(e => proEnfantsNoms.some(n => n.toLowerCase().includes(e.prenom.toLowerCase())));
+    const autres = enfants.filter(e => !lies.includes(e));
+    const enfantSel = document.getElementById('rdv-enfant-select');
+    enfantSel.innerHTML = '<option value="">— Sélectionner un enfant —</option>';
+    if (lies.length) enfantSel.innerHTML += '<optgroup label="Enfants suivis">' + lies.map(e=>`<option value="${e.id}">👶 ${e.prenom} ${e.nom}</option>`).join('') + '</optgroup>';
+    if (autres.length) enfantSel.innerHTML += '<optgroup label="Autres enfants">' + autres.map(e=>`<option value="${e.id}">👶 ${e.prenom} ${e.nom}</option>`).join('') + '</optgroup>';
+  } else {
+    enfantsRow.style.display = 'none';
+  }
+  renderRdvEnfants();
   document.getElementById('modal-rdv').classList.add('open');
 }
 
