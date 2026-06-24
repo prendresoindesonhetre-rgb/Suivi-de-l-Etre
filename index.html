@@ -496,8 +496,7 @@ html, body {
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 14px;background:var(--lavender-light);border:0.5px solid var(--lavender);border-radius:var(--radius-sm)">
         <input type="checkbox" id="rdv-premiere" onchange="togglePremiereFields()" style="width:18px;height:18px;accent-color:var(--teal);cursor:pointer;flex-shrink:0">
         <div>
-          <div style="font-size:13px;font-weight:700;color:var(--lavender-dark)">✨ Première séance</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:1px">Crée automatiquement la fiche client</div>
+          <div style="font-size:13px;font-weight:700;color:var(--lavender-dark)"><i class="ti ti-leaf" style="font-size:14px;margin-right:5px;color:var(--teal)"></i>Première séance</div>
         </div>
       </label>
     </div>
@@ -586,8 +585,8 @@ html, body {
 
         <!-- Champs professionnel -->
         <div id="rdv-nc-professionnel-fields" style="display:none">
-          <div style="background:#eef6ea;border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-top:0.5rem;border:0.5px solid rgba(122,170,106,0.3)">
-            <div style="font-size:11px;font-weight:700;color:#4a7a3a;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem">Informations professionnelles</div>
+          <div style="background:var(--teal-light);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-top:0.5rem;border:0.5px solid var(--border-md)">
+            <div style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem">Informations professionnelles</div>
             <div class="form-grid form-grid-2">
               <div class="form-row"><label>Fonction / Métier</label><input type="text" id="rdv-nc-pro-fonction" placeholder="Ex: Éducateur, Directeur..."></div>
               <div class="form-row"><label>Structure / Entreprise</label><input type="text" id="rdv-nc-pro-structure" placeholder="Nom de l'établissement"></div>
@@ -596,7 +595,7 @@ html, body {
               <div class="form-row"><label>Téléphone structure</label><input type="tel" id="rdv-nc-pro-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
               <div class="form-row"><label>Email structure</label><input type="email" id="rdv-nc-pro-email" placeholder="email@structure.fr"></div>
             </div>
-            <div style="font-size:12px;font-weight:600;color:#4a7a3a;margin:0.5rem 0 0.4rem">Enfants suivis <span style="font-weight:400;font-style:italic;color:var(--text-muted)">(optionnel)</span></div>
+            <div style="font-size:12px;font-weight:600;color:var(--teal);margin:0.5rem 0 0.4rem">Enfants suivis <span style="font-weight:400;font-style:italic;color:var(--text-muted)">(optionnel)</span></div>
             <div id="rdv-nc-pro-enfants-list" style="margin-bottom:0.5rem"></div>
             <div style="display:flex;gap:8px">
               <input type="text" id="rdv-nc-pro-enfant-input" placeholder="Prénom de l'enfant" style="flex:1;padding:7px 10px;font-size:13px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif">
@@ -802,8 +801,8 @@ html, body {
 
     <!-- Champs professionnel -->
     <div id="professionnel-fields" style="display:none">
-      <div style="background:#eef6ea;border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:0.75rem;border:0.5px solid rgba(122,170,106,0.3)">
-        <div style="font-size:11px;font-weight:700;color:#4a7a3a;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem">Informations professionnelles</div>
+      <div style="background:var(--teal-light);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:0.75rem;border:0.5px solid var(--border-md)">
+        <div style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem">Informations professionnelles</div>
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:0.6rem;font-style:italic">Tous les champs sont optionnels</div>
         <div class="form-grid form-grid-2">
           <div class="form-row"><label>Fonction / Métier</label><input type="text" id="cl-pro-fonction" placeholder="Ex: Éducateur, Directeur..."></div>
@@ -813,11 +812,18 @@ html, body {
           <div class="form-row"><label>Téléphone structure</label><input type="tel" id="cl-pro-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
           <div class="form-row"><label>Email structure</label><input type="email" id="cl-pro-email" placeholder="email@structure.fr"></div>
         </div>
-        <div style="font-size:12px;font-weight:600;color:#4a7a3a;margin:0.5rem 0 0.4rem">Enfants suivis <span style="font-weight:400;font-style:italic;color:var(--text-muted)">(optionnel)</span></div>
+        <div style="font-size:12px;font-weight:600;color:var(--teal);margin:0.5rem 0 0.4rem">Enfants suivis <span style="font-weight:400;font-style:italic;color:var(--text-muted)">(optionnel)</span></div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:0.5rem">Enfants pour lesquels ce professionnel intervient</div>
         <div id="pro-enfants-list" style="margin-bottom:0.5rem"></div>
-        <div style="display:flex;gap:8px">
-          <input type="text" id="pro-enfant-input" placeholder="Prénom de l'enfant" style="flex:1;padding:7px 10px;font-size:13px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <select id="pro-enfant-select" style="flex:1;padding:7px 10px;font-size:13px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif">
+            <option value="">— Sélectionner un enfant existant —</option>
+          </select>
+          <button class="btn" type="button" onclick="addProEnfantFromSelect()" style="flex-shrink:0;border-color:var(--teal);color:var(--teal)"><i class="ti ti-plus"></i> Ajouter</button>
+        </div>
+        <div style="margin-top:6px;font-size:12px;color:var(--text-muted);text-align:center">ou</div>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <input type="text" id="pro-enfant-input" placeholder="Saisir un prénom manuellement" style="flex:1;padding:7px 10px;font-size:13px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif">
           <button class="btn" type="button" onclick="addProEnfant()" style="flex-shrink:0"><i class="ti ti-plus"></i> Ajouter</button>
         </div>
       </div>
@@ -1082,7 +1088,7 @@ function renderRdvNcProEnfants() {
   if (!list) return;
   list.innerHTML = rdvNcProEnfants.map((p, i) =>
     `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:white;border-radius:5px;margin-bottom:4px;border:0.5px solid var(--border)">
-      <i class="ti ti-user" style="font-size:13px;color:#4a7a3a"></i>
+      <i class="ti ti-user" style="font-size:13px;color:var(--teal)"></i>
       <span style="flex:1;font-size:13px">${p}</span>
       <button onclick="removeRdvNcProEnfant(${i})" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:15px;padding:0;display:flex"><i class="ti ti-x"></i></button>
     </div>`
@@ -1286,7 +1292,7 @@ function showFiche(id) {
         ${c.profil === 'structure' && c.participants && c.participants.length ? `<div class="fiche-meta" style="flex-wrap:wrap;gap:4px;margin-top:4px"><i class="ti ti-users" style="flex-shrink:0"></i>${c.participants.map(p=>`<span style="background:var(--amber-light);color:var(--amber);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${p}</span>`).join('')}</div>` : ''}
         ${c.profil === 'professionnel' && c.proFonction ? `<div class="fiche-meta"><i class="ti ti-briefcase"></i>${c.proFonction}${c.proStructure?' — '+c.proStructure:''}</div>` : ''}
         ${c.profil === 'professionnel' && (c.proTel||c.proEmail) ? `<div class="fiche-meta"><i class="ti ti-building"></i>${c.proTel||''}${c.proEmail?' · '+c.proEmail:''}</div>` : ''}
-        ${c.profil === 'professionnel' && c.proEnfants && c.proEnfants.length ? `<div class="fiche-meta" style="flex-wrap:wrap;gap:4px;margin-top:4px"><i class="ti ti-users" style="flex-shrink:0;color:#4a7a3a"></i>${c.proEnfants.map(p=>`<span style="background:#eef6ea;color:#4a7a3a;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${p}</span>`).join('')}</div>` : ''}
+        ${c.profil === 'professionnel' && c.proEnfants && c.proEnfants.length ? `<div class="fiche-meta" style="flex-wrap:wrap;gap:4px;margin-top:4px"><i class="ti ti-users" style="flex-shrink:0;color:var(--teal)"></i>${c.proEnfants.map(p=>`<span style="background:var(--teal-light);color:var(--teal);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${p}</span>`).join('')}</div>` : ''}
         <div class="fiche-badges">
           <span class="badge badge-${c.profil}">${c.profil.charAt(0).toUpperCase()+c.profil.slice(1)}</span>
           <span class="badge badge-gray">${nbRdv} RDV</span>
@@ -1629,6 +1635,25 @@ function toggleEnfantFields() {
   document.getElementById('structure-fields').style.display = profil === 'structure' ? 'block' : 'none';
   const pf = document.getElementById('professionnel-fields');
   if (pf) pf.style.display = profil === 'professionnel' ? 'block' : 'none';
+  // Peupler le select enfants existants
+  if (profil === 'professionnel') {
+    const sel = document.getElementById('pro-enfant-select');
+    if (sel) {
+      const enfants = clients.filter(c => c.profil === 'enfant');
+      sel.innerHTML = '<option value="">— Sélectionner un enfant existant —</option>' +
+        enfants.map(c => `<option value="${c.prenom} ${c.nom}">👶 ${c.prenom} ${c.nom}</option>`).join('');
+    }
+  }
+}
+
+function addProEnfantFromSelect() {
+  const sel = document.getElementById('pro-enfant-select');
+  if (!sel || !sel.value) return;
+  if (!proEnfants.includes(sel.value)) {
+    proEnfants.push(sel.value);
+    renderProEnfants();
+  }
+  sel.value = '';
 }
 
 function toggleAutreType() {
@@ -1659,7 +1684,7 @@ function renderProEnfants() {
   if (!proEnfants.length) { list.innerHTML = ''; return; }
   list.innerHTML = proEnfants.map((p, i) =>
     `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:white;border-radius:5px;margin-bottom:4px;border:0.5px solid var(--border)">
-      <i class="ti ti-user" style="font-size:13px;color:#4a7a3a"></i>
+      <i class="ti ti-user" style="font-size:13px;color:var(--teal)"></i>
       <span style="flex:1;font-size:13px">${p}</span>
       <button onclick="removeProEnfant(${i})" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:15px;padding:0;display:flex"><i class="ti ti-x"></i></button>
     </div>`
