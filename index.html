@@ -1902,9 +1902,10 @@ function setFactureEtRefresh(noteId) {
   const n = notes.find(x => x.id == noteId);
   if (!n) return;
   const cycle = { non_envoyee: 'envoyee', envoyee: 'payee', payee: 'non_envoyee' };
-  n.facture = cycle[n.facture||'non_envoyee'];
+  n.facture = cycle[n.facture||'non_envoyee'] || 'envoyee';
   persistAndSync();
   renderFacturation();
+  if (currentClientId) showFiche(currentClientId);
 }
 
 function marquerClientMois(clientId, statut) {
@@ -2722,7 +2723,7 @@ function setFacture(noteId, newStatut) {
   if (idx < 0) return;
   notes[idx].facture = newStatut;
   persistAndSync();
-  showFiche(currentClientId);
+  if (currentClientId) showFiche(currentClientId);
 }
 
 function editNote(id) {
