@@ -691,6 +691,20 @@ html, body {
   </div>
 </div>
 
+<!-- MODAL RECAP MOIS -->
+<div class="overlay" id="modal-recap">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title">
+      <span id="recap-title">Récap du mois</span>
+      <button class="modal-close" onclick="closeModal('recap')"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="recap-content" style="font-size:13px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="closeModal('recap')">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL WHATSAPP -->
 <div class="overlay" id="modal-whatsapp">
   <div class="modal" style="max-width:420px">
@@ -1241,10 +1255,22 @@ function renderDashboard() {
   const mois = today.getMonth(), annee = today.getFullYear();
   const rdvsMois = rdvs.filter(r => { const d=new Date(r.date+'T12:00:00'); return d.getMonth()===mois && d.getFullYear()===annee; });
   const km = rdvsMois.reduce((s,r) => s + ((r.trajetAller||0) + (r.trajetRetour||0)), 0);
-  const next = rdvs.filter(r => r.date >= nowStr).sort((a,b) => a.date.localeCompare(b.date)||a.heure.localeCompare(b.heure))[0];
+  const next = rdvs.filter(r => {
+    if (r.annule) return false;
+    if (r.date > nowStr) return true;
+    if (r.date < nowStr) return false;
+    // Aujourd'hui : seulement si pas encore terminé
+    const [h, m] = r.heure.split(':').map(Number);
+    return (h * 60 + m + (r.duree || 60)) > nowTime;
+  }).sort((a,b) => a.date.localeCompare(b.date)||a.heure.localeCompare(b.heure))[0];
   const nextClient = next ? getClient(next.clientId) : null;
+
   document.getElementById('stats-row').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Séances ce mois</div><div class="stat-value">${rdvsMois.length}</div><div class="stat-sub">${MONTHS[mois]} ${annee}</div></div>
+    <div class="stat-card" style="cursor:pointer" onclick="openRecapMois()" title="Voir le récap du mois">
+      <div class="stat-label">Séances ce mois</div>
+      <div class="stat-value">${rdvsMois.length}</div>
+      <div class="stat-sub">${MONTHS[mois]} ${annee}</div>
+    </div>
     <div class="stat-card"><div class="stat-label">Clients actifs</div><div class="stat-value">${clients.length}</div><div class="stat-sub">au total</div></div>
     <div class="stat-card"><div class="stat-label">Minutes trajet</div><div class="stat-value">${km}</div><div class="stat-sub">ce mois</div></div>
     <div class="stat-card"><div class="stat-label">Prochain RDV</div><div class="stat-value" style="font-size:14px;padding-top:4px">${next ? fmtDate(next.date) : '—'}</div><div class="stat-sub">${nextClient ? nextClient.prenom+' '+nextClient.nom : 'Aucun prévu'}</div></div>
@@ -1778,6 +1804,67 @@ function toggleProchainRdv() {
 function toggleNoteAutreType() {
   const type = document.getElementById('note-type').value;
   document.getElementById('note-autre-row').style.display = type === 'Autre (préciser)' ? 'block' : 'none';
+}
+
+function openRecapMois() {
+  const mois = today.getMonth(), annee = today.getFullYear();
+  const rdvsMois = rdvs.filter(r => {
+    const d = new Date(r.date+'T12:00:00');
+    return d.getMonth()===mois && d.getFullYear()===annee && !r.annule;
+  }).sort((a,b) => a.date.localeCompare(b.date)||a.heure.localeCompare(b.heure));
+
+  document.getElementById('recap-title').textContent = `Récap — ${MONTHS[mois]} ${annee}`;
+
+  if (!rdvsMois.length) {
+    document.getElementById('recap-content').innerHTML = '<div class="empty-state"><i class="ti ti-calendar-off"></i>Aucune séance ce mois</div>';
+    document.getElementById('modal-recap').classList.add('open');
+    return;
+  }
+
+  // Totaux
+  const totalMin = rdvsMois.reduce((s,r) => s + (r.duree||60), 0);
+  const totalTrajet = rdvsMois.reduce((s,r) => s + (r.trajetAller||0) + (r.trajetRetour||0), 0);
+  const clientsVus = [...new Set(rdvsMois.map(r => r.clientId))];
+  const avecNote = rdvsMois.filter(r => notes.some(n => n.clientId===r.clientId && n.date===r.date)).length;
+
+  let html = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.25rem">
+      <div style="background:var(--teal-light);border-radius:var(--radius-sm);padding:10px 14px;text-align:center">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--teal)">${rdvsMois.length}</div>
+        <div style="font-size:11px;color:var(--text-muted)">séances</div>
+      </div>
+      <div style="background:var(--lavender-light);border-radius:var(--radius-sm);padding:10px 14px;text-align:center">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--lavender-dark)">${clientsVus.length}</div>
+        <div style="font-size:11px;color:var(--text-muted)">clients différents</div>
+      </div>
+      <div style="background:var(--amber-light);border-radius:var(--radius-sm);padding:10px 14px;text-align:center">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--amber)">${Math.round(totalMin/60*10)/10}h</div>
+        <div style="font-size:11px;color:var(--text-muted)">de séances</div>
+      </div>
+      <div style="background:#eef0fa;border-radius:var(--radius-sm);padding:10px 14px;text-align:center">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:#8890c0">${totalTrajet}</div>
+        <div style="font-size:11px;color:var(--text-muted)">min de trajet</div>
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem">Détail des séances</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+    ${rdvsMois.map(r => {
+      const c = getClient(r.clientId);
+      const aNoteDate = notes.some(n => n.clientId===r.clientId && n.date===r.date);
+      const tt = (r.trajetAller||0)+(r.trajetRetour||0);
+      return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:${aNoteDate?'var(--cream-card)':'#fffaf5'};border-radius:var(--radius-sm);border:0.5px solid ${aNoteDate?'var(--border)':'var(--amber-light)'}">
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:600;color:var(--teal-dark)">${fmtDate(r.date)} · ${r.heure} — ${r.type}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${c?c.prenom+' '+c.nom:'?'}${tt>0?' · '+tt+' min trajet':''}</div>
+        </div>
+        <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:${aNoteDate?'var(--teal-light)':'var(--amber-light)'};color:${aNoteDate?'var(--teal)':'var(--amber)'}">${aNoteDate?'✓ Note':'À remplir'}</span>
+      </div>`;
+    }).join('')}
+    </div>
+    <div style="margin-top:0.75rem;font-size:11px;color:var(--text-muted);text-align:right">${avecNote}/${rdvsMois.length} notes remplies</div>`;
+
+  document.getElementById('recap-content').innerHTML = html;
+  document.getElementById('modal-recap').classList.add('open');
 }
 
 function toggleAutreType() {
