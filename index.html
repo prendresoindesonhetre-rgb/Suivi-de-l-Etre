@@ -492,15 +492,19 @@ html, body {
     <input type="hidden" id="rdv-edit-id">
     <div class="form-grid form-grid-2">
       <div class="form-row"><label>Type de séance</label>
-        <select id="rdv-type" onchange="updateDureeFromType()">
+        <select id="rdv-type" onchange="updateDureeFromType(); toggleAutreType()">
           <option value="Relaxation">Relaxation</option>
           <option value="Méditation">Méditation</option>
           <option value="Hypnose">Hypnose</option>
           <option value="Accompagnement émotionnel">Accompagnement émotionnel</option>
           <option value="Coaching">Coaching</option>
           <option value="Atelier groupe">Atelier groupe</option>
-          <option value="Autre">Autre</option>
+          <option value="Autre">Autre (préciser)</option>
         </select>
+      </div>
+      <div class="form-row" id="rdv-autre-row" style="display:none">
+        <label>Préciser le type</label>
+        <input type="text" id="rdv-type-autre" placeholder="Ex: Hypno-tapping, EFT, Bilan...">
       </div>
       <div class="form-row" style="display:flex;flex-direction:column;justify-content:flex-end">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 10px;background:var(--lavender-light);border:0.5px solid var(--lavender);border-radius:var(--radius-sm)">
@@ -687,6 +691,7 @@ html, body {
         <select id="cl-profil" onchange="toggleEnfantFields()">
           <option value="adulte">Adulte</option>
           <option value="enfant">Enfant</option>
+          <option value="professionnel">Professionnel</option>
           <option value="structure">Structure</option>
         </select>
       </div>
@@ -765,6 +770,29 @@ html, body {
         <div style="display:flex;gap:8px">
           <input type="text" id="structure-participant-input" placeholder="Prénom (ou prénom + initiale)" style="flex:1;padding:7px 10px;font-size:13px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif">
           <button class="btn" type="button" onclick="addParticipant()" style="flex-shrink:0"><i class="ti ti-plus"></i> Ajouter</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Champs professionnel -->
+    <div id="professionnel-fields" style="display:none">
+      <div style="background:#eef6ea;border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:0.75rem;border:0.5px solid rgba(122,170,106,0.3)">
+        <div style="font-size:11px;font-weight:700;color:#4a7a3a;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem">Informations professionnelles</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:0.6rem;font-style:italic">Tous les champs sont optionnels</div>
+        <div class="form-grid form-grid-2">
+          <div class="form-row"><label>Fonction / Métier</label><input type="text" id="cl-pro-fonction" placeholder="Ex: Éducateur, Directeur..."></div>
+          <div class="form-row"><label>Structure / Entreprise</label><input type="text" id="cl-pro-structure" placeholder="Nom de l'établissement"></div>
+        </div>
+        <div class="form-grid form-grid-2">
+          <div class="form-row"><label>Téléphone structure</label><input type="tel" id="cl-pro-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+          <div class="form-row"><label>Email structure</label><input type="email" id="cl-pro-email" placeholder="email@structure.fr"></div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:#4a7a3a;margin:0.5rem 0 0.4rem">Enfants suivis <span style="font-weight:400;font-style:italic;color:var(--text-muted)">(optionnel)</span></div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:0.5rem">Enfants pour lesquels ce professionnel intervient</div>
+        <div id="pro-enfants-list" style="margin-bottom:0.5rem"></div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="pro-enfant-input" placeholder="Prénom de l'enfant" style="flex:1;padding:7px 10px;font-size:13px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif">
+          <button class="btn" type="button" onclick="addProEnfant()" style="flex-shrink:0"><i class="ti ti-plus"></i> Ajouter</button>
         </div>
       </div>
     </div>
@@ -1110,12 +1138,12 @@ function renderDashboard() {
     return `<div class="upcoming-item" style="${r.annule?'opacity:0.5;text-decoration:line-through;':''}">
       <div class="upcoming-dot ${r.annule?'dot-annule':hasTrajet?'dot-trajet':'dot-seance'}"></div>
       <div class="upcoming-info" style="cursor:pointer" onclick="openRdvDetail(${r.id})">
-        <div class="upcoming-name"><strong style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800">${r.heure}–${calcEndTime(r.heure, r.duree)} :</strong> · <span style="color:#6B7A8D">${c ? c.prenom+' '+c.nom : '?'} — ${r.type}</span> <span style="font-weight:400;color:var(--text-muted);font-style:italic">(${r.duree} min)</span>${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600;text-decoration:none">Annulé</span>':''}</div>
+        <div class="upcoming-name"><strong style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800">${fmtDate(r.date)} · ${r.heure}–${calcEndTime(r.heure, r.duree)} :</strong> · <span style="color:#6B7A8D">${c ? c.prenom+' '+c.nom : '?'} — ${r.type}</span> <span style="font-weight:400;color:var(--text-muted);font-style:italic">(${r.duree} min)</span>${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600;text-decoration:none">Annulé</span>':''}</div>
         <div class="upcoming-detail">${(r.trajetAller||0) > 0 ? `<i class="ti ti-car" style="font-size:11px;margin-right:3px;color:#7A4F3A"></i><span style="color:#7A4F3A;font-weight:500;text-decoration:underline">Départ à ${calcEndTime(r.heure, -(r.trajetAller||0))}</span> <span style="color:#9B8EC4">pour ${r.lieu||(c&&c.adresse)||'?'}</span><br>` : (r.lieu ? `<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px;color:#D4A5B5"></i><span style="color:#9B8EC4">${r.lieu}</span><br>` : (c&&c.adresse ? `<i class="ti ti-map-pin" style="font-size:11px;margin-right:3px;color:#D4A5B5"></i><span style="color:#9B8EC4">${c.adresse}</span><br>` : ''))}${(r.trajetRetour||0) > 0 ? `<i class="ti ti-arrow-back-up" style="font-size:11px;margin-right:3px;color:#6B7A8D"></i><span style="color:#6B7A8D">Retour : ${r.trajetRetour} min</span>` : ''}</div>
         ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:4px;font-size:11px;color:#7A9E7E;font-weight:500"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-        <div class="upcoming-time" style="margin-right:4px">${fmtDate(r.date)}</div>
+        
         ${!r.annule ? `<button class="icon-btn" onclick="openNoteFromRdv(${r.id})" title="Ajouter une note" style="color:var(--teal-mid)"><i class="ti ti-notes"></i></button>` : ''}
         ${c && c.tel && !r.annule ? `<button class="icon-btn" onclick="openWhatsapp(${r.id})" title="WhatsApp" style="color:#25D366"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
         <button class="icon-btn" onclick="cancelRdv(${r.id})" title="${r.annule?'Réactiver':'Annuler le RDV'}" style="color:${r.annule?'var(--teal)':'var(--danger)'}"><i class="ti ti-${r.annule?'rotate':'calendar-off'}"></i></button>
@@ -1200,6 +1228,9 @@ function showFiche(id) {
         ${c.profil === 'enfant' && c.structure ? `<div class="fiche-meta"><i class="ti ti-building"></i><span><strong>${c.structure}</strong>${c.structureResp?' · '+c.structureResp:''}${c.structureTel?' · '+c.structureTel:''}${c.structureEmail?' · '+c.structureEmail:''}</span></div>` : ''}
         ${c.profil === 'structure' && c.structureResp ? `<div class="fiche-meta"><i class="ti ti-id-badge"></i><span><strong>${c.structureResp}</strong>${c.structureFonction?' — '+c.structureFonction:''}${c.structureTel?' · '+c.structureTel:''}${c.structureEmail?' · '+c.structureEmail:''}</span></div>` : ''}
         ${c.profil === 'structure' && c.participants && c.participants.length ? `<div class="fiche-meta" style="flex-wrap:wrap;gap:4px;margin-top:4px"><i class="ti ti-users" style="flex-shrink:0"></i>${c.participants.map(p=>`<span style="background:var(--amber-light);color:var(--amber);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${p}</span>`).join('')}</div>` : ''}
+        ${c.profil === 'professionnel' && c.proFonction ? `<div class="fiche-meta"><i class="ti ti-briefcase"></i>${c.proFonction}${c.proStructure?' — '+c.proStructure:''}</div>` : ''}
+        ${c.profil === 'professionnel' && (c.proTel||c.proEmail) ? `<div class="fiche-meta"><i class="ti ti-building"></i>${c.proTel||''}${c.proEmail?' · '+c.proEmail:''}</div>` : ''}
+        ${c.profil === 'professionnel' && c.proEnfants && c.proEnfants.length ? `<div class="fiche-meta" style="flex-wrap:wrap;gap:4px;margin-top:4px"><i class="ti ti-users" style="flex-shrink:0;color:#4a7a3a"></i>${c.proEnfants.map(p=>`<span style="background:#eef6ea;color:#4a7a3a;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${p}</span>`).join('')}</div>` : ''}
         <div class="fiche-badges">
           <span class="badge badge-${c.profil}">${c.profil.charAt(0).toUpperCase()+c.profil.slice(1)}</span>
           <span class="badge badge-gray">${nbRdv} RDV</span>
@@ -1535,6 +1566,43 @@ function toggleEnfantFields() {
   const profil = document.getElementById('cl-profil').value;
   document.getElementById('enfant-fields').style.display = profil === 'enfant' ? 'block' : 'none';
   document.getElementById('structure-fields').style.display = profil === 'structure' ? 'block' : 'none';
+  const pf = document.getElementById('professionnel-fields');
+  if (pf) pf.style.display = profil === 'professionnel' ? 'block' : 'none';
+}
+
+function toggleAutreType() {
+  const type = document.getElementById('rdv-type').value;
+  document.getElementById('rdv-autre-row').style.display = type === 'Autre' ? 'block' : 'none';
+}
+
+let proEnfants = [];
+
+function addProEnfant() {
+  const input = document.getElementById('pro-enfant-input');
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) return;
+  proEnfants.push(val);
+  input.value = '';
+  renderProEnfants();
+}
+
+function removeProEnfant(i) {
+  proEnfants.splice(i, 1);
+  renderProEnfants();
+}
+
+function renderProEnfants() {
+  const list = document.getElementById('pro-enfants-list');
+  if (!list) return;
+  if (!proEnfants.length) { list.innerHTML = ''; return; }
+  list.innerHTML = proEnfants.map((p, i) =>
+    `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:white;border-radius:5px;margin-bottom:4px;border:0.5px solid var(--border)">
+      <i class="ti ti-user" style="font-size:13px;color:#4a7a3a"></i>
+      <span style="flex:1;font-size:13px">${p}</span>
+      <button onclick="removeProEnfant(${i})" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:15px;padding:0;display:flex"><i class="ti ti-x"></i></button>
+    </div>`
+  ).join('');
 }
 
 let structureParticipants = [];
@@ -1753,7 +1821,9 @@ function saveRdv() {
   const editId = document.getElementById('rdv-edit-id').value;
   const data = {
     clientId,
-    type: document.getElementById('rdv-type').value,
+    type: document.getElementById('rdv-type').value === 'Autre'
+      ? (document.getElementById('rdv-type-autre').value.trim() || 'Autre')
+      : document.getElementById('rdv-type').value,
     date: document.getElementById('rdv-date').value,
     heure: document.getElementById('rdv-heure').value,
     duree: parseInt(document.getElementById('rdv-duree').value)||60,
@@ -1851,6 +1921,11 @@ function saveClient() {
     structureTel: profil === 'enfant' ? document.getElementById('cl-structure-tel').value : (profil === 'structure' ? document.getElementById('cl-structure-tel').value : ''),
     structureEmail: profil === 'enfant' ? document.getElementById('cl-structure-email').value : (profil === 'structure' ? document.getElementById('cl-structure-email').value : ''),
     participants: profil === 'structure' ? [...structureParticipants] : [],
+    proFonction: profil === 'professionnel' ? document.getElementById('cl-pro-fonction').value : '',
+    proStructure: profil === 'professionnel' ? document.getElementById('cl-pro-structure').value : '',
+    proTel: profil === 'professionnel' ? document.getElementById('cl-pro-tel').value : '',
+    proEmail: profil === 'professionnel' ? document.getElementById('cl-pro-email').value : '',
+    proEnfants: profil === 'professionnel' ? [...proEnfants] : [],
   };
   if (editId) {
     const idx = clients.findIndex(c => c.id == editId);
