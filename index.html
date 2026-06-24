@@ -1249,9 +1249,15 @@ function renderDashboard() {
   `;
 
   // RDV passés sans note de séance (à remplir)
+  // Un RDV est "passé" si sa date est avant aujourd'hui, OU si c'est aujourd'hui mais l'heure est passée
+  const nowTime = today.getHours() * 60 + today.getMinutes();
   const rdvsSansNote = rdvs.filter(r => {
-    if (r.date >= nowStr) return false;
     if (r.annule) return false;
+    const estPasse = r.date < nowStr || (r.date === nowStr && (() => {
+      const [h, m] = r.heure.split(':').map(Number);
+      return (h * 60 + m + (r.duree || 60)) < nowTime;
+    })());
+    if (!estPasse) return false;
     return !notes.some(n => n.clientId === r.clientId && n.date === r.date);
   }).sort((a,b) => b.date.localeCompare(a.date)||b.heure.localeCompare(a.heure)).slice(0, 5);
 
