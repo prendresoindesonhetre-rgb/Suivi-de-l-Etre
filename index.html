@@ -883,9 +883,26 @@ html, body {
     <div class="form-row"><label>Prochaine étape</label>
       <input type="text" id="note-suite" placeholder="Point à travailler lors de la prochaine séance...">
     </div>
-    <div class="form-row"><label>Prochain rendez-vous <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label>
-      <input type="date" id="note-prochain-rdv">
-      <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Cette date sera affichée dans la fiche client</div>
+
+    <!-- PROCHAIN RDV -->
+    <div style="background:var(--teal-light);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:0.75rem;border:0.5px solid var(--border-md)">
+      <div style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem"><i class="ti ti-calendar-plus" style="font-size:13px;margin-right:4px"></i>Planifier le prochain rendez-vous <span style="font-weight:400;font-style:italic;color:var(--text-muted)">(optionnel)</span></div>
+      <div class="form-grid form-grid-2">
+        <div class="form-row"><label>Date</label><input type="date" id="note-prochain-rdv"></div>
+        <div class="form-row"><label>Heure</label><input type="time" id="note-prochain-heure" value="10:00"></div>
+      </div>
+      <div class="form-row"><label>Pour qui <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label>
+        <select id="note-prochain-client">
+          <option value="">— Même client —</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Motif / Type <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label>
+        <input type="text" id="note-prochain-motif" placeholder="Ex: Suivi, Bilan, Relaxation...">
+      </div>
+      <div class="form-grid form-grid-2">
+        <div class="form-row"><label>Trajet aller (min)</label><input type="number" id="note-prochain-trajet-aller" value="0" min="0"></div>
+        <div class="form-row"><label>Trajet retour (min)</label><input type="number" id="note-prochain-trajet-retour" value="0" min="0"></div>
+      </div>
     </div>
     </div>
     <div class="modal-actions">
@@ -1656,6 +1673,17 @@ function openNoteFromRdv(rdvId) {
   document.getElementById('note-type').value = r.type;
   document.getElementById('note-contenu').value = '';
   document.getElementById('note-suite').value = '';
+  // Peupler le select prochain client
+  const sel = document.getElementById('note-prochain-client');
+  if (sel) {
+    sel.innerHTML = '<option value="">— Même client —</option>' +
+      clients.map(c => `<option value="${c.id}">${c.prenom} ${c.nom}</option>`).join('');
+  }
+  document.getElementById('note-prochain-rdv').value = '';
+  document.getElementById('note-prochain-heure').value = '10:00';
+  document.getElementById('note-prochain-motif').value = '';
+  document.getElementById('note-prochain-trajet-aller').value = 0;
+  document.getElementById('note-prochain-trajet-retour').value = 0;
   document.getElementById('modal-note').classList.add('open');
 }
 
@@ -1906,6 +1934,10 @@ function closeModal(type) {
     document.getElementById('note-autre-row').style.display = 'none';
     document.getElementById('note-type-autre').value = '';
     document.getElementById('note-prochain-rdv').value = '';
+    document.getElementById('note-prochain-heure').value = '10:00';
+    document.getElementById('note-prochain-motif').value = '';
+    document.getElementById('note-prochain-trajet-aller').value = 0;
+    document.getElementById('note-prochain-trajet-retour').value = 0;
   }
 }
 
@@ -2261,10 +2293,37 @@ function saveNote() {
       toast('Note ajoutée');
     }
   }
+  // Créer le prochain RDV automatiquement si date renseignée
+  const prochainDate = document.getElementById('note-prochain-rdv').value;
+  if (prochainDate) {
+    const prochainClientId = parseInt(document.getElementById('note-prochain-client').value) || currentClientId;
+    const prochainHeure = document.getElementById('note-prochain-heure').value || '10:00';
+    const prochainMotif = document.getElementById('note-prochain-motif').value.trim();
+    const prochainAller = parseInt(document.getElementById('note-prochain-trajet-aller').value) || 0;
+    const prochainRetour = parseInt(document.getElementById('note-prochain-trajet-retour').value) || 0;
+    const clientPourRdv = getClient(prochainClientId);
+    rdvs.push({
+      id: newId(),
+      clientId: prochainClientId,
+      type: prochainMotif || 'Suivi',
+      date: prochainDate,
+      heure: prochainHeure,
+      duree: 60,
+      trajetAller: prochainAller,
+      trajetRetour: prochainRetour,
+      lieu: clientPourRdv ? clientPourRdv.adresse || '' : '',
+      notes: '',
+      premiere: false,
+    });
+    const nomClient = clientPourRdv ? clientPourRdv.prenom : '';
+    toast(`RDV planifié pour ${nomClient} le ${new Date(prochainDate+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long'})}`);
+  }
+
   persistAndSync();
   closeModal('note');
   ['note-contenu','note-suite'].forEach(id=>document.getElementById(id).value='');
   showFiche(currentClientId);
+  renderDashboard();
 }
 
 function editNote(id) {
