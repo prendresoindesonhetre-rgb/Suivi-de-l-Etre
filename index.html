@@ -2737,10 +2737,16 @@ function toggleFactureBtn(noteId, statut) {
 function setFacture(noteId, newStatut) {
   const idx = notes.findIndex(n => n.id == noteId);
   if (idx < 0) return;
-  notes[idx].facture = newStatut;
+  if (newStatut) {
+    notes[idx].facture = newStatut;
+  } else {
+    const cycle = { non_envoyee: 'envoyee', envoyee: 'payee', payee: 'non_envoyee' };
+    notes[idx].facture = cycle[notes[idx].facture||'non_envoyee'] || 'envoyee';
+  }
   persistAndSync();
   const cid = notes[idx].clientId;
-  if (cid) { currentClientId = cid; showFiche(cid); }
+  if (cid && currentClientId) showFiche(cid);
+  if (document.getElementById('view-facturation')?.classList.contains('active')) renderFacturation();
 }
 
 function editNote(id) {
@@ -3142,17 +3148,34 @@ function genFacturePDF(clientId, mois, annee) {
 
   if (!rdvsMois.length) { toast('Aucune séance ce mois pour ce client'); return; }
 
-  // Ouvrir la modale de confirmation avant génération
   openFactureModal(clientId, mois, annee, rdvsMois, p, c);
 }
 
 function openFactureModal(clientId, mois, annee, rdvsMois, p, c) {
-  // Supprimer ancienne modale si elle existe
   const old = document.getElementById('modale-facture');
   if (old) old.remove();
 
   const moisLabel = MONTHS[mois]+' '+annee;
-  const defaultTarif = p.prixSeance || 60;
+  const defaultTarif = p.prix || 60;
+
+  // Stocker avant de construire le DOM
+  window._factureRdvs = rdvsMois;
+  window._factureClient = c;
+  window._factureParams = p;
+  window._factureMois = mois;
+  window._factureAnnee = annee;
+  window._factureClientId = clientId;
+
+  const seancesHTML = rdvsMois.map(r => {
+    const tt = (r.trajetAller||0)+(r.trajetRetour||0);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--warm-cream);border-radius:var(--radius-sm);border:0.5px solid var(--border)">
+      <div style="flex:1;font-size:12px;color:var(--text)">${fmtDateLong(r.date)} · ${r.type}${tt>0?' + trajet':''}</div>
+      <input type="number" id="tarif-rdv-${r.id}" value="${defaultTarif}" min="0" step="5"
+        style="width:72px;padding:5px 8px;font-size:13px;font-weight:600;color:var(--teal);border:0.5px solid var(--border-md);border-radius:6px;background:white;text-align:center;font-family:'Nunito',sans-serif"
+        oninput="updateFactureTotal()">
+      <span style="font-size:12px;color:var(--text-muted)">€</span>
+    </div>`;
+  }).join('');
 
   const mo = document.createElement('div');
   mo.id = 'modale-facture';
@@ -3168,79 +3191,65 @@ function openFactureModal(clientId, mois, annee, rdvsMois, p, c) {
           <strong>${c.prenom} ${c.nom}</strong> · ${moisLabel}<br>
           <span style="color:var(--text-muted);font-size:12px">${rdvsMois.length} séance${rdvsMois.length>1?'s':''}</span>
         </div>
-
-        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:1.25rem">
-          ${rdvsMois.map((r,i) => {
-            const tt = (r.trajetAller||0)+(r.trajetRetour||0);
-            return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--warm-cream);border-radius:var(--radius-sm);border:0.5px solid var(--border)">
-              <div style="flex:1;font-size:12px;color:var(--text)">${fmtDateLong(r.date)} · ${r.type}${tt>0?' + trajet':''}</div>
-              <div style="display:flex;align-items:center;gap:6px">
-                <input type="number" id="tarif-rdv-${r.id}" value="${defaultTarif}" min="0" step="5"
-                  style="width:70px;padding:4px 8px;font-size:13px;font-weight:600;color:var(--teal);border:0.5px solid var(--border-md);border-radius:6px;background:white;text-align:center;font-family:'Nunito',sans-serif"
-                  oninput="updateFactureTotal()">
-                <span style="font-size:12px;color:var(--text-muted)">€</span>
-              </div>
-            </div>`;
-          }).join('')}
-        </div>
-
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1.25rem">${seancesHTML}</div>
         <div style="display:flex;align-items:center;justify-content:space-between;background:var(--lavender-light);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:1rem">
           <span style="font-size:12px;font-weight:700;color:var(--lavender-dark);text-transform:uppercase;letter-spacing:0.05em">Total</span>
           <span id="facture-total-display" style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--teal)"></span>
         </div>
-
         <div style="display:flex;gap:8px;justify-content:flex-end">
           <button class="btn" onclick="document.getElementById('modale-facture').remove()"><i class="ti ti-x"></i> Annuler</button>
-          <button class="btn btn-primary" onclick="genFacturePDFConfirm(${clientId},${mois},${annee})"><i class="ti ti-file-type-pdf"></i> Générer PDF</button>
+          <button class="btn btn-primary" onclick="genFacturePDFConfirm()"><i class="ti ti-file-type-pdf"></i> Générer PDF</button>
         </div>
       </div>
     </div>`;
 
   document.body.appendChild(mo);
-
-  // Stocker les rdvs pour usage dans genFacturePDFConfirm
-  window._factureRdvs = rdvsMois;
-  window._factureClient = c;
-  window._factureParams = p;
-
   updateFactureTotal();
 }
 
 function updateFactureTotal() {
   const rdvs_ = window._factureRdvs || [];
   const total = rdvs_.reduce((sum, r) => {
-    const val = parseFloat(document.getElementById('tarif-rdv-'+r.id)?.value || 0);
-    return sum + val;
+    const el = document.getElementById('tarif-rdv-'+r.id);
+    return sum + parseFloat(el ? el.value : 0);
   }, 0);
   const el = document.getElementById('facture-total-display');
   if (el) el.textContent = total.toFixed(2).replace('.',',') + ' €';
 }
 
-function genFacturePDFConfirm(clientId, mois, annee) {
-  const p = window._factureParams || getParams();
-  const c = window._factureClient || getClient(clientId);
+function genFacturePDFConfirm() {
   const rdvsMois = window._factureRdvs || [];
+  const c = window._factureClient;
+  const p = window._factureParams || getParams();
+  const mois = window._factureMois;
+  const annee = window._factureAnnee;
+  const clientId = window._factureClientId;
 
-  document.getElementById('modale-facture').remove();
-
-  const numFact = `FACT-${annee}${String(mois+1).padStart(2,'0')}-${String(clientId).padStart(3,'0')}`;
-  const dateStr = new Date().toLocaleDateString('fr-FR');
-  const moisLabel = MONTHS[mois]+' '+annee;
-
-  // Récupérer les tarifs saisis
+  // Lire les tarifs AVANT de fermer la modale
   const lignes = rdvsMois.map(r => {
-    const tarif = parseFloat(document.getElementById('tarif-rdv-'+r.id)?.value || p.prixSeance || 60);
+    const el = document.getElementById('tarif-rdv-'+r.id);
+    const tarif = parseFloat(el ? el.value : (p.prix || 60));
     const tt = (r.trajetAller||0)+(r.trajetRetour||0);
     return { r, tarif, tt };
   });
+
+  document.getElementById('modale-facture').remove();
+
+  if (!c || !lignes.length) return;
+
   const total = lignes.reduce((s, l) => s + l.tarif, 0);
+  const moisLabel = MONTHS[mois]+' '+annee;
+  // Numéro propre basé sur un index client simple
+  const clientIndex = clients.findIndex(x => x.id === clientId) + 1;
+  const numFact = `FACT-${annee}${String(mois+1).padStart(2,'0')}-${String(clientIndex).padStart(3,'0')}`;
+  const dateStr = new Date().toLocaleDateString('fr-FR');
 
   // Adresse client
   let clientAddr = [`<strong>${c.prenom} ${c.nom}</strong>`];
   if (c.facturation) clientAddr.push(c.facturation);
   if (c.profil === 'enfant') {
-    if (c.resp1) clientAddr.push(`Père/Mère : ${c.resp1}${c.resp1Tel ? ' · '+c.resp1Tel : ''}`);
-    if (c.resp2) clientAddr.push(c.resp2+(c.resp2Tel ? ' · '+c.resp2Tel : ''));
+    if (c.resp1) clientAddr.push(`${c.resp1}${c.resp1Tel ? ' · '+c.resp1Tel : ''}`);
+    if (c.resp2) clientAddr.push(`${c.resp2}${c.resp2Tel ? ' · '+c.resp2Tel : ''}`);
     if (c.structure) clientAddr.push(`Structure : ${c.structure}`);
   } else {
     if (c.adresse) clientAddr.push(c.adresse);
@@ -3250,233 +3259,256 @@ function genFacturePDFConfirm(clientId, mois, annee) {
 
   const rows = lignes.map(({r, tarif, tt}) => `
     <tr>
-      <td>${fmtDateLong(r.date)}</td>
-      <td>${r.type}${tt>0 ? `<span class="trajet"> + trajet ${tt} min</span>` : ''}</td>
-      <td style="text-align:center">${r.duree} min</td>
-      <td style="text-align:right;font-weight:600">${tarif.toFixed(2).replace('.',',')} €</td>
+      <td class="col-date">${fmtDateLong(r.date)}</td>
+      <td class="col-type">${r.type}${tt>0 ? `<span class="trajet-note"> · trajet ${tt} min</span>` : ''}</td>
+      <td class="col-duree">${r.duree} min</td>
+      <td class="col-montant">${tarif.toFixed(2).replace('.',',')} €</td>
     </tr>`).join('');
 
-  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+  const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
 <title>Facture ${numFact}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Nunito:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Nunito:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Nunito', sans-serif;
-    font-size: 13px;
-    color: #2d4a4a;
-    background: #faf8f5;
-    padding: 48px 52px;
-    line-height: 1.6;
-  }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* EN-TÊTE */
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 40px;
-    padding-bottom: 28px;
-    border-bottom: 1px solid #d8eaea;
-  }
-  .brand h1 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 30px;
-    font-weight: 600;
-    color: #1a7a7a;
-    letter-spacing: 0.02em;
-    line-height: 1.1;
-    margin-bottom: 4px;
-  }
-  .brand .tagline {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 13px;
-    font-style: italic;
-    color: #b8a8d0;
-    margin-bottom: 14px;
-  }
-  .brand .coords {
-    font-size: 11.5px;
-    color: #7a9a9a;
-    line-height: 2;
-  }
-  .facture-meta {
-    text-align: right;
-  }
-  .facture-meta .mot-facture {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 34px;
-    font-weight: 600;
-    color: #1a7a7a;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    line-height: 1;
-    margin-bottom: 10px;
-  }
-  .facture-meta .details {
-    font-size: 11.5px;
-    color: #9ab0b0;
-    line-height: 2;
-  }
-  .facture-meta .details strong {
-    color: #5a7a7a;
-    font-weight: 600;
-  }
+body {
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  color: #2d4a4a;
+  background: white;
+  padding: 52px 56px;
+  line-height: 1.65;
+  min-height: 100vh;
+}
 
-  /* PARTIES */
-  .parties {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 32px;
-  }
-  .partie {
-    flex: 1;
-    border-radius: 10px;
-    padding: 18px 20px;
-    font-size: 12px;
-    line-height: 1.85;
-  }
-  .partie-label {
-    font-size: 9.5px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 10px;
-  }
-  .partie-emetteur {
-    background: #eef6f6;
-    border-left: 3px solid #1a7a7a;
-  }
-  .partie-emetteur .partie-label { color: #1a7a7a; }
-  .partie-client {
-    background: #f4f0fb;
-    border-left: 3px solid #b8a8d0;
-  }
-  .partie-client .partie-label { color: #7a6a9a; }
+/* ── EN-TÊTE ── */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 44px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid #e0eded;
+}
 
-  /* OBJET */
-  .objet-bloc {
-    margin-bottom: 24px;
-    padding: 13px 18px;
-    background: #1a7a7a;
-    border-radius: 8px;
-    color: white;
-    font-size: 13.5px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-  }
+.brand-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px;
+  font-weight: 500;
+  color: #1a7a7a;
+  letter-spacing: 0.015em;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+.brand-tagline {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 13.5px;
+  color: #b8a8d0;
+  margin-bottom: 18px;
+  letter-spacing: 0.02em;
+}
+.brand-coords {
+  font-size: 11.5px;
+  color: #7a9a9a;
+  line-height: 2;
+  font-weight: 400;
+}
 
-  /* TABLE */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 8px;
-  }
-  thead tr {
-    background: #1a7a7a;
-    color: white;
-  }
-  th {
-    padding: 10px 14px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    text-align: left;
-  }
-  td {
-    padding: 10px 14px;
-    border-bottom: 1px solid #eaf2f2;
-    font-size: 12px;
-    vertical-align: middle;
-  }
-  tr:last-child td { border-bottom: none; }
-  tbody tr:nth-child(even) td { background: #f8fcfc; }
-  .trajet { font-size: 10.5px; color: #9ab0b0; font-style: italic; margin-left: 6px; }
+.facture-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 38px;
+  font-weight: 600;
+  color: #1a7a7a;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: right;
+  line-height: 1;
+  margin-bottom: 14px;
+}
+.facture-infos {
+  text-align: right;
+  font-size: 11.5px;
+  color: #9ab8b8;
+  line-height: 2.1;
+}
+.facture-infos strong { color: #4a7070; font-weight: 600; }
 
-  /* TOTAL */
-  .total-bloc {
-    display: flex;
-    justify-content: flex-end;
-    margin: 20px 0 8px;
-  }
-  .total-inner {
-    background: #f4f0fb;
-    border-left: 3px solid #b8a8d0;
-    border-radius: 0 8px 8px 0;
-    padding: 14px 22px;
-    min-width: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-  }
-  .total-label {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #7a6a9a;
-  }
-  .total-montant {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 26px;
-    font-weight: 600;
-    color: #1a7a7a;
-  }
+/* ── PARTIES ── */
+.parties {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 36px;
+}
+.partie {
+  flex: 1;
+  padding: 18px 20px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.9;
+}
+.partie-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: block;
+}
+.partie-prestataire {
+  background: #eef7f7;
+  border-left: 2px solid #1a7a7a;
+}
+.partie-prestataire .partie-label { color: #1a7a7a; }
+.partie-prestataire { color: #3a6a6a; }
 
-  /* TVA */
-  .tva {
-    font-size: 10.5px;
-    color: #aac4c4;
-    font-style: italic;
-    text-align: right;
-    margin-bottom: 28px;
-  }
+.partie-destinataire {
+  background: #f5f2fb;
+  border-left: 2px solid #c4b4dc;
+}
+.partie-destinataire .partie-label { color: #8a7aaa; }
+.partie-destinataire { color: #4a3a6a; }
 
-  /* TAMPON */
-  .tampon-zone {
-    text-align: center;
-    margin: 28px 0 36px;
-  }
-  .tampon {
-    display: inline-block;
-    border: 2.5px solid #1a7a7a;
-    color: #1a7a7a;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 18px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    padding: 8px 28px;
-    border-radius: 4px;
-    transform: rotate(-4deg);
-    opacity: 0.65;
-    text-transform: uppercase;
-  }
+/* ── OBJET ── */
+.objet {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 15px;
+  color: #5a8a8a;
+  border-bottom: 1px solid #e0eded;
+  padding-bottom: 14px;
+  margin-bottom: 22px;
+  letter-spacing: 0.01em;
+}
 
-  /* FOOTER */
-  .footer {
-    border-top: 1px solid #daeaea;
-    padding-top: 16px;
-    font-size: 10px;
-    color: #b0c8c8;
-    text-align: center;
-    line-height: 1.9;
-  }
+/* ── TABLEAU ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+}
+.col-date  { width: 30%; }
+.col-type  { width: 35%; }
+.col-duree { width: 17%; text-align: center; }
+.col-montant { width: 18%; text-align: right; }
 
-  @media print {
-    body { background: white; padding: 28px 36px; }
-    .tampon { opacity: 0.55; }
-  }
+thead tr {
+  border-bottom: 1.5px solid #1a7a7a;
+}
+th {
+  padding: 0 12px 10px;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #1a7a7a;
+  vertical-align: bottom;
+}
+th.col-duree { text-align: center; }
+th.col-montant { text-align: right; }
+
+td {
+  padding: 11px 12px;
+  border-bottom: 1px solid #f0f6f6;
+  font-size: 12.5px;
+  vertical-align: middle;
+  color: #2d4a4a;
+}
+tbody tr:last-child td { border-bottom: none; }
+.trajet-note {
+  font-size: 10.5px;
+  color: #aac4c4;
+  font-style: italic;
+}
+
+/* ── TOTAL ── */
+.total-zone {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 22px;
+  margin-bottom: 6px;
+}
+.total-box {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  padding: 14px 22px;
+  background: #f5f2fb;
+  border-radius: 10px;
+  border-left: 2px solid #c4b4dc;
+}
+.total-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8a7aaa;
+}
+.total-montant {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a7a7a;
+  letter-spacing: 0.01em;
+}
+
+/* ── TVA ── */
+.tva-note {
+  text-align: right;
+  font-size: 10px;
+  color: #b0c8c8;
+  font-style: italic;
+  margin-bottom: 40px;
+  margin-top: 6px;
+}
+
+/* ── TAMPON ── */
+.tampon-zone {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0 44px;
+}
+.tampon {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #1a7a7a;
+  border: 1.5px solid #1a7a7a;
+  padding: 8px 28px;
+  border-radius: 3px;
+  opacity: 0.45;
+  transform: rotate(-3deg);
+  display: inline-block;
+}
+
+/* ── PIED ── */
+.footer {
+  border-top: 1px solid #e8f2f2;
+  padding-top: 16px;
+  font-size: 10px;
+  color: #b0c8c8;
+  text-align: center;
+  line-height: 2;
+}
+
+@media print {
+  body { padding: 30px 36px; }
+}
 </style>
-</head><body>
+</head>
+<body>
 
 <div class="header">
   <div class="brand">
-    <h1>${p.enseigne || 'Prendre Soin de Son Être'}</h1>
-    <div class="tagline">Accompagnement · Hypnose · Coaching · Relaxation</div>
-    <div class="coords">
+    <div class="brand-name">${p.enseigne || 'Prendre Soin de Son Être'}</div>
+    <div class="brand-tagline">Accompagnement · Hypnose · Coaching · Relaxation</div>
+    <div class="brand-coords">
       ${p.prenom||''} ${p.nom||''}<br>
       ${p.adresse ? p.adresse+'<br>' : ''}
       ${p.tel ? p.tel+'<br>' : ''}
@@ -3484,52 +3516,54 @@ function genFacturePDFConfirm(clientId, mois, annee) {
       ${p.siret ? 'SIRET : '+p.siret : ''}
     </div>
   </div>
-  <div class="facture-meta">
-    <div class="mot-facture">Facture</div>
-    <div class="details">
+  <div>
+    <div class="facture-label">Facture</div>
+    <div class="facture-infos">
       N° <strong>${numFact}</strong><br>
-      Date : <strong>${dateStr}</strong><br>
+      Émise le <strong>${dateStr}</strong><br>
       Période : <strong>${moisLabel}</strong>
     </div>
   </div>
 </div>
 
 <div class="parties">
-  <div class="partie partie-emetteur">
-    <div class="partie-label">Prestataire</div>
+  <div class="partie partie-prestataire">
+    <span class="partie-label">Prestataire</span>
     <strong>${p.prenom||''} ${p.nom||''}</strong><br>
     ${p.enseigne||''}<br>
     ${p.adresse||''}<br>
     ${p.siret ? 'SIRET : '+p.siret : ''}
   </div>
-  <div class="partie partie-client">
-    <div class="partie-label">Destinataire</div>
+  <div class="partie partie-destinataire">
+    <span class="partie-label">Destinataire</span>
     ${clientAddr.join('<br>')}
   </div>
 </div>
 
-<div class="objet-bloc">Séances d'accompagnement — ${moisLabel}</div>
+<div class="objet">Séances d'accompagnement — ${moisLabel}</div>
 
 <table>
   <thead>
     <tr>
-      <th>Date</th>
-      <th>Prestation</th>
-      <th style="text-align:center">Durée</th>
-      <th style="text-align:right">Montant</th>
+      <th class="col-date">Date</th>
+      <th class="col-type">Prestation</th>
+      <th class="col-duree">Durée</th>
+      <th class="col-montant">Montant</th>
     </tr>
   </thead>
-  <tbody>${rows}</tbody>
+  <tbody>
+    ${rows}
+  </tbody>
 </table>
 
-<div class="total-bloc">
-  <div class="total-inner">
-    <div class="total-label">Total à régler</div>
-    <div class="total-montant">${total.toFixed(2).replace('.',',')} €</div>
+<div class="total-zone">
+  <div class="total-box">
+    <span class="total-label">Total à régler</span>
+    <span class="total-montant">${total.toFixed(2).replace('.',',')} €</span>
   </div>
 </div>
 
-<div class="tva">${p.tva || 'TVA non applicable — article 293 B du CGI'}</div>
+<div class="tva-note">${p.tva || 'TVA non applicable — article 293 B du CGI'}</div>
 
 <div class="tampon-zone">
   <div class="tampon">À régler</div>
@@ -3537,15 +3571,16 @@ function genFacturePDFConfirm(clientId, mois, annee) {
 
 <div class="footer">
   ${p.enseigne || 'Prendre Soin de Son Être'} — ${p.prenom||''} ${p.nom||''}<br>
-  ${p.siret ? 'SIRET : '+p.siret+' — ' : ''}${p.tva || 'TVA non applicable — article 293 B du CGI'}
+  ${p.siret ? 'SIRET : '+p.siret+' · ' : ''}${p.tva || 'TVA non applicable — article 293 B du CGI'}
 </div>
 
-</body></html>`;
+</body>
+</html>`;
 
   const w = window.open('', '_blank');
   w.document.write(html);
   w.document.close();
-  setTimeout(() => w.print(), 600);
+  setTimeout(() => w.print(), 700);
 }
 
 function envoyerFactureEmail(clientId, mois, annee) {
