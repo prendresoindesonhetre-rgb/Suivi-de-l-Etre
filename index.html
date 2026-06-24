@@ -694,12 +694,12 @@ html, body {
 
 <!-- MODAL RECAP MOIS -->
 <div class="overlay" id="modal-recap">
-  <div class="modal" style="max-width:500px">
+  <div class="modal" style="max-width:520px">
     <div class="modal-title">
       <span id="recap-title">Récap du mois</span>
       <button class="modal-close" onclick="closeModal('recap')"><i class="ti ti-x"></i></button>
     </div>
-    <div class="modal-scroll">
+    <div class="modal-scroll" style="overflow-y:auto;flex:1;padding-bottom:0.5rem">
       <div id="recap-content" style="font-size:13px"></div>
     </div>
     <div class="modal-actions">
@@ -1854,9 +1854,9 @@ function openRecapCalMois() {
     </div>
     <div style="font-size:11px;font-weight:700;color:var(--lavender-dark);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem">Clients vus ce mois</div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem">
-      \${clientsVus.map(id => { const c = getClient(id); return c ? \`<span style="background:var(--lavender-light);color:var(--lavender-dark);padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600">\${c.prenom} \${c.nom}</span>\` : ''; }).join('')}
+      ${clientsVus.map(id => { const cl = getClient(id); return cl ? '<span style=\"background:var(--lavender-light);color:var(--lavender-dark);padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600\">' + cl.prenom + ' ' + cl.nom + '</span>' : ''; }).join('')}
     </div>
-        <div style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem">Détail des séances</div>
+    <div style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem">Détail des séances</div>
     <div style="display:flex;flex-direction:column;gap:6px">
     ${rdvsMois.map(r => {
       const c = getClient(r.clientId);
@@ -1867,7 +1867,10 @@ function openRecapCalMois() {
           <div style="font-size:12px;font-weight:600;color:var(--teal-dark)">${fmtDate(r.date)} · ${r.heure} — ${r.type}</div>
           <div style="font-size:11px;color:var(--text-muted)">${c?c.prenom+' '+c.nom:'?'}${tt>0?' · '+tt+' min trajet':''}</div>
         </div>
-        <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;background:${aNoteDate?'var(--teal-light)':'var(--amber-light)'};color:${aNoteDate?'var(--teal)':'var(--amber)'}">${aNoteDate?'✓ Note':'À remplir'}</span>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
+          <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:${aNoteDate?'var(--teal-light)':'var(--amber-light)'};color:${aNoteDate?'var(--teal)':'var(--amber)'}">${aNoteDate?'✓ Note':'À remplir'}</span>
+          ${(() => { const noteR = notes.find(n => n.clientId===r.clientId && n.date===r.date); if (!noteR) return ''; const f = noteR.facture||'non_envoyee'; if (f==='envoyee') return '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--amber-light);color:var(--amber)">Facture envoyée</span>'; if (f==='payee') return '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:#e6f4e6;color:#2d7a2d">Payée ✓</span>'; return ''; })()}
+        </div>
       </div>`;
     }).join('')}
     </div>
@@ -1919,9 +1922,9 @@ function openRecapMois() {
     </div>
     <div style="font-size:11px;font-weight:700;color:var(--lavender-dark);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem">Clients vus ce mois</div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem">
-      \${clientsVus.map(id => { const c = getClient(id); return c ? \`<span style="background:var(--lavender-light);color:var(--lavender-dark);padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600">\${c.prenom} \${c.nom}</span>\` : ''; }).join('')}
+      ${clientsVus.map(id => { const cl = getClient(id); return cl ? '<span style=\"background:var(--lavender-light);color:var(--lavender-dark);padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600\">' + cl.prenom + ' ' + cl.nom + '</span>' : ''; }).join('')}
     </div>
-        <div style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem">Détail des séances</div>
+    <div style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem">Détail des séances</div>
     <div style="display:flex;flex-direction:column;gap:6px">
     ${rdvsMois.map(r => {
       const c = getClient(r.clientId);
