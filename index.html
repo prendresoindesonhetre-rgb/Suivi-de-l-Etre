@@ -1078,7 +1078,8 @@ html, body {
 <script>
 const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const DAYS_SHORT = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
-const today = new Date();
+const today = new Date(); // kept for calYear/calMonth init only
+function getToday() { return new Date(); }
 let calYear = today.getFullYear(), calMonth = today.getMonth();
 let currentClientId = null;
 let currentRdvId = null;
@@ -1238,7 +1239,7 @@ function updateRdvNcAge() {
 
 function fmtDate(d) {
   const dt = new Date(d+'T12:00:00');
-  const diff = Math.round((dt - new Date(fmt(today)+'T12:00:00'))/86400000);
+  const diff = Math.round((dt - new Date(fmt(getToday())+'T12:00:00'))/86400000);
   if (diff === 0) return "Aujourd'hui";
   if (diff === 1) return "Demain";
   if (diff === -1) return "Hier";
@@ -1402,7 +1403,7 @@ function renderCalendar() {
 function calClick(d) { document.getElementById('rdv-date').value=d; document.getElementById('rdv-edit-id').value=''; document.getElementById('rdv-modal-title').textContent='Nouveau rendez-vous'; openModal('rdv'); }
 function prevMonth() { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
 function nextMonth() { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); }
-function goToday() { calYear=today.getFullYear(); calMonth=today.getMonth(); renderCalendar(); }
+function goToday() { const t=getToday(); calYear=t.getFullYear(); calMonth=t.getMonth(); renderCalendar(); }
 
 // --- CLIENTS ---
 function renderClients() {
@@ -1412,7 +1413,7 @@ function renderClients() {
   if (!filtered.length) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><i class="ti ti-user-off"></i>Aucun client trouvé</div>'; return; }
   grid.innerHTML = filtered.map(c => {
     const nb = notes.filter(n => n.clientId===c.id).length;
-    const next = rdvs.filter(r => r.clientId===c.id && r.date>=fmt(today)).sort((a,b)=>a.date.localeCompare(b.date))[0];
+    const next = rdvs.filter(r => r.clientId===c.id && r.date>=fmt(getToday())).sort((a,b)=>a.date.localeCompare(b.date))[0];
     return `<div class="client-card" onclick="showFiche(${c.id})">
       <div class="client-avatar">${initials(c)}</div>
       <div class="client-name">${c.prenom} ${c.nom}</div>
@@ -1463,7 +1464,7 @@ function showFiche(id) {
       </div>
     </div>`;
   const clientNotes = notes.filter(n => n.clientId===id).sort((a,b) => b.date.localeCompare(a.date));
-  const clientRdvs = rdvs.filter(r => r.clientId===id && r.date>=fmt(today)).sort((a,b)=>a.date.localeCompare(b.date));
+  const clientRdvs = rdvs.filter(r => r.clientId===id && r.date>=fmt(getToday())).sort((a,b)=>a.date.localeCompare(b.date));
   const sl = document.getElementById('seances-list');
 
   // RDV à venir
@@ -1516,7 +1517,7 @@ function showFiche(id) {
 
 // --- TOUS LES RDV ---
 function renderRdvs() {
-  const nowStr = fmt(today);
+  const nowStr = fmt(getToday());
   const up = rdvs.filter(r=>r.date>=nowStr).sort((a,b)=>a.date.localeCompare(b.date)||a.heure.localeCompare(b.heure));
   const past = rdvs.filter(r=>r.date<nowStr).sort((a,b)=>b.date.localeCompare(a.date)||b.heure.localeCompare(a.heure));
   function rdvHtml(r) {
@@ -2026,7 +2027,7 @@ function openRecapCalMois() {
 }
 
 function openRecapMois() {
-  const mois = today.getMonth(), annee = today.getFullYear();
+  const _t = getToday(); const mois = _t.getMonth(), annee = _t.getFullYear();
   const rdvsMois = rdvs.filter(r => {
     const d = new Date(r.date+'T12:00:00');
     return d.getMonth()===mois && d.getFullYear()===annee && !r.annule;
@@ -4219,6 +4220,12 @@ function showApp() {
   renderCalendar();
   sbStatus('Connexion...', 'var(--teal)');
   sbPull();
+  // Rafraîchissement automatique du dashboard toutes les minutes
+  setInterval(() => {
+    if (document.getElementById('view-dashboard')?.classList.contains('active')) {
+      renderDashboard();
+    }
+  }, 60000);
 }
 
 async function sbPull() {
