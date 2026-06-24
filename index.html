@@ -885,23 +885,32 @@ html, body {
     </div>
 
     <!-- PROCHAIN RDV -->
-    <div style="background:var(--teal-light);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:0.75rem;border:0.5px solid var(--border-md)">
-      <div style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem"><i class="ti ti-calendar-plus" style="font-size:13px;margin-right:4px"></i>Planifier le prochain rendez-vous <span style="font-weight:400;font-style:italic;color:var(--text-muted)">(optionnel)</span></div>
-      <div class="form-grid form-grid-2">
-        <div class="form-row"><label>Date</label><input type="date" id="note-prochain-rdv"></div>
-        <div class="form-row"><label>Heure</label><input type="time" id="note-prochain-heure" value="10:00"></div>
-      </div>
-      <div class="form-row"><label>Pour qui <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label>
-        <select id="note-prochain-client">
-          <option value="">— Même client —</option>
-        </select>
-      </div>
-      <div class="form-row"><label>Motif / Type <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label>
-        <input type="text" id="note-prochain-motif" placeholder="Ex: Suivi, Bilan, Relaxation...">
-      </div>
-      <div class="form-grid form-grid-2">
-        <div class="form-row"><label>Trajet aller (min)</label><input type="number" id="note-prochain-trajet-aller" value="0" min="0"></div>
-        <div class="form-row"><label>Trajet retour (min)</label><input type="number" id="note-prochain-trajet-retour" value="0" min="0"></div>
+    <div style="margin-bottom:0.75rem">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 14px;background:var(--teal-light);border:0.5px solid var(--border-md);border-radius:var(--radius-sm)">
+        <input type="checkbox" id="note-prochain-rdv-oui" onchange="toggleProchainRdv()" style="width:18px;height:18px;accent-color:var(--teal);cursor:pointer;flex-shrink:0">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--teal)"><i class="ti ti-calendar-plus" style="margin-right:5px"></i>Un prochain rendez-vous est-il défini ?</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:1px">Cocher pour planifier le prochain RDV</div>
+        </div>
+      </label>
+
+      <div id="note-prochain-rdv-bloc" style="display:none;background:var(--teal-light);border:0.5px solid var(--border-md);border-radius:0 0 var(--radius-sm) var(--radius-sm);border-top:none;padding:0.75rem 1rem">
+        <div class="form-grid form-grid-2">
+          <div class="form-row"><label>Date</label><input type="date" id="note-prochain-rdv"></div>
+          <div class="form-row"><label>Heure</label><input type="time" id="note-prochain-heure" value="10:00"></div>
+        </div>
+        <div class="form-row"><label>Pour qui <span style="color:var(--text-hint);font-weight:400">(par défaut même client)</span></label>
+          <select id="note-prochain-client">
+            <option value="">— Même client —</option>
+          </select>
+        </div>
+        <div class="form-row"><label>Motif / Type <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label>
+          <input type="text" id="note-prochain-motif" placeholder="Ex: Suivi, Bilan, Relaxation...">
+        </div>
+        <div class="form-grid form-grid-2">
+          <div class="form-row"><label>Trajet aller (min)</label><input type="number" id="note-prochain-trajet-aller" value="0" min="0"></div>
+          <div class="form-row"><label>Trajet retour (min)</label><input type="number" id="note-prochain-trajet-retour" value="0" min="0"></div>
+        </div>
       </div>
     </div>
     </div>
@@ -1234,7 +1243,12 @@ function renderDashboard() {
     <div class="stat-card"><div class="stat-label">Minutes trajet</div><div class="stat-value">${km}</div><div class="stat-sub">ce mois</div></div>
     <div class="stat-card"><div class="stat-label">Prochain RDV</div><div class="stat-value" style="font-size:14px;padding-top:4px">${next ? fmtDate(next.date) : '—'}</div><div class="stat-sub">${nextClient ? nextClient.prenom+' '+nextClient.nom : 'Aucun prévu'}</div></div>
   `;
-  const upcoming = rdvs.filter(r => r.date >= nowStr).sort((a,b) => a.date.localeCompare(b.date)||a.heure.localeCompare(b.heure)).slice(0,6);
+  const upcoming = rdvs.filter(r => {
+    if (r.date > nowStr) return true;
+    if (r.date < nowStr) return false;
+    // Même jour : toujours afficher, note ou pas
+    return true;
+  }).sort((a,b) => a.date.localeCompare(b.date)||a.heure.localeCompare(b.heure)).slice(0,6);
   const ul = document.getElementById('upcoming-list');
   if (!upcoming.length) { ul.innerHTML = '<div class="empty-state"><i class="ti ti-calendar-off"></i>Aucun rendez-vous à venir</div>'; return; }
   ul.innerHTML = '<div class="upcoming-list">' + upcoming.map(r => {
@@ -1411,12 +1425,11 @@ function renderRdvs() {
     return `<div class="rdv-item" style="${r.annule?'opacity:0.5;':''}">
       <div class="upcoming-dot ${r.annule?'dot-annule':tt>0?'dot-trajet':'dot-seance'}"></div>
       <div class="rdv-info">
-        <div class="rdv-title"><strong style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800">${r.heure}–${calcEndTime(r.heure, r.duree)} :</strong> · <span style="color:#6B7A8D">${c?c.prenom+' '+c.nom:'?'} — ${r.type}</span> <span style="font-weight:400;color:var(--text-muted);font-style:italic">(${r.duree} min)</span>${r.premiere?' <span style="font-size:10px;background:var(--lavender-light);color:var(--lavender-dark);padding:1px 6px;border-radius:8px;font-weight:600">1ère séance</span>':''}${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600">Annulé</span>':''}</div>
+        <div class="rdv-title"><strong style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800">${fmtDate(r.date)} · ${r.heure}–${calcEndTime(r.heure, r.duree)} :</strong> · <span style="color:#6B7A8D">${c?c.prenom+' '+c.nom:'?'} — ${r.type}</span> <span style="font-weight:400;color:var(--text-muted);font-style:italic">(${r.duree} min)</span>${r.premiere?' <span style="font-size:10px;background:var(--lavender-light);color:var(--lavender-dark);padding:1px 6px;border-radius:8px;font-weight:600">1ère séance</span>':''}${r.annule?' <span style="font-size:10px;background:var(--danger-light);color:var(--danger);padding:1px 6px;border-radius:8px;font-weight:600">Annulé</span>':''}</div>
         <div class="rdv-detail">${(r.trajetAller||0) > 0 ? `<i class="ti ti-car" style="font-size:11px;margin-right:3px;color:#7A4F3A"></i><span style="color:#7A4F3A;font-weight:500;text-decoration:underline">Départ à ${calcEndTime(r.heure, -(r.trajetAller||0))}</span> <span style="color:#9B8EC4">pour ${r.lieu||(c&&c.adresse)||'?'}</span>` : (r.lieu ? `<span style="color:#9B8EC4">${r.lieu}</span>` : (c&&c.adresse ? `<span style="color:#9B8EC4">${c.adresse}</span>` : ''))}${tt>0 && !(r.trajetAller>0) ? `<span style="color:#6B7A8D"> · ${tt} min trajet</span>` : ''}</div>
         ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:3px;font-size:11px;color:#7A9E7E;font-weight:500"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <div class="rdv-time">${fmtDate(r.date)}</div>
         ${c && c.tel && !r.annule ? `<button class="icon-btn" onclick="openWhatsapp(${r.id})" title="Confirmation WhatsApp" style="color:#25D366"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
         ${!r.annule ? `<button class="icon-btn" onclick="editRdv(${r.id})" title="Modifier"><i class="ti ti-edit"></i></button>` : ''}
         <button class="icon-btn" onclick="cancelRdv(${r.id})" title="${r.annule?'Réactiver':'Annuler'}" style="color:${r.annule?'var(--teal)':'var(--danger)'}"><i class="ti ti-${r.annule?'rotate':'calendar-off'}"></i></button>
@@ -1714,6 +1727,11 @@ function addProEnfantFromSelect() {
   sel.value = '';
 }
 
+function toggleProchainRdv() {
+  const checked = document.getElementById('note-prochain-rdv-oui').checked;
+  document.getElementById('note-prochain-rdv-bloc').style.display = checked ? 'block' : 'none';
+}
+
 function toggleNoteAutreType() {
   const type = document.getElementById('note-type').value;
   document.getElementById('note-autre-row').style.display = type === 'Autre (préciser)' ? 'block' : 'none';
@@ -1933,6 +1951,8 @@ function closeModal(type) {
     document.getElementById('note-edit-id').value='';
     document.getElementById('note-autre-row').style.display = 'none';
     document.getElementById('note-type-autre').value = '';
+    document.getElementById('note-prochain-rdv-oui').checked = false;
+    document.getElementById('note-prochain-rdv-bloc').style.display = 'none';
     document.getElementById('note-prochain-rdv').value = '';
     document.getElementById('note-prochain-heure').value = '10:00';
     document.getElementById('note-prochain-motif').value = '';
@@ -2293,9 +2313,10 @@ function saveNote() {
       toast('Note ajoutée');
     }
   }
-  // Créer le prochain RDV automatiquement si date renseignée
+  // Créer le prochain RDV automatiquement si case cochée et date renseignée
+  const prochainOui = document.getElementById('note-prochain-rdv-oui').checked;
   const prochainDate = document.getElementById('note-prochain-rdv').value;
-  if (prochainDate) {
+  if (prochainOui && prochainDate) {
     const prochainClientId = parseInt(document.getElementById('note-prochain-client').value) || currentClientId;
     const prochainHeure = document.getElementById('note-prochain-heure').value || '10:00';
     const prochainMotif = document.getElementById('note-prochain-motif').value.trim();
