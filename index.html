@@ -608,7 +608,20 @@ html, body {
 
     <!-- 2. CLIENT (masqué si première séance) -->
     <div id="rdv-client-row" class="form-row"><label>Client</label>
-      <select id="rdv-client"></select>
+      <select id="rdv-client" onchange="onRdvClientChange()"></select>
+    </div>
+
+    <!-- Enfants concernés (visible si le client est un professionnel) -->
+    <div id="rdv-enfants-row" style="display:none">
+      <div style="background:#eef0fa;border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:0.75rem;border:0.5px solid #c0c8e8">
+        <div style="font-size:11px;font-weight:700;color:#8890c0;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem"><i class="ti ti-users" style="font-size:13px;margin-right:4px"></i>Enfants concernés par ce RDV</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:0.6rem;font-style:italic">La note de séance sera aussi ajoutée dans leur fiche</div>
+        <div id="rdv-enfants-selectionnes" style="margin-bottom:0.5rem"></div>
+        <select id="rdv-enfant-select" style="width:100%;padding:7px 10px;font-size:13px;border:0.5px solid #c0c8e8;border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif;margin-bottom:6px">
+          <option value="">— Sélectionner un enfant —</option>
+        </select>
+        <button class="btn" type="button" onclick="addRdvEnfant()" style="font-size:12px;border-color:#8890c0;color:#8890c0"><i class="ti ti-plus"></i> Ajouter cet enfant</button>
+      </div>
     </div>
 
     <!-- 3. TYPE DE SÉANCE -->
@@ -982,6 +995,7 @@ const DAYS_SHORT = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const today = new Date();
 let calYear = today.getFullYear(), calMonth = today.getMonth();
 let currentClientId = null;
+let currentRdvId = null;
 
 // --- STORAGE ---
 function load(key, def) { try { return JSON.parse(localStorage.getItem(key)) || def; } catch(e) { return def; } }
@@ -1621,6 +1635,7 @@ function openNoteFromRdv(rdvId) {
   const r = rdvs.find(x => x.id == rdvId);
   if (!r) return;
   currentClientId = r.clientId;
+  currentRdvId = rdvId;
   document.getElementById('note-edit-id').value = '';
   document.getElementById('note-date').value = r.date;
   document.getElementById('note-type').value = r.type;
@@ -1659,6 +1674,69 @@ function addProEnfantFromSelect() {
 function toggleAutreType() {
   const type = document.getElementById('rdv-type').value;
   document.getElementById('rdv-autre-row').style.display = type === 'Autre' ? 'block' : 'none';
+}
+
+let rdvEnfantsSelectionnes = [];
+
+function onRdvClientChange() {
+  const clientId = parseInt(document.getElementById('rdv-client').value);
+  const c = getClient(clientId);
+  const row = document.getElementById('rdv-enfants-row');
+  if (!row) return;
+  if (c && c.profil === 'professionnel') {
+    row.style.display = 'block';
+    rdvEnfantsSelectionnes = [];
+    renderRdvEnfants();
+    // Peupler le select avec les enfants suivis par ce pro + tous les enfants
+    const sel = document.getElementById('rdv-enfant-select');
+    const enfants = clients.filter(x => x.profil === 'enfant');
+    // Mettre en avant les enfants liés à ce professionnel
+    const proEnfantsNoms = c.proEnfants || [];
+    const lies = enfants.filter(e => proEnfantsNoms.some(n => n.toLowerCase().includes(e.prenom.toLowerCase())));
+    const autres = enfants.filter(e => !lies.includes(e));
+    sel.innerHTML = '<option value="">— Sélectionner un enfant —</option>';
+    if (lies.length) {
+      sel.innerHTML += '<optgroup label="Enfants suivis par ce professionnel">' +
+        lies.map(e => `<option value="${e.id}">👶 ${e.prenom} ${e.nom}</option>`).join('') + '</optgroup>';
+    }
+    if (autres.length) {
+      sel.innerHTML += '<optgroup label="Autres enfants">' +
+        autres.map(e => `<option value="${e.id}">👶 ${e.prenom} ${e.nom}</option>`).join('') + '</optgroup>';
+    }
+  } else {
+    row.style.display = 'none';
+    rdvEnfantsSelectionnes = [];
+  }
+}
+
+function addRdvEnfant() {
+  const sel = document.getElementById('rdv-enfant-select');
+  const id = parseInt(sel.value);
+  if (!id) return;
+  if (!rdvEnfantsSelectionnes.includes(id)) {
+    rdvEnfantsSelectionnes.push(id);
+    renderRdvEnfants();
+  }
+  sel.value = '';
+}
+
+function removeRdvEnfant(id) {
+  rdvEnfantsSelectionnes = rdvEnfantsSelectionnes.filter(x => x !== id);
+  renderRdvEnfants();
+}
+
+function renderRdvEnfants() {
+  const list = document.getElementById('rdv-enfants-selectionnes');
+  if (!list) return;
+  if (!rdvEnfantsSelectionnes.length) { list.innerHTML = ''; return; }
+  list.innerHTML = rdvEnfantsSelectionnes.map(id => {
+    const e = getClient(id);
+    return `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:white;border-radius:5px;margin-bottom:4px;border:0.5px solid #c0c8e8">
+      <i class="ti ti-user" style="font-size:13px;color:#8890c0"></i>
+      <span style="flex:1;font-size:13px">${e ? e.prenom+' '+e.nom : '?'}</span>
+      <button onclick="removeRdvEnfant(${id})" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:15px;padding:0;display:flex"><i class="ti ti-x"></i></button>
+    </div>`;
+  }).join('');
 }
 
 let proEnfants = [];
@@ -1770,6 +1848,10 @@ function openModal(type) {
     document.getElementById('rdv-premiere').checked = false;
     document.getElementById('rdv-nouveau-client').style.display = 'none';
     document.getElementById('rdv-client-row').style.display = 'block';
+    document.getElementById('rdv-enfants-row').style.display = 'none';
+    rdvEnfantsSelectionnes = [];
+    renderRdvEnfants();
+    currentRdvId = null;
     updateDureeFromType();
   }
   if (type==='note') document.getElementById('note-date').value=fmt(today);
@@ -1923,6 +2005,7 @@ function saveRdv() {
     lieu: document.getElementById('rdv-lieu').value,
     notes: document.getElementById('rdv-notes').value,
     premiere: premiere,
+    enfantsIds: [...rdvEnfantsSelectionnes],
   };
 
   const conflit = checkConflict(data, editId || null);
@@ -2117,9 +2200,41 @@ function saveNote() {
     contenu: document.getElementById('note-contenu').value,
     suite: document.getElementById('note-suite').value,
   };
-  if (editId) { const idx=notes.findIndex(n=>n.id==editId); if(idx>-1) notes[idx]={...notes[idx],...data}; toast('Note modifiée'); }
-  else { notes.push({id:newId(),...data}); toast('Note ajoutée'); }
-  persistAndSync(); closeModal('note');
+  if (editId) {
+    const idx = notes.findIndex(n=>n.id==editId);
+    if (idx>-1) notes[idx]={...notes[idx],...data};
+    toast('Note modifiée');
+  } else {
+    notes.push({id:newId(),...data});
+    // Dupliquer la note dans les fiches des enfants liés au RDV
+    if (currentRdvId) {
+      const rdv = rdvs.find(r => r.id == currentRdvId);
+      if (rdv && rdv.enfantsIds && rdv.enfantsIds.length) {
+        rdv.enfantsIds.forEach(enfantId => {
+          if (enfantId !== currentClientId) {
+            notes.push({
+              id: newId(),
+              clientId: enfantId,
+              date: data.date,
+              type: data.type,
+              contenu: data.contenu,
+              suite: data.suite,
+              liePro: true, // marqueur pour savoir que c'est lié à un pro
+            });
+          }
+        });
+        const noms = rdv.enfantsIds.map(id => { const e = getClient(id); return e ? e.prenom : ''; }).filter(Boolean);
+        if (noms.length) toast(`Note ajoutée + liée à ${noms.join(', ')}`);
+        else toast('Note ajoutée');
+      } else {
+        toast('Note ajoutée');
+      }
+    } else {
+      toast('Note ajoutée');
+    }
+  }
+  persistAndSync();
+  closeModal('note');
   ['note-contenu','note-suite'].forEach(id=>document.getElementById(id).value='');
   showFiche(currentClientId);
 }
