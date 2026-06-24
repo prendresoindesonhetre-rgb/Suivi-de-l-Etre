@@ -497,6 +497,12 @@ html, body {
             <button class="btn btn-primary" onclick="saveParametres()"><i class="ti ti-check"></i> Enregistrer</button>
             <button class="btn" onclick="loadParametres()"><i class="ti ti-refresh"></i> Annuler</button>
           </div>
+
+          <!-- CARNET DE DESTINATAIRES -->
+          <div class="section-title" style="margin:2rem 0 1rem">Carnet de destinataires</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:1rem">Ces destinataires seront proposés lors de la génération d'une facture.</div>
+          <div id="dest-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem"></div>
+          <button class="btn" onclick="openDestModal(null)" style="border-color:var(--teal);color:var(--teal)"><i class="ti ti-plus"></i> Nouveau destinataire</button>
         </div>
       </div>
 
@@ -1076,7 +1082,7 @@ const today = new Date();
 let calYear = today.getFullYear(), calMonth = today.getMonth();
 let currentClientId = null;
 let currentRdvId = null;
-function getNowTime() { return today.getHours() * 60 + today.getMinutes(); }
+function getNowTime() { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); }
 
 // --- STORAGE ---
 function load(key, def) { try { return JSON.parse(localStorage.getItem(key)) || def; } catch(e) { return def; } }
@@ -1275,8 +1281,9 @@ function showView(v) {
 
 // --- DASHBOARD ---
 function renderDashboard() {
-  const nowStr = fmt(today);
-  const mois = today.getMonth(), annee = today.getFullYear();
+  const now = new Date();
+  const nowStr = fmt(now);
+  const mois = now.getMonth(), annee = now.getFullYear();
   const rdvsMois = rdvs.filter(r => { const d=new Date(r.date+'T12:00:00'); return d.getMonth()===mois && d.getFullYear()===annee; });
   const km = rdvsMois.reduce((s,r) => s + ((r.trajetAller||0) + (r.trajetRetour||0)), 0);
   const next = rdvs.filter(r => {
@@ -2780,6 +2787,7 @@ const DEFAULT_PARAMS = {
 
 function loadParametres() {
   const p = JSON.parse(localStorage.getItem(PARAM_KEY) || 'null') || DEFAULT_PARAMS;
+  renderDestList();
   document.getElementById('param-prenom').value = p.prenom || '';
   document.getElementById('param-nom').value = p.nom || '';
   document.getElementById('param-siret').value = p.siret || '';
@@ -3139,6 +3147,182 @@ function editDevis(id) {
 
 // ---- GÉNÉRATION PDF ----
 // ---- GÉNÉRATION FACTURE ----
+// ── CARNET DE DESTINATAIRES ──
+const DEST_KEY = 'mac_destinataires';
+
+function getDestinataires() {
+  return JSON.parse(localStorage.getItem(DEST_KEY) || '[]');
+}
+
+function saveDestinataires(list) {
+  localStorage.setItem(DEST_KEY, JSON.stringify(list));
+}
+
+function renderDestList() {
+  const list = getDestinataires();
+  const el = document.getElementById('dest-list');
+  if (!el) return;
+  if (!list.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text-hint);font-style:italic">Aucun destinataire enregistré.</div>';
+    return;
+  }
+  el.innerHTML = list.map(d => `
+    <div style="background:var(--cream-card);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:10px">
+      <div style="font-size:20px">${d.type==='structure'?'🏢':'👤'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--teal-dark)">${d.nom}</div>
+        ${d.referent?`<div style="font-size:11px;color:var(--text-muted)">Référent : ${d.referent}</div>`:''}
+        ${d.adresse?`<div style="font-size:11px;color:var(--text-muted)">${d.adresse}</div>`:''}
+        ${d.email?`<div style="font-size:11px;color:var(--text-muted)">${d.email}</div>`:''}
+        ${d.tel?`<div style="font-size:11px;color:var(--text-muted)">${d.tel}</div>`:''}
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="icon-btn" onclick="openDestModal(${d.id})" title="Modifier"><i class="ti ti-pencil"></i></button>
+        <button class="icon-btn danger" onclick="deleteDestinataire(${d.id})" title="Supprimer"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+function openDestModal(id, fromFacture = false) {
+  const old = document.getElementById('modale-dest');
+  if (old) old.remove();
+  const list = getDestinataires();
+  const d = id ? list.find(x => x.id === id) : null;
+
+  const mo = document.createElement('div');
+  mo.id = 'modale-dest';
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(20,60,60,0.4);display:flex;align-items:center;justify-content:center;z-index:10000;padding:1rem';
+  mo.innerHTML = `
+    <div style="background:var(--cream-card);border-radius:var(--radius);width:440px;max-width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 30px rgba(26,122,122,0.18);border:0.5px solid var(--border)">
+      <div style="padding:1.5rem 1.5rem 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:600;color:var(--teal)">${d ? 'Modifier' : 'Nouveau'} destinataire</div>
+        <button onclick="document.getElementById('modale-dest').remove()" style="background:none;border:none;cursor:pointer;color:var(--text-hint);font-size:20px;display:flex"><i class="ti ti-x"></i></button>
+      </div>
+      <div style="padding:0 1.5rem 1.5rem;display:flex;flex-direction:column;gap:10px">
+        <div>
+          <label style="font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px">Type</label>
+          <div style="display:flex;gap:8px">
+            <button id="dest-btn-particulier" type="button" class="btn ${(!d||d.type==='particulier')?'btn-primary':''}" onclick="setDestType('particulier')" style="flex:1;justify-content:center"><i class="ti ti-user"></i> Particulier</button>
+            <button id="dest-btn-structure" type="button" class="btn ${(d&&d.type==='structure')?'btn-primary':''}" onclick="setDestType('structure')" style="flex:1;justify-content:center"><i class="ti ti-building"></i> Structure</button>
+          </div>
+          <input type="hidden" id="dest-type" value="${d?d.type:'particulier'}">
+        </div>
+        <div>
+          <label style="font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px">Nom *</label>
+          <input type="text" id="dest-nom" value="${d?d.nom:''}" placeholder="Nom ou raison sociale"
+            style="width:100%;padding:8px 10px;font-size:13px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif;outline:none">
+        </div>
+        <div id="dest-referent-row" style="display:${(!d||d.type==='structure')?'block':'none'}">
+          <label style="font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px">Référent / Contact</label>
+          <input type="text" id="dest-referent" value="${d?d.referent||'':''}" placeholder="Ex: Mme Martin — Éducatrice"
+            style="width:100%;padding:8px 10px;font-size:13px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif;outline:none">
+        </div>
+        <div>
+          <label style="font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px">Adresse</label>
+          <input type="text" id="dest-adresse" value="${d?d.adresse||'':''}" placeholder="Adresse postale"
+            style="width:100%;padding:8px 10px;font-size:13px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif;outline:none">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px">Email</label>
+            <input type="email" id="dest-email" value="${d?d.email||'':''}" placeholder="email@exemple.fr"
+              style="width:100%;padding:8px 10px;font-size:13px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif;outline:none">
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px">Téléphone</label>
+            <input type="text" id="dest-tel" value="${d?d.tel||'':''}" placeholder="06 xx xx xx xx"
+              style="width:100%;padding:8px 10px;font-size:13px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif;outline:none">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
+          <button class="btn" onclick="document.getElementById('modale-dest').remove()"><i class="ti ti-x"></i> Annuler</button>
+          <button class="btn btn-primary" onclick="saveDestinataire(${id||'null'}, ${fromFacture})"><i class="ti ti-check"></i> Enregistrer</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(mo);
+}
+
+function setDestType(type) {
+  document.getElementById('dest-type').value = type;
+  document.getElementById('dest-btn-particulier').className = 'btn' + (type==='particulier'?' btn-primary':'');
+  document.getElementById('dest-btn-structure').className = 'btn' + (type==='structure'?' btn-primary':'');
+  document.getElementById('dest-referent-row').style.display = type==='structure' ? 'block' : 'none';
+}
+
+function saveDestinataire(id, fromFacture) {
+  const nom = document.getElementById('dest-nom').value.trim();
+  if (!nom) { toast('Le nom est obligatoire'); return; }
+  const list = getDestinataires();
+  const newDest = {
+    id: id || Date.now(),
+    type: document.getElementById('dest-type').value,
+    nom,
+    referent: document.getElementById('dest-referent').value.trim(),
+    adresse: document.getElementById('dest-adresse').value.trim(),
+    email: document.getElementById('dest-email').value.trim(),
+    tel: document.getElementById('dest-tel').value.trim(),
+  };
+  if (id) {
+    const idx = list.findIndex(x => x.id === id);
+    if (idx >= 0) list[idx] = newDest; else list.push(newDest);
+  } else {
+    list.push(newDest);
+  }
+  saveDestinataires(list);
+  document.getElementById('modale-dest').remove();
+  toast('Destinataire enregistré ✓');
+  renderDestList();
+  // Si on vient de la modale facture, recharger le select
+  if (fromFacture) {
+    const sel = document.getElementById('fact-dest-select');
+    if (sel) {
+      const opt = document.createElement('option');
+      opt.value = newDest.id;
+      opt.textContent = (newDest.type==='structure'?'🏢':'👤')+' '+newDest.nom+(newDest.referent?' · '+newDest.referent:'');
+      sel.appendChild(opt);
+      sel.value = newDest.id;
+      onFactDestSelect();
+    }
+  }
+}
+
+function deleteDestinataire(id) {
+  if (!confirm('Supprimer ce destinataire ?')) return;
+  const list = getDestinataires().filter(x => x.id !== id);
+  saveDestinataires(list);
+  renderDestList();
+  toast('Destinataire supprimé');
+}
+
+function onFactDestSelect() {
+  const sel = document.getElementById('fact-dest-select');
+  if (!sel) return;
+  const val = sel.value;
+  const c = window._factureClient;
+  if (!val) {
+    // Manuel — vider les champs
+    document.getElementById('fact-dest-nom').value = '';
+    document.getElementById('fact-dest-adresse').value = '';
+    document.getElementById('fact-dest-email').value = '';
+    document.getElementById('fact-dest-tel').value = '';
+    return;
+  }
+  if (val === '__client__') {
+    document.getElementById('fact-dest-nom').value = c ? (c.prenom+' '+c.nom) : '';
+    document.getElementById('fact-dest-adresse').value = c ? (c.adresse||'') : '';
+    document.getElementById('fact-dest-email').value = c ? (c.email||'') : '';
+    document.getElementById('fact-dest-tel').value = c ? (c.tel||'') : '';
+    return;
+  }
+  const d = getDestinataires().find(x => x.id == val);
+  if (!d) return;
+  document.getElementById('fact-dest-nom').value = d.nom + (d.referent ? ' — '+d.referent : '');
+  document.getElementById('fact-dest-adresse').value = d.adresse || '';
+  document.getElementById('fact-dest-email').value = d.email || '';
+  document.getElementById('fact-dest-tel').value = d.tel || '';
+}
+
 function genFacturePDF(clientId, mois, annee) {
   const p = getParams();
   const c = getClient(clientId);
@@ -3168,6 +3352,9 @@ function openFactureModal(clientId, mois, annee, rdvsMois, p, c) {
   window._factureMois = mois;
   window._factureAnnee = annee;
   window._factureClientId = clientId;
+
+  // Carnet de destinataires
+  const destinataires = getDestinataires();
 
   // Destinataire par défaut
   let destDefault = '';
@@ -3217,13 +3404,32 @@ function openFactureModal(clientId, mois, annee, rdvsMois, p, c) {
         </div>
 
         <!-- Destinataire -->
-        <div style="font-size:10px;font-weight:700;color:var(--lavender-dark);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Destinataire de la facture</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.25rem">
+        <div style="font-size:10px;font-weight:700;color:var(--lavender-dark);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Destinataire de la facture</div>
+
+        <!-- Sélecteur destinataire -->
+        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+          <select id="fact-dest-select" onchange="onFactDestSelect()"
+            style="flex:1;padding:7px 10px;font-size:12px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif;outline:none">
+            <option value="">— Saisir manuellement —</option>
+            <option value="__client__">📋 ${c.prenom} ${c.nom} (client)</option>
+            ${destinataires.map(d => `<option value="${d.id}">${d.type==='structure'?'🏢':'👤'} ${d.nom}${d.referent?' · '+d.referent:''}</option>`).join('')}
+          </select>
+          <button class="btn" onclick="openDestModal(null, true)" style="font-size:11px;border-color:var(--teal);color:var(--teal);white-space:nowrap"><i class="ti ti-plus"></i> Nouveau</button>
+        </div>
+
+        <!-- Champs manuels destinataire -->
+        <div id="fact-dest-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.25rem">
           <input type="text" id="fact-dest-nom" value="${destDefault}"
             placeholder="Nom / Structure"
             style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif;outline:none">
           <input type="text" id="fact-dest-adresse" value="${destAdresseDefault}"
             placeholder="Adresse"
+            style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif;outline:none">
+          <input type="text" id="fact-dest-email" value=""
+            placeholder="Email (optionnel)"
+            style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif;outline:none">
+          <input type="text" id="fact-dest-tel" value=""
+            placeholder="Téléphone (optionnel)"
             style="padding:7px 10px;font-size:12px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif;outline:none">
         </div>
 
@@ -3278,6 +3484,8 @@ function genFacturePDFConfirm() {
   // Lire destinataire personnalisé
   const destNom = document.getElementById('fact-dest-nom')?.value || (c.prenom+' '+c.nom);
   const destAdresse = document.getElementById('fact-dest-adresse')?.value || '';
+  const destEmail = document.getElementById('fact-dest-email')?.value || '';
+  const destTel = document.getElementById('fact-dest-tel')?.value || '';
 
   // Lire tarifs ET km AVANT de fermer la modale
   const lignes = rdvsMois.map(r => {
@@ -3500,7 +3708,7 @@ tbody tr:last-child td { border-bottom: none; }
   </div>
   <div class="partie partie-destinataire">
     <span class="partie-label">Destinataire</span>
-    <strong>${destNom}</strong>${destAdresse ? '<br>'+destAdresse : ''}
+    <strong>${destNom}</strong>${destAdresse ? '<br>'+destAdresse : ''}${destTel ? '<br>'+destTel : ''}${destEmail ? '<br>'+destEmail : ''}
   </div>
 </div>
 
