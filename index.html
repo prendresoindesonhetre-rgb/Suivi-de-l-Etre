@@ -359,6 +359,10 @@ html, body {
       <!-- DASHBOARD -->
       <div class="view active" id="view-dashboard">
         <div class="stats-row" id="stats-row"></div>
+        <div id="notes-a-remplir-section" style="display:none">
+          <div class="section-title" style="color:var(--amber)"><i class="ti ti-notes" style="font-size:13px;margin-right:5px"></i>Notes de séance à remplir</div>
+          <div id="notes-a-remplir-list"></div>
+        </div>
         <div class="section-title">Prochains rendez-vous</div>
         <div id="upcoming-list"></div>
       </div>
@@ -1243,18 +1247,44 @@ function renderDashboard() {
     <div class="stat-card"><div class="stat-label">Minutes trajet</div><div class="stat-value">${km}</div><div class="stat-sub">ce mois</div></div>
     <div class="stat-card"><div class="stat-label">Prochain RDV</div><div class="stat-value" style="font-size:14px;padding-top:4px">${next ? fmtDate(next.date) : '—'}</div><div class="stat-sub">${nextClient ? nextClient.prenom+' '+nextClient.nom : 'Aucun prévu'}</div></div>
   `;
-  const upcoming = rdvs.filter(r => {
-    if (r.date > nowStr) return true;
-    if (r.date < nowStr) return false;
-    // Même jour : toujours afficher, note ou pas
-    return true;
-  }).sort((a,b) => a.date.localeCompare(b.date)||a.heure.localeCompare(b.heure)).slice(0,6);
+
+  // RDV passés sans note de séance (à remplir)
+  const rdvsSansNote = rdvs.filter(r => {
+    if (r.date >= nowStr) return false;
+    if (r.annule) return false;
+    return !notes.some(n => n.clientId === r.clientId && n.date === r.date);
+  }).sort((a,b) => b.date.localeCompare(a.date)||b.heure.localeCompare(a.heure)).slice(0, 5);
+
+  const sectionNotes = document.getElementById('notes-a-remplir-section');
+  const listNotes = document.getElementById('notes-a-remplir-list');
+  if (rdvsSansNote.length) {
+    sectionNotes.style.display = 'block';
+    listNotes.innerHTML = '<div class="upcoming-list">' + rdvsSansNote.map(r => {
+      const c = getClient(r.clientId);
+      return `<div class="upcoming-item" style="border-left:3px solid var(--amber);background:#fffaf5">
+        <div class="upcoming-dot dot-trajet"></div>
+        <div class="upcoming-info">
+          <div class="upcoming-name"><strong style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:800">${fmtDate(r.date)} · ${r.heure} :</strong> · <span style="color:#6B7A8D">${c ? c.prenom+' '+c.nom : '?'} — ${r.type}</span></div>
+          ${r.enfantsIds && r.enfantsIds.length ? `<div style="font-size:11px;color:#8890c0;margin-top:2px"><i class="ti ti-users" style="font-size:11px;margin-right:3px"></i>Pour : ${r.enfantsIds.map(id=>{const e=getClient(id);return e?e.prenom:'?';}).join(', ')}</div>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+          <button class="btn btn-primary" onclick="openNoteFromRdv(${r.id})" style="font-size:12px;padding:5px 10px;background:var(--amber);border-color:var(--amber)"><i class="ti ti-notes"></i> Remplir la note</button>
+          <button class="icon-btn danger" onclick="confirmDeleteRdv(${r.id})" title="Supprimer"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+  } else {
+    sectionNotes.style.display = 'none';
+  }
+
+  // RDV à venir (aujourd'hui inclus)
+  const upcoming = rdvs.filter(r => r.date >= nowStr)
+    .sort((a,b) => a.date.localeCompare(b.date)||a.heure.localeCompare(b.heure)).slice(0,6);
   const ul = document.getElementById('upcoming-list');
   if (!upcoming.length) { ul.innerHTML = '<div class="empty-state"><i class="ti ti-calendar-off"></i>Aucun rendez-vous à venir</div>'; return; }
   ul.innerHTML = '<div class="upcoming-list">' + upcoming.map(r => {
     const c = getClient(r.clientId);
     const hasTrajet = (r.trajetAller||0)+(r.trajetRetour||0) > 0;
-    const trajetTxt = hasTrajet ? `<br><i class="ti ti-car" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>${(r.trajetAller||0)+(r.trajetRetour||0)} min de trajet · ` : '';
     return `<div class="upcoming-item" style="${r.annule?'opacity:0.5;text-decoration:line-through;':''}">
       <div class="upcoming-dot ${r.annule?'dot-annule':hasTrajet?'dot-trajet':'dot-seance'}"></div>
       <div class="upcoming-info" style="cursor:pointer" onclick="openRdvDetail(${r.id})">
@@ -1264,7 +1294,6 @@ function renderDashboard() {
         ${!r.annule && getProchaineEtape(r.clientId) ? `<div style="margin-top:4px;font-size:11px;color:#7A9E7E;font-weight:500"><i class="ti ti-target" style="font-size:11px;margin-right:3px"></i>${getProchaineEtape(r.clientId)}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-        
         ${!r.annule ? `<button class="icon-btn" onclick="openNoteFromRdv(${r.id})" title="Ajouter une note" style="color:var(--teal-mid)"><i class="ti ti-notes"></i></button>` : ''}
         ${c && c.tel && !r.annule ? `<button class="icon-btn" onclick="openWhatsapp(${r.id})" title="WhatsApp" style="color:#25D366"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
         <button class="icon-btn" onclick="cancelRdv(${r.id})" title="${r.annule?'Réactiver':'Annuler le RDV'}" style="color:${r.annule?'var(--teal)':'var(--danger)'}"><i class="ti ti-${r.annule?'rotate':'calendar-off'}"></i></button>
