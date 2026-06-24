@@ -1879,6 +1879,8 @@ function renderFacturation() {
           <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:${globalBg};color:${globalColor}">${globalLabel}</span>
           <button class="btn" onclick="marquerClientMois(${clientId},'envoyee')" style="font-size:11px;border-color:#e07b00;color:#e07b00" title="Marquer envoyée"><i class="ti ti-send"></i></button>
           <button class="btn" onclick="marquerClientMois(${clientId},'payee')" style="font-size:11px;border-color:#2d7a2d;color:#2d7a2d" title="Marquer payée"><i class="ti ti-circle-check"></i></button>
+          <button class="btn" onclick="genFacturePDF(${clientId},${factMois},${factAnnee})" style="font-size:11px;border-color:var(--teal);color:var(--teal)" title="Générer PDF"><i class="ti ti-file-type-pdf"></i></button>
+          <button class="btn" onclick="envoyerFactureEmail(${clientId},${factMois},${factAnnee})" style="font-size:11px;border-color:#8890c0;color:#8890c0" title="Envoyer par email"><i class="ti ti-mail"></i></button>
         </div>
       </div>
       <div style="padding:8px 14px">
@@ -2725,7 +2727,8 @@ function saveNote() {
 }
 
 function toggleFactureBtn(noteId, statut) {
-  const s = statut || 'non_envoyee';
+  const valid = ['non_envoyee', 'envoyee', 'payee'];
+  const s = valid.includes(statut) ? statut : 'non_envoyee';
   if (s === 'non_envoyee') return `<button class="btn" onclick="setFacture(${noteId},'envoyee')" style="font-size:11px;border-color:var(--amber);color:var(--amber)"><i class="ti ti-receipt"></i> Facture à envoyer</button>`;
   if (s === 'envoyee') return `<button class="btn" onclick="setFacture(${noteId},'payee')" style="font-size:11px;border-color:#2d7a2d;color:#2d7a2d;background:#e6f4e6"><i class="ti ti-receipt"></i> Facture envoyée ✓</button>`;
   return `<button class="btn" onclick="setFacture(${noteId},'non_envoyee')" style="font-size:11px;border-color:var(--teal);color:var(--teal);background:var(--teal-light)"><i class="ti ti-circle-check"></i> Payée ✓</button>`;
@@ -2736,7 +2739,8 @@ function setFacture(noteId, newStatut) {
   if (idx < 0) return;
   notes[idx].facture = newStatut;
   persistAndSync();
-  if (currentClientId) showFiche(currentClientId);
+  const cid = notes[idx].clientId;
+  if (cid) { currentClientId = cid; showFiche(cid); }
 }
 
 function editNote(id) {
@@ -3125,6 +3129,145 @@ function editDevis(id) {
 }
 
 // ---- GÉNÉRATION PDF ----
+// ---- GÉNÉRATION FACTURE ----
+function genFacturePDF(clientId, mois, annee) {
+  const p = getParams();
+  const c = getClient(clientId);
+  if (!c) return;
+
+  const rdvsMois = rdvs.filter(r => {
+    const d = new Date(r.date+'T12:00:00');
+    return d.getMonth()===mois && d.getFullYear()===annee && r.clientId===clientId && !r.annule;
+  }).sort((a,b) => a.date.localeCompare(b.date));
+
+  if (!rdvsMois.length) { toast('Aucune séance ce mois pour ce client'); return; }
+
+  const numFact = `FACT-${annee}${String(mois+1).padStart(2,'0')}-${clientId}`;
+  const dateStr = new Date().toLocaleDateString('fr-FR');
+  const destFacturation = c.facturation || (c.prenom+' '+c.nom);
+
+  // Lignes de séances
+  const rows = rdvsMois.map(r => {
+    const tt = (r.trajetAller||0)+(r.trajetRetour||0);
+    return `<tr>
+      <td>${fmtDateLong(r.date)}</td>
+      <td>${r.type}</td>
+      <td style="text-align:center">${r.duree} min${tt>0?' + '+tt+' min trajet':''}</td>
+    </tr>`;
+  }).join('');
+
+  // Adresse client
+  let clientAddr = [c.prenom+' '+c.nom];
+  if (c.facturation) clientAddr.push(c.facturation);
+  if (c.adresse) clientAddr.push(c.adresse);
+  if (c.tel) clientAddr.push(c.tel);
+
+  const moisLabel = MONTHS[mois]+' '+annee;
+
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+<title>Facture ${numFact}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Nunito:wght@300;400;500;600;800&display=swap');
+  body { font-family: 'Nunito', Arial, sans-serif; font-size: 13px; color: #2d4a4a; margin: 0; padding: 40px; background: #faf8f5; }
+  h1 { font-family: 'Cormorant Garamond', serif; font-size: 28px; color: #1a7a7a; margin: 0 0 2px; font-weight: 600; letter-spacing: 0.02em; }
+  .subtitle { color: #b8a8d0; font-size: 13px; font-style: italic; margin-bottom: 16px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 2px solid #1a7a7a; }
+  .meta .num { font-family: 'Cormorant Garamond', serif; font-size: 22px; color: #1a7a7a; font-weight: 600; }
+  .meta .info { font-size: 12px; color: #7a9a9a; line-height: 1.9; margin-top: 4px; text-align:right; }
+  .emetteur-info { font-size: 12px; color: #5a7a7a; line-height: 1.9; }
+  .parties { display: flex; gap: 24px; margin-bottom: 28px; }
+  .partie { flex: 1; border-radius: 8px; padding: 16px 18px; font-size: 12px; line-height: 1.8; }
+  .partie-emetteur { background: #e8f4f4; border-left: 3px solid #1a7a7a; }
+  .partie-client { background: #f0eaf8; border-left: 3px solid #b8a8d0; }
+  .partie-title { font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .partie-emetteur .partie-title { color: #1a7a7a; }
+  .partie-client .partie-title { color: #7a6a9a; }
+  .objet { background: #1a7a7a; color: white; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-weight: 600; font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 6px; border-radius: 8px; overflow: hidden; }
+  th { background: #1a7a7a; color: white; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  td { padding: 9px 12px; border-bottom: 1px solid #e8f0f0; font-size: 12px; }
+  tr:nth-child(even) td { background: #f5fafa; }
+  .tva { font-size: 11px; color: #9ab0b0; margin: 6px 0 22px; font-style: italic; }
+  .footer { font-size: 10px; color: #b0c8c8; border-top: 1px solid #d8eaea; padding-top: 14px; text-align: center; margin-top: 30px; line-height: 1.8; }
+  .paid-stamp { display:inline-block; border: 3px solid #2d7a2d; color: #2d7a2d; font-size: 20px; font-weight: 800; padding: 6px 18px; border-radius: 6px; transform: rotate(-8deg); opacity: 0.7; margin-top: 16px; }
+  @media print { body { padding: 20px; background: white; } }
+</style></head><body>
+<div class="header">
+  <div class="emetteur">
+    <h1>${p.enseigne || 'Prendre Soin de Son Être'}</h1>
+    <div class="subtitle">Hypnothérapie · Coaching · Relaxation</div>
+    <div class="emetteur-info">
+      ${p.prenom||''} ${p.nom||''}<br>
+      ${p.adresse ? p.adresse+'<br>' : ''}
+      ${p.tel ? p.tel+'<br>' : ''}
+      ${p.email ? p.email+'<br>' : ''}
+      ${p.siret ? 'SIRET : '+p.siret : ''}
+    </div>
+  </div>
+  <div class="meta">
+    <div class="num">FACTURE</div>
+    <div class="info">
+      N° ${numFact}<br>
+      Date : ${dateStr}<br>
+      Période : ${moisLabel}
+    </div>
+  </div>
+</div>
+
+<div class="parties">
+  <div class="partie partie-emetteur">
+    <div class="partie-title">Prestataire</div>
+    ${p.prenom||''} ${p.nom||''}<br>
+    ${p.enseigne||''}<br>
+    ${p.adresse||''}<br>
+    ${p.siret ? 'SIRET : '+p.siret : ''}
+  </div>
+  <div class="partie partie-client">
+    <div class="partie-title">Destinataire</div>
+    ${clientAddr.join('<br>')}
+  </div>
+</div>
+
+<div class="objet">🗓 Séances d'accompagnement — ${moisLabel}</div>
+
+<table>
+  <thead><tr><th>Date</th><th>Prestation</th><th style="text-align:center">Durée</th></tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+
+<div class="tva" style="margin-top:10px">${p.tva || 'TVA non applicable — article 293 B du CGI'}</div>
+
+<div style="text-align:center;margin-top:24px">
+  <div class="paid-stamp">À RÉGLER</div>
+</div>
+
+<div class="footer">
+  ${p.enseigne || 'Prendre Soin de Son Être'} — ${p.prenom||''} ${p.nom||''}<br>
+  ${p.siret ? 'SIRET : '+p.siret+' — ' : ''}${p.tva || 'TVA non applicable — article 293 B du CGI'}
+</div>
+</body></html>`;
+
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => w.print(), 500);
+}
+
+function envoyerFactureEmail(clientId, mois, annee) {
+  const p = getParams();
+  const c = getClient(clientId);
+  if (!c) return;
+  const moisLabel = MONTHS[mois]+' '+annee;
+  const numFact = `FACT-${annee}${String(mois+1).padStart(2,'0')}-${clientId}`;
+  const dest = c.email || c.proEmail || '';
+  const sujet = encodeURIComponent(`Facture ${numFact} — ${moisLabel}`);
+  const corps = encodeURIComponent(
+    `Bonjour,\n\nVeuillez trouver ci-joint la facture ${numFact} concernant les séances du mois de ${moisLabel}.\n\n`+
+    `N'hésitez pas à me contacter pour toute question.\n\nCordialement,\n${p.prenom||''} ${p.nom||''}\n${p.enseigne||'Prendre Soin de Son Être'}`
+  );
+  window.open(`mailto:${dest}?subject=${sujet}&body=${corps}`);
+}
+
 function genDevisPDFById(id) {
   const d = devisList.find(x => x.id === id);
   if (!d) return;
