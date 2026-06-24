@@ -490,6 +490,129 @@ html, body {
     </div>
     <div class="modal-body">
     <input type="hidden" id="rdv-edit-id">
+
+    <!-- 1. PREMIÈRE SÉANCE EN PREMIER -->
+    <div style="margin-bottom:1rem">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 14px;background:var(--lavender-light);border:0.5px solid var(--lavender);border-radius:var(--radius-sm)">
+        <input type="checkbox" id="rdv-premiere" onchange="togglePremiereFields()" style="width:18px;height:18px;accent-color:var(--teal);cursor:pointer;flex-shrink:0">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--lavender-dark)">✨ Première séance</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:1px">Crée automatiquement la fiche client</div>
+        </div>
+      </label>
+    </div>
+
+    <!-- Bloc nouveau client (visible si première séance) -->
+    <div id="rdv-nouveau-client" style="display:none;margin-bottom:1rem">
+      <div style="background:var(--lavender-light);border:0.5px solid var(--lavender);border-radius:var(--radius-sm);padding:0.75rem 1rem">
+        <div style="font-size:11px;font-weight:700;color:var(--lavender-dark);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem"><i class="ti ti-user-plus" style="font-size:13px;vertical-align:-1px;margin-right:4px"></i>Nouveau client</div>
+
+        <!-- Identité -->
+        <div class="form-grid form-grid-2">
+          <div class="form-row"><label>Prénom</label><input type="text" id="rdv-nc-prenom" placeholder="Prénom"></div>
+          <div class="form-row"><label>Nom <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="text" id="rdv-nc-nom" placeholder="Nom"></div>
+        </div>
+        <div class="form-grid form-grid-2">
+          <div class="form-row"><label>Profil</label>
+            <select id="rdv-nc-profil" onchange="toggleRdvNcEnfantFields()">
+              <option value="adulte">Adulte</option>
+              <option value="enfant">Enfant</option>
+              <option value="professionnel">Professionnel</option>
+              <option value="structure">Structure</option>
+            </select>
+          </div>
+          <div class="form-row" id="rdv-nc-tel-row"><label>Téléphone <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="tel" id="rdv-nc-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+        </div>
+
+        <!-- Champs enfant -->
+        <div id="rdv-nc-enfant-fields" style="display:none">
+          <div class="form-grid form-grid-2">
+            <div class="form-row"><label>Date de naissance <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="date" id="rdv-nc-naissance" onchange="updateRdvNcAge()"></div>
+            <div class="form-row"><label>Âge</label><input type="text" id="rdv-nc-age" placeholder="calculé auto" readonly style="background:var(--lavender-light);color:var(--lavender-dark);font-weight:600"></div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);text-transform:uppercase;letter-spacing:0.06em;margin:0.75rem 0 0.5rem">Situation familiale</div>
+          <div style="display:flex;gap:8px;margin-bottom:0.75rem;flex-wrap:wrap">
+            <button type="button" id="rdv-nc-sit-btn-ensemble" class="btn" onclick="setRdvNcSituation('ensemble')" style="flex:1;justify-content:center;font-size:12px">👨‍👩‍👦 Parents ensemble</button>
+            <button type="button" id="rdv-nc-sit-btn-separes" class="btn" onclick="setRdvNcSituation('separes')" style="flex:1;justify-content:center;font-size:12px">↔ Parents séparés</button>
+            <button type="button" id="rdv-nc-sit-btn-recompose" class="btn" onclick="setRdvNcSituation('recompose')" style="flex:1;justify-content:center;font-size:12px">🏠 Famille recomposée</button>
+          </div>
+          <input type="hidden" id="rdv-nc-situation" value="">
+          <div id="rdv-nc-sit-ensemble" style="display:none">
+            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.4rem 0">Père</div>
+            <div class="form-grid form-grid-2">
+              <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-ens-pere-nom" placeholder="Ex: Dupont Jean"></div>
+              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-ens-pere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.4rem 0">Mère</div>
+            <div class="form-grid form-grid-2">
+              <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-ens-mere-nom" placeholder="Ex: Dupont Sophie"></div>
+              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-ens-mere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+            </div>
+            <div class="form-row"><label>Email commun <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="email" id="rdv-nc-ens-email" placeholder="email@famille.fr"></div>
+          </div>
+          <div id="rdv-nc-sit-separes" style="display:none">
+            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.4rem 0">Père</div>
+            <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-sep-pere-nom" placeholder="Ex: Dupont Jean"></div>
+            <div class="form-grid form-grid-2">
+              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-sep-pere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+              <div class="form-row"><label>Email</label><input type="email" id="rdv-nc-sep-pere-email" placeholder="email@exemple.fr"></div>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.5rem 0 0.4rem">Mère</div>
+            <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-sep-mere-nom" placeholder="Ex: Dupont Sophie"></div>
+            <div class="form-grid form-grid-2">
+              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-sep-mere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+              <div class="form-row"><label>Email</label><input type="email" id="rdv-nc-sep-mere-email" placeholder="email@exemple.fr"></div>
+            </div>
+          </div>
+          <div id="rdv-nc-sit-recompose" style="display:none">
+            <div id="rdv-nc-recompose-membres"></div>
+            <button type="button" class="btn" onclick="addRdvNcMembre()" style="font-size:12px;margin-top:4px"><i class="ti ti-plus"></i> Ajouter un membre</button>
+          </div>
+          <div style="margin:0.75rem 0 0.4rem;display:flex;align-items:center;gap:8px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:0.06em">
+              <input type="checkbox" id="rdv-nc-avec-structure" onchange="toggleRdvNcStructure()" style="width:16px;height:16px;accent-color:var(--teal);cursor:pointer">
+              Accompagné par un établissement
+            </label>
+          </div>
+          <div id="rdv-nc-structure-fields" style="display:none">
+            <div class="form-row"><label>Nom de la structure</label><input type="text" id="rdv-nc-structure" placeholder="Ex: IME Les Pins, École Jules Ferry..."></div>
+            <div class="form-row"><label>Nom du responsable / référent</label><input type="text" id="rdv-nc-structure-resp" placeholder="Ex: Mme Martin — Éducatrice spécialisée"></div>
+            <div class="form-grid form-grid-2">
+              <div class="form-row"><label>Téléphone du référent</label><input type="tel" id="rdv-nc-structure-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+              <div class="form-row"><label>Email du référent</label><input type="email" id="rdv-nc-structure-email" placeholder="email@structure.fr"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Champs professionnel -->
+        <div id="rdv-nc-professionnel-fields" style="display:none">
+          <div style="background:#eef6ea;border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-top:0.5rem;border:0.5px solid rgba(122,170,106,0.3)">
+            <div style="font-size:11px;font-weight:700;color:#4a7a3a;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem">Informations professionnelles</div>
+            <div class="form-grid form-grid-2">
+              <div class="form-row"><label>Fonction / Métier</label><input type="text" id="rdv-nc-pro-fonction" placeholder="Ex: Éducateur, Directeur..."></div>
+              <div class="form-row"><label>Structure / Entreprise</label><input type="text" id="rdv-nc-pro-structure" placeholder="Nom de l'établissement"></div>
+            </div>
+            <div class="form-grid form-grid-2">
+              <div class="form-row"><label>Téléphone structure</label><input type="tel" id="rdv-nc-pro-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+              <div class="form-row"><label>Email structure</label><input type="email" id="rdv-nc-pro-email" placeholder="email@structure.fr"></div>
+            </div>
+            <div style="font-size:12px;font-weight:600;color:#4a7a3a;margin:0.5rem 0 0.4rem">Enfants suivis <span style="font-weight:400;font-style:italic;color:var(--text-muted)">(optionnel)</span></div>
+            <div id="rdv-nc-pro-enfants-list" style="margin-bottom:0.5rem"></div>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="rdv-nc-pro-enfant-input" placeholder="Prénom de l'enfant" style="flex:1;padding:7px 10px;font-size:13px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif">
+              <button class="btn" type="button" onclick="addRdvNcProEnfant()" style="flex-shrink:0"><i class="ti ti-plus"></i> Ajouter</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. CLIENT (masqué si première séance) -->
+    <div id="rdv-client-row" class="form-row"><label>Client</label>
+      <select id="rdv-client"></select>
+    </div>
+
+    <!-- 3. TYPE DE SÉANCE -->
     <div class="form-grid form-grid-2">
       <div class="form-row"><label>Type de séance</label>
         <select id="rdv-type" onchange="updateDureeFromType(); toggleAutreType()">
@@ -506,119 +629,22 @@ html, body {
         <label>Préciser le type</label>
         <input type="text" id="rdv-type-autre" placeholder="Ex: Hypno-tapping, EFT, Bilan...">
       </div>
-      <div class="form-row" style="display:flex;flex-direction:column;justify-content:flex-end">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 10px;background:var(--lavender-light);border:0.5px solid var(--lavender);border-radius:var(--radius-sm)">
-          <input type="checkbox" id="rdv-premiere" onchange="togglePremiereFields()" style="width:16px;height:16px;accent-color:var(--teal);cursor:pointer">
-          <span style="font-size:13px;font-weight:600;color:var(--lavender-dark)">Première séance</span>
-        </label>
-      </div>
     </div>
 
-    <!-- Bloc nouveau client (visible si première séance) -->
-    <div id="rdv-nouveau-client" style="display:none">
-      <div style="background:var(--lavender-light);border:0.5px solid var(--lavender);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:0.5rem">
-        <div style="font-size:11px;font-weight:700;color:var(--lavender-dark);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem"><i class="ti ti-user-plus" style="font-size:13px;vertical-align:-1px;margin-right:4px"></i>Nouveau client</div>
-        <div class="form-grid form-grid-2">
-          <div class="form-row"><label>Profil</label>
-            <select id="rdv-nc-profil" onchange="toggleRdvNcEnfantFields()">
-              <option value="adulte">Adulte</option>
-              <option value="enfant">Enfant</option>
-              <option value="structure">Structure</option>
-            </select>
-          </div>
-          <div class="form-row"><label>Prénom</label><input type="text" id="rdv-nc-prenom" placeholder="Prénom"></div>
-        </div>
-        <div class="form-grid form-grid-2">
-          <div class="form-row"><label>Nom <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="text" id="rdv-nc-nom" placeholder="Nom"></div>
-          <div class="form-row" id="rdv-nc-tel-row"><label>Téléphone <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="tel" id="rdv-nc-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
-        </div>
-
-        <!-- Champs enfant (visibles si profil = enfant) -->
-        <div id="rdv-nc-enfant-fields" style="display:none">
-          <div class="form-grid form-grid-2">
-            <div class="form-row"><label>Date de naissance <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="date" id="rdv-nc-naissance" onchange="updateRdvNcAge()"></div>
-            <div class="form-row"><label>Âge</label><input type="text" id="rdv-nc-age" placeholder="calculé auto" readonly style="background:var(--lavender-light);color:var(--lavender-dark);font-weight:600"></div>
-          </div>
-
-          <!-- Situation familiale -->
-          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);text-transform:uppercase;letter-spacing:0.06em;margin:0.75rem 0 0.5rem">Situation familiale</div>
-          <div style="display:flex;gap:8px;margin-bottom:0.75rem;flex-wrap:wrap">
-            <button type="button" id="rdv-nc-sit-btn-ensemble" class="btn" onclick="setRdvNcSituation('ensemble')" style="flex:1;justify-content:center;font-size:12px">👨‍👩‍👦 Parents ensemble</button>
-            <button type="button" id="rdv-nc-sit-btn-separes" class="btn" onclick="setRdvNcSituation('separes')" style="flex:1;justify-content:center;font-size:12px">↔ Parents séparés</button>
-            <button type="button" id="rdv-nc-sit-btn-recompose" class="btn" onclick="setRdvNcSituation('recompose')" style="flex:1;justify-content:center;font-size:12px">🏠 Famille recomposée</button>
-          </div>
-          <input type="hidden" id="rdv-nc-situation" value="">
-
-          <!-- Parents ensemble -->
-          <div id="rdv-nc-sit-ensemble" style="display:none">
-            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.4rem 0">Père</div>
-            <div class="form-grid form-grid-2">
-              <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-ens-pere-nom" placeholder="Ex: Dupont Jean"></div>
-              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-ens-pere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
-            </div>
-            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.4rem 0">Mère</div>
-            <div class="form-grid form-grid-2">
-              <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-ens-mere-nom" placeholder="Ex: Dupont Sophie"></div>
-              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-ens-mere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
-            </div>
-            <div class="form-row"><label>Email commun <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="email" id="rdv-nc-ens-email" placeholder="email@famille.fr"></div>
-          </div>
-
-          <!-- Parents séparés -->
-          <div id="rdv-nc-sit-separes" style="display:none">
-            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.4rem 0">Père</div>
-            <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-sep-pere-nom" placeholder="Ex: Dupont Jean"></div>
-            <div class="form-grid form-grid-2">
-              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-sep-pere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
-              <div class="form-row"><label>Email</label><input type="email" id="rdv-nc-sep-pere-email" placeholder="email@exemple.fr"></div>
-            </div>
-            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.5rem 0 0.4rem">Mère</div>
-            <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-sep-mere-nom" placeholder="Ex: Dupont Sophie"></div>
-            <div class="form-grid form-grid-2">
-              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-sep-mere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
-              <div class="form-row"><label>Email</label><input type="email" id="rdv-nc-sep-mere-email" placeholder="email@exemple.fr"></div>
-            </div>
-          </div>
-
-          <!-- Famille recomposée -->
-          <div id="rdv-nc-sit-recompose" style="display:none">
-            <div id="rdv-nc-recompose-membres"></div>
-            <button type="button" class="btn" onclick="addRdvNcMembre()" style="font-size:12px;margin-top:4px"><i class="ti ti-plus"></i> Ajouter un membre</button>
-          </div>
-
-          <!-- Structure -->
-          <div style="margin:0.75rem 0 0.4rem;display:flex;align-items:center;gap:8px">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:0.06em">
-              <input type="checkbox" id="rdv-nc-avec-structure" onchange="toggleRdvNcStructure()" style="width:16px;height:16px;accent-color:var(--teal);cursor:pointer">
-              Accompagné par un établissement
-            </label>
-          </div>
-          <div id="rdv-nc-structure-fields" style="display:none">
-            <div class="form-row"><label>Nom de la structure</label><input type="text" id="rdv-nc-structure" placeholder="Ex: IME Les Pins, École Jules Ferry..."></div>
-            <div class="form-row"><label>Nom du responsable / référent</label><input type="text" id="rdv-nc-structure-resp" placeholder="Ex: Mme Martin — Éducatrice spécialisée"></div>
-            <div class="form-grid form-grid-2">
-              <div class="form-row"><label>Téléphone du référent</label><input type="tel" id="rdv-nc-structure-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
-              <div class="form-row"><label>Email du référent</label><input type="email" id="rdv-nc-structure-email" placeholder="email@structure.fr"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sélecteur client (masqué si première séance) -->
-    <div id="rdv-client-row" class="form-row"><label>Client</label>
-      <select id="rdv-client"></select>
-    </div>
-
+    <!-- 4. DATE / HEURE -->
     <div class="form-grid form-grid-2">
       <div class="form-row"><label>Date</label><input type="date" id="rdv-date"></div>
       <div class="form-row"><label>Heure</label><input type="time" id="rdv-heure" value="10:00"></div>
     </div>
+
+    <!-- 5. DURÉE / TRAJET -->
     <div class="form-grid form-grid-3">
       <div class="form-row"><label>Durée (min)</label><input type="number" id="rdv-duree" value="60" min="15" step="15"></div>
       <div class="form-row"><label>Trajet aller (min)</label><input type="number" id="rdv-trajet-aller" value="0" min="0"></div>
       <div class="form-row"><label>Trajet retour (min)</label><input type="number" id="rdv-trajet-retour" value="0" min="0"></div>
     </div>
+
+    <!-- 6. LIEU / NOTES -->
     <div class="form-row"><label>Lieu <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="text" id="rdv-lieu" placeholder="Adresse ou domicile du client"></div>
     <div class="form-row"><label>Notes <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><textarea id="rdv-notes" placeholder="Rappels, particularités..."></textarea></div>
     </div>
@@ -1029,8 +1055,38 @@ function toggleRdvNcStructure() {
 function toggleRdvNcEnfantFields() {
   const profil = document.getElementById('rdv-nc-profil').value;
   document.getElementById('rdv-nc-enfant-fields').style.display = profil === 'enfant' ? 'block' : 'none';
-  // Masquer le téléphone si enfant
   document.getElementById('rdv-nc-tel-row').style.display = profil === 'enfant' ? 'none' : '';
+  const pf = document.getElementById('rdv-nc-professionnel-fields');
+  if (pf) pf.style.display = profil === 'professionnel' ? 'block' : 'none';
+}
+
+let rdvNcProEnfants = [];
+
+function addRdvNcProEnfant() {
+  const input = document.getElementById('rdv-nc-pro-enfant-input');
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) return;
+  rdvNcProEnfants.push(val);
+  input.value = '';
+  renderRdvNcProEnfants();
+}
+
+function removeRdvNcProEnfant(i) {
+  rdvNcProEnfants.splice(i, 1);
+  renderRdvNcProEnfants();
+}
+
+function renderRdvNcProEnfants() {
+  const list = document.getElementById('rdv-nc-pro-enfants-list');
+  if (!list) return;
+  list.innerHTML = rdvNcProEnfants.map((p, i) =>
+    `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:white;border-radius:5px;margin-bottom:4px;border:0.5px solid var(--border)">
+      <i class="ti ti-user" style="font-size:13px;color:#4a7a3a"></i>
+      <span style="flex:1;font-size:13px">${p}</span>
+      <button onclick="removeRdvNcProEnfant(${i})" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:15px;padding:0;display:flex"><i class="ti ti-x"></i></button>
+    </div>`
+  ).join('');
 }
 
 function setRdvNcSituation(sit) {
@@ -1418,6 +1474,11 @@ function togglePremiereFields() {
     document.getElementById('rdv-nc-avec-structure').checked = false;
     document.getElementById('rdv-nc-structure-fields').style.display = 'none';
     document.getElementById('rdv-nc-enfant-fields').style.display = 'none';
+    const pf = document.getElementById('rdv-nc-professionnel-fields');
+    if (pf) pf.style.display = 'none';
+    rdvNcProEnfants = [];
+    const proList = document.getElementById('rdv-nc-pro-enfants-list');
+    if (proList) proList.innerHTML = '';
   }
 }
 function updateDureeFromType() {
@@ -1809,6 +1870,11 @@ function saveRdv() {
       structureTel: document.getElementById('rdv-nc-structure-tel').value.trim(),
       structureEmail: document.getElementById('rdv-nc-structure-email').value.trim(),
       participants: [],
+      proFonction: document.getElementById('rdv-nc-pro-fonction')?.value.trim() || '',
+      proStructure: document.getElementById('rdv-nc-pro-structure')?.value.trim() || '',
+      proTel: document.getElementById('rdv-nc-pro-tel')?.value.trim() || '',
+      proEmail: document.getElementById('rdv-nc-pro-email')?.value.trim() || '',
+      proEnfants: [...rdvNcProEnfants],
     };
     clients.push(nouveauClient);
     clientId = nouveauClient.id;
