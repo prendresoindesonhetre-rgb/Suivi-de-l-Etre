@@ -2,18 +2,10 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" type="image/png" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
-<meta name="theme-color" content="#f2eef8">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Suivi de l'Être">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prendre soin de son Hêtre</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Nunito:wght@300;400;500;600&family=Dancing+Script:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Nunito:wght@300;400;500;600;800&family=Dancing+Script:wght@500;600&display=swap" rel="stylesheet">
 <style>
 :root {
   /* Palette inspirée de la carte de visite */
@@ -59,7 +51,9 @@ html, body {
   font-size: 14px;
 }
 
-.app { display: flex; height: 100vh; }
+.app { display: none; height: 100vh; }
+.access-gate { position: fixed; inset: 0; background: var(--warm-cream); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.login-card { background: var(--cream-card); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 2rem 1.75rem; width: 380px; max-width: 100%; box-shadow: 0 8px 30px rgba(26,122,122,0.15); }
 
 /* SIDEBAR */
 .sidebar { width: 230px; min-width: 230px; background: var(--cream-sidebar); border-right: 0.5px solid var(--border); display: flex; flex-direction: column; }
@@ -108,8 +102,9 @@ html, body {
 .upcoming-list { display: flex; flex-direction: column; gap: 8px; }
 .upcoming-item { background: var(--cream-card); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 0.8rem 1rem; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow); }
 .upcoming-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-annule { background: var(--danger) !important; }
 .dot-seance { background: var(--teal); }
-.dot-trajet { background: var(--amber); }
+.dot-trajet { background: #7A4F3A; }
 .upcoming-info { flex: 1; min-width: 0; }
 .upcoming-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--teal-dark); }
 .upcoming-detail { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
@@ -153,7 +148,6 @@ html, body {
 .badge-adulte { background: var(--teal-light); color: var(--teal); }
 .badge-enfant { background: var(--lavender-light); color: var(--lavender-dark); }
 .badge-structure { background: var(--amber-light); color: var(--amber); }
-.badge-professionnel { background: #eef6ea; color: #4a7a3a; }
 .badge-gray { background: #f0f0ec; color: var(--text-muted); }
 
 /* FICHE CLIENT */
@@ -174,17 +168,11 @@ html, body {
 .seance-actions { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--border); }
 
 /* MODAL */
-.overlay { position: fixed; inset: 0; background: rgba(20,60,60,0.35); display: none; align-items: flex-end; justify-content: center; z-index: 200; padding: 0; }
+.overlay { position: fixed; inset: 0; background: rgba(20,60,60,0.35); display: none; align-items: center; justify-content: center; z-index: 200; padding: 1rem; }
 .overlay.open { display: flex; }
-.modal { background: var(--cream-card); border: 0.5px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; padding: 1rem 1rem 0; width: 100%; max-width: 500px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 -4px 30px rgba(26,122,122,0.15); }
-.modal-title { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; color: var(--teal); margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-.modal-scroll { overflow-y: auto; flex: 1; }
-.modal-actions { display: flex; gap: 8px; justify-content: flex-end; padding: 0.75rem 0 max(1rem, env(safe-area-inset-bottom)); border-top: 0.5px solid var(--border); flex-shrink: 0; background: var(--cream-card); position: sticky; bottom: 0; }
-@media (min-width: 700px) {
-  .overlay { align-items: center; padding: 1rem; }
-  .modal { border-radius: var(--radius); max-width: 460px; padding: 1.5rem 1.5rem 0; max-height: 90vh; }
-  .modal-actions { padding: 1rem 0 1.5rem; }
-}
+.modal { background: var(--cream-card); border: 0.5px solid var(--border); border-radius: var(--radius); width: 460px; max-width: 100%; max-height: 90vh; box-shadow: 0 8px 30px rgba(26,122,122,0.15); display: flex; flex-direction: column; overflow: hidden; }
+.modal-title { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; color: var(--teal); padding: 1.5rem 1.5rem 0; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.modal-body { padding: 0 1.5rem; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
 .modal-close { background: none; border: none; cursor: pointer; color: var(--text-hint); font-size: 20px; display: flex; }
 .form-row { margin-bottom: 1rem; }
 .form-row label { display: block; font-size: 12px; color: var(--teal); margin-bottom: 5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
@@ -194,6 +182,7 @@ html, body {
 .form-grid { display: grid; gap: 10px; }
 .form-grid-2 { grid-template-columns: 1fr 1fr; }
 .form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; padding: 1rem 1.5rem 1.5rem; margin-top: 1.25rem; border-top: 0.5px solid var(--border); flex-shrink: 0; }
 
 /* TOAST */
 .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--teal); color: white; padding: 0.7rem 1.2rem; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; box-shadow: 0 4px 16px rgba(26,122,122,0.25); z-index: 999; transform: translateY(20px); opacity: 0; transition: all 0.22s; pointer-events: none; display: flex; align-items: center; gap: 7px; }
@@ -242,7 +231,7 @@ html, body {
   .clients-grid { grid-template-columns: 1fr; }
 
   /* Formulaires modal plein écran */
-  .modal { width: 100%; max-width: 100%; max-height: 100vh; border-radius: var(--radius) var(--radius) 0 0; margin-top: auto; }
+  .modal { width: 100%; max-width: 100%; max-height: 92dvh; max-height: 92vh; border-radius: var(--radius) var(--radius) 0 0; margin-top: auto; }
   .overlay { align-items: flex-end; padding: 0; }
   .form-grid-2 { grid-template-columns: 1fr; }
   .form-grid-3 { grid-template-columns: 1fr 1fr; }
@@ -284,6 +273,17 @@ html, body {
 </style>
 </head>
 <body>
+<div id="access-gate" class="access-gate">
+  <div class="login-card">
+    <div class="sidebar-logo-name" style="font-size:24px;text-align:center;margin-bottom:1.25rem">Suivi de l'Être</div>
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <div class="form-row"><label>Email</label><input type="email" id="login-email" autocomplete="username" required></div>
+      <div class="form-row"><label>Mot de passe</label><input type="password" id="login-password" autocomplete="current-password" required></div>
+      <div id="login-error" style="display:none;color:var(--danger);font-size:12px;margin-bottom:0.75rem"></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center" id="login-btn">Se connecter</button>
+    </form>
+  </div>
+</div>
 
 <div class="app">
   <nav class="sidebar">
@@ -339,6 +339,9 @@ html, body {
         <i class="ti ti-upload" style="font-size:15px"></i> Importer des données
         <input type="file" accept=".json" onchange="importData(event)" style="display:none">
       </label>
+      <button class="btn" onclick="sbLogout()" style="width:100%;justify-content:center;margin-top:6px;font-size:11px;padding:0.3rem 0.5rem;color:var(--danger)">
+        <i class="ti ti-logout"></i> Se déconnecter
+      </button>
     </div>
   </nav>
 
@@ -402,7 +405,10 @@ html, body {
 
       <!-- FICHE CLIENT -->
       <div class="view" id="view-fiche">
-        <button class="back-btn" onclick="showView('clients')"><i class="ti ti-arrow-left"></i> Retour</button>
+        <div style="display:flex;gap:8px;margin-bottom:0.5rem">
+          <button class="back-btn" onclick="showView('clients')" style="margin-bottom:0"><i class="ti ti-arrow-left"></i> Retour aux clients</button>
+          <button class="btn" id="retour-devis-btn" style="display:none;font-size:12px;border-color:var(--amber);color:var(--amber)" onclick="retourAuDevis()"><i class="ti ti-file-invoice"></i> Retour au devis</button>
+        </div>
         <div id="fiche-header"></div>
         <div class="section-title">Historique des séances</div>
         <div class="seances-list" id="seances-list"></div>
@@ -423,6 +429,55 @@ html, body {
         <div id="rdvs-past" class="rdv-list"></div>
       </div>
 
+      <!-- VUE DEVIS -->
+      <div class="view" id="view-devis">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <div></div>
+          <button class="btn btn-primary" onclick="openModal('devis')"><i class="ti ti-plus"></i> Nouveau devis</button>
+        </div>
+        <div id="devis-list"></div>
+      </div>
+
+      <!-- VUE PARAMÈTRES -->
+      <div class="view" id="view-parametres">
+        <div style="max-width:560px">
+          <div class="section-title" style="margin-bottom:1rem">Mes informations professionnelles</div>
+          <div class="form-grid form-grid-2">
+            <div class="form-row"><label>Prénom</label><input type="text" id="param-prenom" placeholder="Yoann"></div>
+            <div class="form-row"><label>Nom</label><input type="text" id="param-nom" placeholder="Pageot"></div>
+          </div>
+          <div class="form-row"><label>SIRET</label><input type="text" id="param-siret" placeholder="000 000 000 00000"></div>
+          <div class="form-row"><label>Adresse professionnelle</label><input type="text" id="param-adresse" placeholder="10 rue des Lilas, 10600 La Chapelle-Saint-Luc"></div>
+          <div class="form-grid form-grid-2">
+            <div class="form-row"><label>Email professionnel</label><input type="email" id="param-email" placeholder="yoann.pageot@prendresoindesonhetre.fr"></div>
+            <div class="form-row"><label>Téléphone</label><input type="tel" id="param-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+          </div>
+          <div class="form-row"><label>Nom de l'activité / Enseigne</label><input type="text" id="param-enseigne" placeholder="Prendre Soin de Son Être"></div>
+
+          <div class="section-title" style="margin:1.5rem 0 1rem">Facturation</div>
+          <div class="form-grid form-grid-2">
+            <div class="form-row"><label>Prix de séance par défaut (€)</label><input type="number" id="param-prix" placeholder="60" min="0" step="0.01"></div>
+            <div class="form-row"><label>Taux kilométrique (€/km)</label><input type="number" id="param-taux-km" value="0.518" min="0" step="0.001"></div>
+          </div>
+          <div class="form-row"><label>Mention TVA</label><input type="text" id="param-tva" value="TVA non applicable — article 293 B du CGI"></div>
+
+          <div class="section-title" style="margin:1.5rem 0 1rem">Envoi d'emails (EmailJS)</div>
+          <div class="form-row" style="background:var(--amber-light);border-radius:var(--radius-sm);padding:0.75rem 1rem;font-size:12px;color:var(--amber);margin-bottom:1rem">
+            <i class="ti ti-info-circle"></i> Pour envoyer des emails depuis l'appli, vous devez créer un compte gratuit sur <strong>emailjs.com</strong> et renseigner vos identifiants ci-dessous.
+          </div>
+          <div class="form-grid form-grid-2">
+            <div class="form-row"><label>Service ID</label><input type="text" id="param-ejs-service" placeholder="service_xxxxxxx"></div>
+            <div class="form-row"><label>Template ID</label><input type="text" id="param-ejs-template" placeholder="template_xxxxxxx"></div>
+          </div>
+          <div class="form-row"><label>Public Key</label><input type="text" id="param-ejs-pubkey" placeholder="xxxxxxxxxxxxxxx"></div>
+
+          <div style="margin-top:1.5rem;display:flex;gap:8px">
+            <button class="btn btn-primary" onclick="saveParametres()"><i class="ti ti-check"></i> Enregistrer</button>
+            <button class="btn" onclick="loadParametres()"><i class="ti ti-refresh"></i> Annuler</button>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -432,13 +487,12 @@ html, body {
   <div class="modal">
     <div class="modal-title">
       <span id="rdv-modal-title">Nouveau rendez-vous</span>
-      <button class="modal-close" onclick="closeModal('rdv')"><i class="ti ti-x"></i></button>
     </div>
-    <div class="modal-scroll">
+    <div class="modal-body">
     <input type="hidden" id="rdv-edit-id">
     <div class="form-grid form-grid-2">
       <div class="form-row"><label>Type de séance</label>
-        <select id="rdv-type" onchange="updateDureeFromType(); toggleAutreType()">
+        <select id="rdv-type" onchange="updateDureeFromType()">
           <option value="Relaxation">Relaxation</option>
           <option value="Méditation">Méditation</option>
           <option value="Hypnose">Hypnose</option>
@@ -447,10 +501,6 @@ html, body {
           <option value="Atelier groupe">Atelier groupe</option>
           <option value="Autre">Autre</option>
         </select>
-      </div>
-      <div class="form-row" id="rdv-autre-row" style="display:none">
-        <label>Précisez le type <span style="color:var(--text-hint);font-weight:400">(obligatoire)</span></label>
-        <input type="text" id="rdv-type-autre" placeholder="Ex: Hypno-tapping, EFT...">
       </div>
       <div class="form-row" style="display:flex;flex-direction:column;justify-content:flex-end">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 10px;background:var(--lavender-light);border:0.5px solid var(--lavender);border-radius:var(--radius-sm)">
@@ -465,17 +515,87 @@ html, body {
       <div style="background:var(--lavender-light);border:0.5px solid var(--lavender);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:0.5rem">
         <div style="font-size:11px;font-weight:700;color:var(--lavender-dark);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem"><i class="ti ti-user-plus" style="font-size:13px;vertical-align:-1px;margin-right:4px"></i>Nouveau client</div>
         <div class="form-grid form-grid-2">
-          <div class="form-row"><label>Prénom</label><input type="text" id="rdv-nc-prenom" placeholder="Prénom"></div>
-          <div class="form-row"><label>Nom <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="text" id="rdv-nc-nom" placeholder="Nom"></div>
-        </div>
-        <div class="form-grid form-grid-2">
-          <div class="form-row"><label>Téléphone <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="tel" id="rdv-nc-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatTel(this)"></div>
           <div class="form-row"><label>Profil</label>
-            <select id="rdv-nc-profil">
+            <select id="rdv-nc-profil" onchange="toggleRdvNcEnfantFields()">
               <option value="adulte">Adulte</option>
               <option value="enfant">Enfant</option>
               <option value="structure">Structure</option>
             </select>
+          </div>
+          <div class="form-row"><label>Prénom</label><input type="text" id="rdv-nc-prenom" placeholder="Prénom"></div>
+        </div>
+        <div class="form-grid form-grid-2">
+          <div class="form-row"><label>Nom <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="text" id="rdv-nc-nom" placeholder="Nom"></div>
+          <div class="form-row" id="rdv-nc-tel-row"><label>Téléphone <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="tel" id="rdv-nc-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+        </div>
+
+        <!-- Champs enfant (visibles si profil = enfant) -->
+        <div id="rdv-nc-enfant-fields" style="display:none">
+          <div class="form-grid form-grid-2">
+            <div class="form-row"><label>Date de naissance <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="date" id="rdv-nc-naissance" onchange="updateRdvNcAge()"></div>
+            <div class="form-row"><label>Âge</label><input type="text" id="rdv-nc-age" placeholder="calculé auto" readonly style="background:var(--lavender-light);color:var(--lavender-dark);font-weight:600"></div>
+          </div>
+
+          <!-- Situation familiale -->
+          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);text-transform:uppercase;letter-spacing:0.06em;margin:0.75rem 0 0.5rem">Situation familiale</div>
+          <div style="display:flex;gap:8px;margin-bottom:0.75rem;flex-wrap:wrap">
+            <button type="button" id="rdv-nc-sit-btn-ensemble" class="btn" onclick="setRdvNcSituation('ensemble')" style="flex:1;justify-content:center;font-size:12px">👨‍👩‍👦 Parents ensemble</button>
+            <button type="button" id="rdv-nc-sit-btn-separes" class="btn" onclick="setRdvNcSituation('separes')" style="flex:1;justify-content:center;font-size:12px">↔ Parents séparés</button>
+            <button type="button" id="rdv-nc-sit-btn-recompose" class="btn" onclick="setRdvNcSituation('recompose')" style="flex:1;justify-content:center;font-size:12px">🏠 Famille recomposée</button>
+          </div>
+          <input type="hidden" id="rdv-nc-situation" value="">
+
+          <!-- Parents ensemble -->
+          <div id="rdv-nc-sit-ensemble" style="display:none">
+            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.4rem 0">Père</div>
+            <div class="form-grid form-grid-2">
+              <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-ens-pere-nom" placeholder="Ex: Dupont Jean"></div>
+              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-ens-pere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.4rem 0">Mère</div>
+            <div class="form-grid form-grid-2">
+              <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-ens-mere-nom" placeholder="Ex: Dupont Sophie"></div>
+              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-ens-mere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+            </div>
+            <div class="form-row"><label>Email commun <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="email" id="rdv-nc-ens-email" placeholder="email@famille.fr"></div>
+          </div>
+
+          <!-- Parents séparés -->
+          <div id="rdv-nc-sit-separes" style="display:none">
+            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.4rem 0">Père</div>
+            <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-sep-pere-nom" placeholder="Ex: Dupont Jean"></div>
+            <div class="form-grid form-grid-2">
+              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-sep-pere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+              <div class="form-row"><label>Email</label><input type="email" id="rdv-nc-sep-pere-email" placeholder="email@exemple.fr"></div>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin:0.5rem 0 0.4rem">Mère</div>
+            <div class="form-row"><label>Nom & prénom</label><input type="text" id="rdv-nc-sep-mere-nom" placeholder="Ex: Dupont Sophie"></div>
+            <div class="form-grid form-grid-2">
+              <div class="form-row"><label>Téléphone</label><input type="tel" id="rdv-nc-sep-mere-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+              <div class="form-row"><label>Email</label><input type="email" id="rdv-nc-sep-mere-email" placeholder="email@exemple.fr"></div>
+            </div>
+          </div>
+
+          <!-- Famille recomposée -->
+          <div id="rdv-nc-sit-recompose" style="display:none">
+            <div id="rdv-nc-recompose-membres"></div>
+            <button type="button" class="btn" onclick="addRdvNcMembre()" style="font-size:12px;margin-top:4px"><i class="ti ti-plus"></i> Ajouter un membre</button>
+          </div>
+
+          <!-- Structure -->
+          <div style="margin:0.75rem 0 0.4rem;display:flex;align-items:center;gap:8px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:0.06em">
+              <input type="checkbox" id="rdv-nc-avec-structure" onchange="toggleRdvNcStructure()" style="width:16px;height:16px;accent-color:var(--teal);cursor:pointer">
+              Accompagné par un établissement
+            </label>
+          </div>
+          <div id="rdv-nc-structure-fields" style="display:none">
+            <div class="form-row"><label>Nom de la structure</label><input type="text" id="rdv-nc-structure" placeholder="Ex: IME Les Pins, École Jules Ferry..."></div>
+            <div class="form-row"><label>Nom du responsable / référent</label><input type="text" id="rdv-nc-structure-resp" placeholder="Ex: Mme Martin — Éducatrice spécialisée"></div>
+            <div class="form-grid form-grid-2">
+              <div class="form-row"><label>Téléphone du référent</label><input type="tel" id="rdv-nc-structure-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
+              <div class="form-row"><label>Email du référent</label><input type="email" id="rdv-nc-structure-email" placeholder="email@structure.fr"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -497,7 +617,7 @@ html, body {
     </div>
     <div class="form-row"><label>Lieu <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="text" id="rdv-lieu" placeholder="Adresse ou domicile du client"></div>
     <div class="form-row"><label>Notes <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><textarea id="rdv-notes" placeholder="Rappels, particularités..."></textarea></div>
-        </div>
+    </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal('rdv')">Annuler</button>
       <button class="btn btn-primary" onclick="saveRdv()">Enregistrer</button>
@@ -512,11 +632,14 @@ html, body {
       <span id="detail-title">Détail du rendez-vous</span>
       <button class="modal-close" onclick="closeModal('rdv-detail')"><i class="ti ti-x"></i></button>
     </div>
+    <div class="modal-body">
     <div id="detail-content" style="font-size:13px;line-height:1.8;color:var(--text-muted)"></div>
-    <div class="modal-actions" style="margin-top:1rem">
-      <button class="btn btn-danger" id="detail-delete-btn"><i class="ti ti-trash"></i> Supprimer</button>
-      <button class="btn" id="detail-edit-btn"><i class="ti ti-edit"></i> Modifier</button>
-      <button class="btn btn-primary" id="detail-note-btn"><i class="ti ti-notes"></i> Note de séance</button>
+    </div>
+    <div class="modal-actions" style="margin-top:1rem;flex-wrap:wrap;gap:6px">
+      <button class="btn btn-danger" id="detail-delete-btn" style="flex:1;min-width:90px;justify-content:center"><i class="ti ti-trash"></i> Supprimer</button>
+      <button class="btn" id="detail-cancel-btn" style="flex:1;min-width:90px;justify-content:center"><i class="ti ti-calendar-off"></i> Annuler</button>
+      <button class="btn" id="detail-edit-btn" style="flex:1;min-width:90px;justify-content:center"><i class="ti ti-edit"></i> Modifier</button>
+      <button class="btn btn-primary" id="detail-note-btn" style="flex:1;min-width:90px;justify-content:center"><i class="ti ti-notes"></i> Note de séance</button>
     </div>
   </div>
 </div>
@@ -528,12 +651,14 @@ html, body {
       <span style="display:flex;align-items:center;gap:8px"><i class="ti ti-brand-whatsapp" style="color:#25D366;font-size:20px"></i> Confirmation WhatsApp</span>
       <button class="modal-close" onclick="closeModal('whatsapp')"><i class="ti ti-x"></i></button>
     </div>
+    <div class="modal-body">
     <div class="form-row">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px">
         <input type="checkbox" id="wa-avec-lieu" onchange="updateWaPreview()" checked style="width:16px;height:16px;accent-color:var(--teal);cursor:pointer">
         <span style="font-size:13px;font-weight:600">Inclure le lieu dans le message</span>
       </label>
       <div style="background:var(--teal-light);border-radius:var(--radius-sm);padding:0.85rem 1rem;font-size:13px;line-height:1.6;color:var(--teal-dark);border:0.5px solid var(--border-md)" id="wa-preview"></div>
+    </div>
     </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal('whatsapp')">Annuler</button>
@@ -551,7 +676,7 @@ html, body {
       <span id="client-modal-title">Nouveau client</span>
       <button class="modal-close" onclick="closeModal('client')"><i class="ti ti-x"></i></button>
     </div>
-    <div class="modal-scroll">
+    <div class="modal-body">
     <input type="hidden" id="client-edit-id">
     <div class="form-grid form-grid-2">
       <div class="form-row"><label>Prénom</label><input type="text" id="cl-prenom" placeholder="Prénom"></div>
@@ -562,11 +687,10 @@ html, body {
         <select id="cl-profil" onchange="toggleEnfantFields()">
           <option value="adulte">Adulte</option>
           <option value="enfant">Enfant</option>
-          <option value="professionnel">Professionnel</option>
           <option value="structure">Structure</option>
         </select>
       </div>
-      <div class="form-row"><label>Téléphone <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="tel" id="cl-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatTel(this)"></div>
+      <div class="form-row"><label>Téléphone <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label><input type="tel" id="cl-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
     </div>
 
     <!-- Champs enfant (masqués par défaut) -->
@@ -585,19 +709,19 @@ html, body {
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:0.6rem;font-style:italic">Tous les champs sont optionnels</div>
 
         <div style="background:white;border-radius:6px;padding:0.6rem 0.75rem;margin-bottom:0.6rem;border:0.5px solid var(--border)">
-          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin-bottom:0.5rem">Parent / Responsable 1</div>
-          <div class="form-row"><label>Nom & prénom</label><input type="text" id="cl-resp1" placeholder="Ex: Dupont Jean (Père)"></div>
+          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin-bottom:0.5rem">Père</div>
+          <div class="form-row"><label>Nom & prénom</label><input type="text" id="cl-resp1" placeholder="Ex: Dupont Sophie"></div>
           <div class="form-grid form-grid-2">
-            <div class="form-row"><label>Téléphone</label><input type="tel" id="cl-resp1-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatTel(this)"></div>
+            <div class="form-row"><label>Téléphone</label><input type="tel" id="cl-resp1-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
             <div class="form-row"><label>Email</label><input type="email" id="cl-resp1-email" placeholder="email@exemple.fr"></div>
           </div>
         </div>
 
         <div style="background:white;border-radius:6px;padding:0.6rem 0.75rem;border:0.5px solid var(--border)">
-          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin-bottom:0.5rem">Parent / Responsable 2</div>
-          <div class="form-row"><label>Nom & prénom</label><input type="text" id="cl-resp2" placeholder="Ex: Dupont Sophie (Mère)"></div>
+          <div style="font-size:11px;font-weight:700;color:var(--teal-dark);margin-bottom:0.5rem">Mère</div>
+          <div class="form-row"><label>Nom & prénom</label><input type="text" id="cl-resp2" placeholder="Ex: Dupont Jean"></div>
           <div class="form-grid form-grid-2">
-            <div class="form-row"><label>Téléphone</label><input type="tel" id="cl-resp2-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatTel(this)"></div>
+            <div class="form-row"><label>Téléphone</label><input type="tel" id="cl-resp2-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
             <div class="form-row"><label>Email</label><input type="email" id="cl-resp2-email" placeholder="email@exemple.fr"></div>
           </div>
         </div>
@@ -610,7 +734,7 @@ html, body {
         <div class="form-row"><label>Nom de la structure</label><input type="text" id="cl-structure" placeholder="Ex: IME Les Pins, École Jules Ferry..."></div>
         <div class="form-row"><label>Nom du responsable / référent de suivi</label><input type="text" id="cl-structure-resp" placeholder="Ex: Mme Martin — Éducatrice spécialisée"></div>
         <div class="form-grid form-grid-2">
-          <div class="form-row"><label>Téléphone du référent</label><input type="tel" id="cl-structure-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatTel(this)"></div>
+          <div class="form-row"><label>Téléphone du référent</label><input type="tel" id="cl-structure-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
           <div class="form-row"><label>Email du référent</label><input type="email" id="cl-structure-email" placeholder="email@structure.fr"></div>
         </div>
       </div>
@@ -632,7 +756,7 @@ html, body {
           <div class="form-row"><label>Fonction</label><input type="text" id="cl-structure-fonction" placeholder="Directeur, Éducateur..."></div>
         </div>
         <div class="form-grid form-grid-2">
-          <div class="form-row"><label>Téléphone</label><input type="tel" id="cl-structure-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatTel(this)"></div>
+          <div class="form-row"><label>Téléphone</label><input type="tel" id="cl-structure-tel" inputmode="tel" placeholder="06 xx xx xx xx" oninput="formatPhone(this)"></div>
           <div class="form-row"><label>Email</label><input type="email" id="cl-structure-email" placeholder="email@structure.fr"></div>
         </div>
         <div style="font-size:12px;font-weight:600;color:var(--amber);margin:0.6rem 0 0.4rem">Participants</div>
@@ -644,26 +768,7 @@ html, body {
         </div>
       </div>
     </div>
-
-    <!-- Champs professionnel -->
-    <div id="professionnel-fields" style="display:none">
-      <div style="background:var(--sage-light);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:0.75rem;border:0.5px solid rgba(122,170,106,0.3)">
-        <div style="font-size:11px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem">Informations professionnelles</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-bottom:0.6rem;font-style:italic">Tous les champs sont optionnels</div>
-        <div class="form-grid form-grid-2">
-          <div class="form-row"><label>Fonction / Métier</label><input type="text" id="cl-pro-fonction" placeholder="Ex: Éducateur, Directeur..."></div>
-          <div class="form-row"><label>Structure / Entreprise</label><input type="text" id="cl-pro-structure" placeholder="Nom de l'établissement"></div>
-        </div>
-        <div style="font-size:12px;font-weight:600;color:var(--sage);margin:0.5rem 0 0.4rem">Enfants suivis <span style="font-weight:400;font-style:italic;color:var(--text-muted)">(optionnel)</span></div>
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:0.5rem">Liste des enfants pour lesquels ce professionnel intervient</div>
-        <div id="pro-enfants-list" style="margin-bottom:0.5rem"></div>
-        <div style="display:flex;gap:8px">
-          <input type="text" id="pro-enfant-input" placeholder="Prénom de l'enfant" style="flex:1;padding:7px 10px;font-size:13px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif">
-          <button class="btn" type="button" onclick="addProEnfant()" style="flex-shrink:0"><i class="ti ti-plus"></i> Ajouter</button>
-        </div>
-      </div>
     </div>
-        </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal('client')">Annuler</button>
       <button class="btn btn-primary" onclick="saveClient()">Enregistrer</button>
@@ -678,7 +783,7 @@ html, body {
       <span>Note de séance</span>
       <button class="modal-close" onclick="closeModal('note')"><i class="ti ti-x"></i></button>
     </div>
-    <div class="modal-scroll">
+    <div class="modal-body">
     <input type="hidden" id="note-edit-id">
     <div class="form-grid form-grid-2">
       <div class="form-row"><label>Date</label><input type="date" id="note-date"></div>
@@ -693,13 +798,10 @@ html, body {
     <div class="form-row"><label>Ce qui s'est dit / observé</label>
       <textarea id="note-contenu" placeholder="Notes, observations, éléments clés échangés durant la séance..." style="min-height:130px"></textarea>
     </div>
-    <div class="form-row"><label>Raison / Objet du rendez-vous <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label>
-      <input type="text" id="note-raison" placeholder="Ex: Suivi anxiété, Bilan de séances, Rencontre parents...">
-    </div>
     <div class="form-row"><label>Prochaine étape</label>
       <input type="text" id="note-suite" placeholder="Point à travailler lors de la prochaine séance...">
     </div>
-        </div>
+    </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal('note')">Annuler</button>
       <button class="btn btn-primary" onclick="saveNote()">Enregistrer</button>
@@ -707,6 +809,9 @@ html, body {
   </div>
 </div>
 
+<div class="toast" id="toast"><i class="ti ti-check"></i> <span id="toast-msg"></span></div>
+
+<!-- MODAL DEVIS -->
 <div class="overlay" id="modal-devis">
   <div class="modal" style="width:600px">
     <div class="modal-title">
@@ -1095,8 +1200,6 @@ function showFiche(id) {
         ${c.profil === 'enfant' && c.structure ? `<div class="fiche-meta"><i class="ti ti-building"></i><span><strong>${c.structure}</strong>${c.structureResp?' · '+c.structureResp:''}${c.structureTel?' · '+c.structureTel:''}${c.structureEmail?' · '+c.structureEmail:''}</span></div>` : ''}
         ${c.profil === 'structure' && c.structureResp ? `<div class="fiche-meta"><i class="ti ti-id-badge"></i><span><strong>${c.structureResp}</strong>${c.structureFonction?' — '+c.structureFonction:''}${c.structureTel?' · '+c.structureTel:''}${c.structureEmail?' · '+c.structureEmail:''}</span></div>` : ''}
         ${c.profil === 'structure' && c.participants && c.participants.length ? `<div class="fiche-meta" style="flex-wrap:wrap;gap:4px;margin-top:4px"><i class="ti ti-users" style="flex-shrink:0"></i>${c.participants.map(p=>`<span style="background:var(--amber-light);color:var(--amber);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${p}</span>`).join('')}</div>` : ''}
-        ${c.profil === 'professionnel' && c.proFonction ? `<div class="fiche-meta"><i class="ti ti-briefcase"></i>${c.proFonction}${c.proStructure?' — '+c.proStructure:''}</div>` : ''}
-        ${c.profil === 'professionnel' && c.proEnfants && c.proEnfants.length ? `<div class="fiche-meta" style="flex-wrap:wrap;gap:4px;margin-top:4px"><i class="ti ti-users" style="flex-shrink:0;color:#4a7a3a"></i>${c.proEnfants.map(p=>`<span style="background:#eef6ea;color:#4a7a3a;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${p}</span>`).join('')}</div>` : ''}
         <div class="fiche-badges">
           <span class="badge badge-${c.profil}">${c.profil.charAt(0).toUpperCase()+c.profil.slice(1)}</span>
           <span class="badge badge-gray">${nbRdv} RDV</span>
@@ -1144,7 +1247,6 @@ function showFiche(id) {
         <span class="seance-date">${fmtDateLong(n.date)}</span>
         <span class="seance-type-badge">${n.type}</span>
       </div>
-      ${n.raison ? `<div style="font-size:11px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px">${n.raison}</div>` : ''}
       <div class="seance-notes">${n.contenu}</div>
       ${n.suite ? `<div class="seance-suite"><i class="ti ti-arrow-right" style="font-size:14px;flex-shrink:0;margin-top:1px"></i>${n.suite}</div>` : ''}
       ${tt>0 ? `<div class="seance-trajet"><i class="ti ti-car"></i>${tt} min de trajet · ${rdv.lieu||''}</div>` : ''}
@@ -1433,8 +1535,6 @@ function toggleEnfantFields() {
   const profil = document.getElementById('cl-profil').value;
   document.getElementById('enfant-fields').style.display = profil === 'enfant' ? 'block' : 'none';
   document.getElementById('structure-fields').style.display = profil === 'structure' ? 'block' : 'none';
-  const pf = document.getElementById('professionnel-fields');
-  if (pf) pf.style.display = profil === 'professionnel' ? 'block' : 'none';
 }
 
 let structureParticipants = [];
@@ -1726,36 +1826,6 @@ function deleteRdv(id) {
   renderDashboard(); renderCalendar(); if(document.getElementById('view-rdvs').classList.contains('active')) renderRdvs();
 }
 
-let proEnfants = [];
-
-function addProEnfant() {
-  const input = document.getElementById('pro-enfant-input');
-  if (!input) return;
-  const val = input.value.trim();
-  if (!val) return;
-  proEnfants.push(val);
-  input.value = '';
-  renderProEnfants();
-}
-
-function removeProEnfant(i) {
-  proEnfants.splice(i, 1);
-  renderProEnfants();
-}
-
-function renderProEnfants() {
-  const list = document.getElementById('pro-enfants-list');
-  if (!list) return;
-  if (!proEnfants.length) { list.innerHTML = ''; return; }
-  list.innerHTML = proEnfants.map((p, i) =>
-    `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:white;border-radius:5px;margin-bottom:4px;border:0.5px solid var(--border)">
-      <i class="ti ti-user" style="font-size:13px;color:#7aaa6a"></i>
-      <span style="flex:1;font-size:13px">${p}</span>
-      <button onclick="removeProEnfant(${i})" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:15px;padding:0;display:flex"><i class="ti ti-x"></i></button>
-    </div>`
-  ).join('');
-}
-
 function saveClient() {
   const prenom = document.getElementById('cl-prenom').value.trim();
   const nom = document.getElementById('cl-nom').value.trim();
@@ -1781,9 +1851,6 @@ function saveClient() {
     structureTel: profil === 'enfant' ? document.getElementById('cl-structure-tel').value : (profil === 'structure' ? document.getElementById('cl-structure-tel').value : ''),
     structureEmail: profil === 'enfant' ? document.getElementById('cl-structure-email').value : (profil === 'structure' ? document.getElementById('cl-structure-email').value : ''),
     participants: profil === 'structure' ? [...structureParticipants] : [],
-    proFonction: profil === 'professionnel' ? document.getElementById('cl-pro-fonction').value : '',
-    proStructure: profil === 'professionnel' ? document.getElementById('cl-pro-structure').value : '',
-    proEnfants: profil === 'professionnel' ? [...proEnfants] : [],
   };
   if (editId) {
     const idx = clients.findIndex(c => c.id == editId);
@@ -1856,20 +1923,17 @@ function deleteClient(id) {
 function saveNote() {
   if (!currentClientId) return;
   const editId = document.getElementById('note-edit-id').value;
-  const raisonEl = document.getElementById('note-raison');
   const data = {
     clientId: currentClientId,
     date: document.getElementById('note-date').value,
     type: document.getElementById('note-type').value,
     contenu: document.getElementById('note-contenu').value,
-    raison: raisonEl ? raisonEl.value : '',
     suite: document.getElementById('note-suite').value,
   };
   if (editId) { const idx=notes.findIndex(n=>n.id==editId); if(idx>-1) notes[idx]={...notes[idx],...data}; toast('Note modifiée'); }
   else { notes.push({id:newId(),...data}); toast('Note ajoutée'); }
   persistAndSync(); closeModal('note');
   ['note-contenu','note-suite'].forEach(id=>document.getElementById(id).value='');
-  if (raisonEl) raisonEl.value = '';
   showFiche(currentClientId);
 }
 
@@ -2447,7 +2511,6 @@ async function sendDevisEmail() {
   }
 }
 
-// ---- PARAMÈTRES ----
 // ---- SUPABASE SYNC ----
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
@@ -2599,1499 +2662,6 @@ function persistAndSync() {
   }
   // Sinon, le formulaire de connexion (#access-gate) reste affiché
 })();
-</script>
-</body>
-</html>
-
-<div class="toast" id="toast"><i class="ti ti-check"></i> <span id="toast-msg"></span></div>
-
-<!-- Navigation mobile en bas -->
-<nav class="mobile-nav">
-  <div class="mobile-nav-item active" id="mnav-dashboard" onclick="showView('dashboard')">
-    <i class="ti ti-home-2"></i>
-    <span>Accueil</span>
-  </div>
-  <div class="mobile-nav-item" id="mnav-calendrier" onclick="showView('calendrier')">
-    <i class="ti ti-calendar-event"></i>
-    <span>Agenda</span>
-  </div>
-  <div class="mobile-nav-item" id="mnav-clients" onclick="showView('clients')">
-    <i class="ti ti-heart-handshake"></i>
-    <span>Clients</span>
-  </div>
-  <div class="mobile-nav-item" id="mnav-rdvs" onclick="showView('rdvs')">
-    <i class="ti ti-list-details"></i>
-    <span>RDV</span>
-  </div>
-  <div class="mobile-nav-item" id="mnav-devis" onclick="showView('devis')">
-    <i class="ti ti-file-invoice"></i>
-    <span>Devis</span>
-  </div>
-  <div class="mobile-nav-item" id="mnav-parametres" onclick="showView('parametres')">
-    <i class="ti ti-settings"></i>
-    <span>Infos</span>
-  </div>
-  <div class="mobile-nav-item" id="mnav-plus" onclick="openModal('rdv')">
-    <i class="ti ti-circle-plus"></i>
-    <span>Nouveau</span>
-  </div>
-</nav>
-
-<script>
-const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-const DAYS_SHORT = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
-const today = new Date();
-let calYear = today.getFullYear(), calMonth = today.getMonth();
-let currentClientId = null;
-
-// --- STORAGE ---
-function load(key, def) { try { return JSON.parse(localStorage.getItem(key)) || def; } catch(e) { return def; } }
-function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
-
-let clients = load('mac_clients', [
-  { id: 1, prenom: 'Marie', nom: 'Dupont', profil: 'adulte', tel: '06 12 34 56 78', adresse: '12 rue des Lilas, Paris', email: '', motif: 'Gestion du stress et anxiété' },
-  { id: 2, prenom: 'Lucas', nom: 'Bernard', profil: 'enfant', tel: '06 98 76 54 32', adresse: '5 avenue Victor Hugo, Versailles', email: '', motif: 'Confiance en soi, troubles du sommeil' },
-  { id: 3, prenom: 'Hélène', nom: 'Martin', profil: 'senior', tel: '06 55 44 33 22', adresse: '8 rue du Moulin, Vincennes', email: '', motif: 'Relaxation, douleurs chroniques' },
-]);
-let rdvs = load('mac_rdvs', [
-  { id: 1, clientId: 1, type: 'Hypnose', date: fmt(addDays(today,1)), heure: '14:00', duree: 60, trajetAller: 20, trajetRetour: 20, lieu: '12 rue des Lilas, Paris', notes: '' },
-  { id: 2, clientId: 2, type: 'Accompagnement émotionnel', date: fmt(addDays(today,3)), heure: '10:00', duree: 45, trajetAller: 35, trajetRetour: 35, lieu: 'Versailles', notes: '' },
-  { id: 3, clientId: 3, type: 'Relaxation', date: fmt(addDays(today,5)), heure: '16:30', duree: 60, trajetAller: 15, trajetRetour: 15, lieu: 'Vincennes', notes: '' },
-]);
-let notes = load('mac_notes', [
-  { id: 1, clientId: 1, date: fmt(addDays(today,-14)), type: 'Hypnose', contenu: "Bonne réceptivité à l'induction. Travail autour des déclencheurs d'anxiété. Marie a évoqué la pression professionnelle. Protocole de réassociation positive utilisé.", suite: 'Approfondir les ressources internes' },
-  { id: 2, clientId: 1, date: fmt(addDays(today,-7)), type: 'Hypnose', contenu: "Séance centrée sur les ressources. Marie rapporte une amélioration du sommeil. Ancrage sensoriel VAKOG bien intégré. Image ressource forte identifiée.", suite: "Consolider l'ancrage, introduire auto-hypnose" },
-  { id: 3, clientId: 2, date: fmt(addDays(today,-10)), type: 'Accompagnement émotionnel', contenu: "Lucas peu verbeux au début, mais ouvert via jeu métaphorique. Travail sur la peur du regard des autres. Les parents notent un mieux à la maison.", suite: 'Continuer avec les métaphores animales' },
-  { id: 4, clientId: 3, date: fmt(addDays(today,-5)), type: 'Relaxation', contenu: "Première séance. Hélène motivée mais tendue au départ. Induction par respiration et visualisation d'un lieu sécurisant bien reçue. Douleurs au dos mentionnées.", suite: 'Gestion de la douleur chronique' },
-]);
-
-function persist() { save('mac_clients', clients); save('mac_rdvs', rdvs); save('mac_notes', notes); }
-
-function exportData() {
-  const data = { clients, rdvs, notes, exportedAt: new Date().toISOString() };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const date = new Date().toLocaleDateString('fr-FR').replace(/\//g, '-');
-  a.href = url;
-  a.download = `prendre-soin-de-son-hetre_${date}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('Données exportées !');
-}
-
-function importData(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (!data.clients || !data.rdvs || !data.notes) throw new Error('Format invalide');
-      if (!confirm(`Importer ${data.clients.length} clients, ${data.rdvs.length} RDV et ${data.notes.length} notes ?\n\nCela remplacera toutes tes données actuelles.`)) return;
-      clients = data.clients;
-      rdvs = data.rdvs;
-      notes = data.notes;
-      persistAndSync();
-      renderDashboard();
-      toast('Données importées avec succès !');
-    } catch(err) {
-      alert('Fichier invalide. Utilise un fichier exporté depuis cette application.');
-    }
-  };
-  reader.readAsText(file);
-  event.target.value = '';
-}
-
-function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
-function fmt(d) { return d.toISOString().split('T')[0]; }
-function initials(c) { return (c.prenom[0]+(c.nom[0]||'')).toUpperCase(); }
-function getClient(id) { return clients.find(c => c.id == id); }
-function newId() { return Date.now() + Math.floor(Math.random()*1000); }
-
-function fmtDate(d) {
-  const dt = new Date(d+'T12:00:00');
-  const diff = Math.round((dt - new Date(fmt(today)+'T12:00:00'))/86400000);
-  if (diff === 0) return "Aujourd'hui";
-  if (diff === 1) return "Demain";
-  if (diff === -1) return "Hier";
-  return dt.toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' });
-}
-function fmtDateLong(d) {
-  return new Date(d+'T12:00:00').toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-}
-
-function toast(msg, color) {
-  const t = document.getElementById('toast');
-  const s = document.getElementById('toast-msg');
-  s.textContent = msg;
-  t.style.background = color || 'var(--teal-600)';
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
-}
-
-// --- NAVIGATION ---
-function showView(v) {
-  document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
-  document.querySelectorAll('.mobile-nav-item').forEach(e => e.classList.remove('active'));
-  document.getElementById('view-'+v).classList.add('active');
-  const nav = document.getElementById('nav-'+v);
-  if (nav) nav.classList.add('active');
-  const mnav = document.getElementById('mnav-'+v);
-  if (mnav) mnav.classList.add('active');
-  const titles = { dashboard:'Tableau de bord', calendrier:'Calendrier', clients:'Clients', fiche:'Fiche client', rdvs:'Tous les rendez-vous' };
-  document.getElementById('topbar-title').textContent = titles[v] || v;
-  if (v==='calendrier') renderCalendar();
-  if (v==='clients') renderClients();
-  if (v==='dashboard') renderDashboard();
-  if (v==='rdvs') renderRdvs();
-}
-
-// --- DASHBOARD ---
-function renderDashboard() {
-  const nowStr = fmt(today);
-  const mois = today.getMonth(), annee = today.getFullYear();
-  const rdvsMois = rdvs.filter(r => { const d=new Date(r.date+'T12:00:00'); return d.getMonth()===mois && d.getFullYear()===annee; });
-  const km = rdvsMois.reduce((s,r) => s + ((r.trajetAller||0) + (r.trajetRetour||0)), 0);
-  const next = rdvs.filter(r => r.date >= nowStr).sort((a,b) => a.date.localeCompare(b.date)||a.heure.localeCompare(b.heure))[0];
-  const nextClient = next ? getClient(next.clientId) : null;
-  document.getElementById('stats-row').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Séances ce mois</div><div class="stat-value">${rdvsMois.length}</div><div class="stat-sub">${MONTHS[mois]} ${annee}</div></div>
-    <div class="stat-card"><div class="stat-label">Clients actifs</div><div class="stat-value">${clients.length}</div><div class="stat-sub">au total</div></div>
-    <div class="stat-card"><div class="stat-label">Minutes trajet</div><div class="stat-value">${km}</div><div class="stat-sub">ce mois</div></div>
-    <div class="stat-card"><div class="stat-label">Prochain RDV</div><div class="stat-value" style="font-size:14px;padding-top:4px">${next ? fmtDate(next.date) : '—'}</div><div class="stat-sub">${nextClient ? nextClient.prenom+' '+nextClient.nom : 'Aucun prévu'}</div></div>
-  `;
-  const upcoming = rdvs.filter(r => r.date >= nowStr).sort((a,b) => a.date.localeCompare(b.date)||a.heure.localeCompare(b.heure)).slice(0,6);
-  const ul = document.getElementById('upcoming-list');
-  if (!upcoming.length) { ul.innerHTML = '<div class="empty-state"><i class="ti ti-calendar-off"></i>Aucun rendez-vous à venir</div>'; return; }
-  ul.innerHTML = '<div class="upcoming-list">' + upcoming.map(r => {
-    const c = getClient(r.clientId);
-    const hasTrajet = (r.trajetAller||0)+(r.trajetRetour||0) > 0;
-    const trajetTxt = hasTrajet ? `<br><i class="ti ti-car" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>${(r.trajetAller||0)+(r.trajetRetour||0)} min de trajet · ` : '';
-    return `<div class="upcoming-item">
-      <div class="upcoming-dot ${hasTrajet?'dot-trajet':'dot-seance'}"></div>
-      <div class="upcoming-info" style="cursor:pointer" onclick="openRdvDetail(${r.id})">
-        <div class="upcoming-name">${fmtDate(r.date)} — ${c ? c.prenom+' '+c.nom : '?'} — ${r.type}</div>
-        <div class="upcoming-detail">${r.heure} · ${r.duree} min · ${r.lieu||''}${trajetTxt?'<br>'+trajetTxt.slice(4):''}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-        <button class="icon-btn" onclick="openNoteFromRdv(${r.id})" title="Ajouter une note" style="color:var(--teal-mid)"><i class="ti ti-notes"></i></button>
-        ${c && c.tel ? `<button class="icon-btn" onclick="openWhatsapp(${r.id})" title="WhatsApp" style="color:#25D366"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
-        <button class="icon-btn danger" onclick="confirmDeleteRdv(${r.id})" title="Supprimer"><i class="ti ti-trash"></i></button>
-      </div>
-    </div>`;
-  }).join('') + '</div>';
-}
-
-// --- CALENDRIER ---
-function renderCalendar() {
-  document.getElementById('cal-month-label').textContent = MONTHS[calMonth]+' '+calYear;
-  const first = new Date(calYear, calMonth, 1);
-  let dow = (first.getDay()+6)%7;
-  const dim = new Date(calYear, calMonth+1, 0).getDate();
-  const prevDim = new Date(calYear, calMonth, 0).getDate();
-  const grid = document.getElementById('cal-days');
-  grid.innerHTML = '';
-  const total = Math.ceil((dow+dim)/7)*7;
-  for (let i=0; i<total; i++) {
-    let day, other=false;
-    if (i<dow) { day=prevDim-dow+1+i; other=true; }
-    else if (i>=dow+dim) { day=i-dow-dim+1; other=true; }
-    else day=i-dow+1;
-    const isToday = !other && day===today.getDate() && calMonth===today.getMonth() && calYear===today.getFullYear();
-    const dateStr = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-    const dayRdvs = other ? [] : rdvs.filter(r => r.date===dateStr);
-    const evHtml = dayRdvs.slice(0,3).map(r => {
-      const c = getClient(r.clientId);
-      const hasT = (r.trajetAller||0)+(r.trajetRetour||0)>0;
-      return `<div class="cal-event ${hasT?'ev-trajet':'ev-seance'}" title="${c?c.prenom+' '+c.nom:''} — ${r.type}" onclick="event.stopPropagation();editRdv(${r.id})">${r.heure} ${c?c.prenom:''}</div>`;
-    }).join('') + (dayRdvs.length>3?`<div style="font-size:10px;color:var(--text-hint)">+${dayRdvs.length-3} autres</div>`:'');
-    grid.innerHTML += `<div class="cal-cell${other?' other-month':''}${isToday?' today':''}" onclick="calClick('${dateStr}')">
-      <div class="cal-num">${day}</div>${evHtml}</div>`;
-  }
-}
-function calClick(d) { document.getElementById('rdv-date').value=d; document.getElementById('rdv-edit-id').value=''; document.getElementById('rdv-modal-title').textContent='Nouveau rendez-vous'; openModal('rdv'); }
-function prevMonth() { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
-function nextMonth() { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); }
-function goToday() { calYear=today.getFullYear(); calMonth=today.getMonth(); renderCalendar(); }
-
-// --- CLIENTS ---
-function renderClients() {
-  const q = (document.getElementById('client-search')?.value||'').toLowerCase();
-  const filtered = clients.filter(c => !q || (c.prenom+' '+c.nom).toLowerCase().includes(q) || c.adresse.toLowerCase().includes(q));
-  const grid = document.getElementById('clients-grid');
-  if (!filtered.length) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><i class="ti ti-user-off"></i>Aucun client trouvé</div>'; return; }
-  grid.innerHTML = filtered.map(c => {
-    const nb = notes.filter(n => n.clientId===c.id).length;
-    const next = rdvs.filter(r => r.clientId===c.id && r.date>=fmt(today)).sort((a,b)=>a.date.localeCompare(b.date))[0];
-    return `<div class="client-card" onclick="showFiche(${c.id})">
-      <div class="client-avatar">${initials(c)}</div>
-      <div class="client-name">${c.prenom} ${c.nom}</div>
-      ${c.tel ? `<div class="client-meta"><i class="ti ti-phone"></i>${telLink(c.tel)}</div>` : ''}
-      <div class="client-meta"><i class="ti ti-map-pin"></i>${c.adresse||'—'}</div>
-      <div class="client-meta" style="margin-top:3px"><i class="ti ti-notes"></i>${nb} note${nb>1?'s':''} · ${next?'Prochain : '+fmtDate(next.date):'Pas de RDV à venir'}</div>
-      <div style="display:flex;gap:5px;flex-wrap:wrap">
-        <span class="badge badge-${c.profil}">${c.profil === 'adulte' ? 'Adulte' : c.profil === 'enfant' ? 'Enfant' : c.profil === 'structure' ? 'Structure' : c.profil}</span>
-        ${c.profil === 'structure' && c.participants && c.participants.length ? `<span class="badge badge-gray">${c.participants.length} participant${c.participants.length>1?'s':''}</span>` : ''}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function showFiche(id) {
-  currentClientId = id;
-  const c = getClient(id);
-  const nbRdv = rdvs.filter(r => r.clientId===id).length;
-  const nbNotes = notes.filter(n => n.clientId===id).length;
-  document.getElementById('fiche-header').innerHTML = `
-    <div class="fiche-header">
-      <div class="fiche-avatar">${initials(c)}</div>
-      <div class="fiche-info" style="flex:1">
-        <h2>${c.prenom} ${c.nom}</h2>
-        ${c.tel ? `<div class="fiche-meta"><i class="ti ti-phone"></i>${telLink(c.tel)}</div>` : ''}
-        ${c.email ? `<div class="fiche-meta"><i class="ti ti-mail"></i>${c.email}</div>` : ''}
-        <div class="fiche-meta"><i class="ti ti-map-pin"></i>${c.adresse||'—'}</div>
-        ${c.motif ? `<div class="fiche-meta" style="margin-top:5px"><i class="ti ti-target"></i>${c.motif}</div>` : ''}
-        ${c.profil === 'enfant' && c.naissance ? `<div class="fiche-meta"><i class="ti ti-cake"></i>${new Date(c.naissance+'T12:00:00').toLocaleDateString('fr-FR')} · <strong>${calcAge(c.naissance)} ans</strong></div>` : ''}
-        ${c.profil === 'enfant' && (c.resp1||c.resp1Tel||c.resp1Email) ? `<div class="fiche-meta"><i class="ti ti-user"></i><span><strong>${c.resp1||'Responsable 1'}</strong>${c.resp1Tel?' · '+telLink(c.resp1Tel):''}${c.resp1Email?' · '+c.resp1Email:''}</span></div>` : ''}
-        ${c.profil === 'enfant' && (c.resp2||c.resp2Tel||c.resp2Email) ? `<div class="fiche-meta"><i class="ti ti-user"></i><span><strong>${c.resp2||'Responsable 2'}</strong>${c.resp2Tel?' · '+telLink(c.resp2Tel):''}${c.resp2Email?' · '+c.resp2Email:''}</span></div>` : ''}
-        ${c.profil === 'enfant' && c.structure ? `<div class="fiche-meta"><i class="ti ti-building"></i><span><strong>${c.structure}</strong>${c.structureResp?' · '+c.structureResp:''}${c.structureTel?' · '+telLink(c.structureTel):''}${c.structureEmail?' · '+c.structureEmail:''}</span></div>` : ''}
-        ${c.profil === 'structure' && c.structureResp ? `<div class="fiche-meta"><i class="ti ti-id-badge"></i><span><strong>${c.structureResp}</strong>${c.structureFonction?' — '+c.structureFonction:''}${c.structureTel?' · '+telLink(c.structureTel):''}${c.structureEmail?' · '+c.structureEmail:''}</span></div>` : ''}
-        ${c.profil === 'structure' && c.participants && c.participants.length ? `<div class="fiche-meta" style="flex-wrap:wrap;gap:4px;margin-top:4px"><i class="ti ti-users" style="flex-shrink:0"></i>${c.participants.map(p=>`<span style="background:var(--amber-light);color:var(--amber);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${p}</span>`).join('')}</div>` : ''}
-        <div class="fiche-badges">
-          <span class="badge badge-${c.profil}">${c.profil.charAt(0).toUpperCase()+c.profil.slice(1)}</span>
-          <span class="badge badge-gray">${nbRdv} RDV</span>
-          <span class="badge badge-gray">${nbNotes} note${nbNotes>1?'s':''}</span>
-        </div>
-      </div>
-      <div style="display:flex;gap:6px;flex-shrink:0">
-        <button class="btn" onclick="editClient(${c.id})"><i class="ti ti-edit"></i> Modifier</button>
-        <button class="btn btn-danger" onclick="deleteClient(${c.id})"><i class="ti ti-trash"></i></button>
-      </div>
-    </div>`;
-  const clientNotes = notes.filter(n => n.clientId===id).sort((a,b) => b.date.localeCompare(a.date));
-  const clientRdvs = rdvs.filter(r => r.clientId===id && r.date>=fmt(today)).sort((a,b)=>a.date.localeCompare(b.date));
-  const sl = document.getElementById('seances-list');
-
-  // RDV à venir
-  let rdvHtml = '';
-  if (clientRdvs.length) {
-    rdvHtml = `<div class="section-title" style="margin-top:0">Prochains rendez-vous</div>` +
-      clientRdvs.map(r => {
-        const tt = (r.trajetAller||0)+(r.trajetRetour||0);
-        return `<div class="rdv-item" style="margin-bottom:8px">
-          <div class="upcoming-dot ${tt>0?'dot-trajet':'dot-seance'}"></div>
-          <div class="rdv-info">
-            <div class="rdv-title">${fmtDate(r.date)} à ${r.heure} — ${r.type}${r.premiere?' <span style="font-size:10px;background:var(--lavender-light);color:var(--lavender-dark);padding:1px 6px;border-radius:8px;font-weight:600">1ère séance</span>':''}</div>
-            <div class="rdv-detail">${r.duree} min${tt>0?' · '+tt+' min trajet':''} ${r.lieu?'· '+r.lieu:''}</div>
-          </div>
-          <div style="display:flex;gap:6px">
-            ${r.lieu || getClient(r.clientId)?.tel ? `<button class="icon-btn" onclick="openWhatsapp(${r.id})" title="WhatsApp" style="color:#25D366"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
-            <button class="icon-btn" onclick="editRdv(${r.id})" title="Modifier"><i class="ti ti-edit"></i></button>
-            <button class="icon-btn danger" onclick="deleteRdv(${r.id});showFiche(${id})" title="Supprimer"><i class="ti ti-trash"></i></button>
-          </div>
-        </div>`;
-      }).join('');
-  }
-
-  if (!clientNotes.length) {
-    sl.innerHTML = rdvHtml + '<div class="empty-state"><i class="ti ti-notes-off"></i>Aucune note de séance pour le moment</div>';
-  } else {
-    sl.innerHTML = rdvHtml + (clientRdvs.length ? `<div class="section-title">Historique des séances</div>` : '') + clientNotes.map(n => {
-    const rdv = rdvs.find(r => r.clientId===id && r.date===n.date);
-    const tt = rdv ? (rdv.trajetAller||0)+(rdv.trajetRetour||0) : 0;
-    return `<div class="seance-card">
-      <div class="seance-top">
-        <span class="seance-date">${fmtDateLong(n.date)}</span>
-        <span class="seance-type-badge">${n.type}</span>
-      </div>
-      <div class="seance-notes">${n.contenu}</div>
-      ${n.suite ? `<div class="seance-suite"><i class="ti ti-arrow-right" style="font-size:14px;flex-shrink:0;margin-top:1px"></i>${n.suite}</div>` : ''}
-      ${tt>0 ? `<div class="seance-trajet"><i class="ti ti-car"></i>${tt} min de trajet · ${rdv.lieu||''}</div>` : ''}
-      <div class="seance-actions">
-        <button class="btn" onclick="editNote(${n.id})"><i class="ti ti-edit"></i> Modifier</button>
-        <button class="icon-btn danger" onclick="deleteNote(${n.id})" title="Supprimer"><i class="ti ti-trash"></i></button>
-      </div>
-    </div>`;
-  }).join('');
-  }
-  showView('fiche');
-  document.getElementById('nav-clients').classList.add('active');
-}
-
-// --- TOUS LES RDV ---
-function renderRdvs() {
-  const nowStr = fmt(today);
-  const up = rdvs.filter(r=>r.date>=nowStr).sort((a,b)=>a.date.localeCompare(b.date)||a.heure.localeCompare(b.heure));
-  const past = rdvs.filter(r=>r.date<nowStr).sort((a,b)=>b.date.localeCompare(a.date)||b.heure.localeCompare(a.heure));
-  function rdvHtml(r) {
-    const c = getClient(r.clientId);
-    const tt = (r.trajetAller||0)+(r.trajetRetour||0);
-    return `<div class="rdv-item">
-      <div class="upcoming-dot ${tt>0?'dot-trajet':'dot-seance'}"></div>
-      <div class="rdv-info">
-        <div class="rdv-title">${c?c.prenom+' '+c.nom:'?'} — ${r.type}${r.premiere?' <span style="font-size:10px;background:var(--lavender-light);color:var(--lavender-dark);padding:1px 6px;border-radius:8px;font-weight:600">1ère séance</span>':''}</div>
-        <div class="rdv-detail">${r.heure} · ${r.duree} min${tt>0?' · '+tt+' min trajet':''} · ${r.lieu||''}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <div class="rdv-time">${fmtDate(r.date)}</div>
-        ${c && c.tel ? `<button class="icon-btn" onclick="openWhatsapp(${r.id})" title="Confirmation WhatsApp" style="color:#25D366"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
-        <button class="icon-btn" onclick="editRdv(${r.id})" title="Modifier"><i class="ti ti-edit"></i></button>
-        <button class="icon-btn danger" onclick="deleteRdv(${r.id})" title="Supprimer"><i class="ti ti-trash"></i></button>
-      </div>
-    </div>`;
-  }
-  document.getElementById('rdvs-upcoming').innerHTML = up.length ? up.map(rdvHtml).join('') : '<div class="empty-state"><i class="ti ti-calendar-off"></i>Aucun RDV à venir</div>';
-  document.getElementById('rdvs-past').innerHTML = past.length ? past.slice(0,20).map(rdvHtml).join('') : '<div class="empty-state"><i class="ti ti-clock-off"></i>Aucun RDV passé</div>';
-}
-
-// --- DURÉES PRÉDÉFINIES ---
-const DUREES_TYPE = {
-  'Relaxation': 30,
-  'Méditation': 60,
-  'Hypnose': 60,
-  'Accompagnement émotionnel': 60,
-  'Coaching': 60,
-  'Atelier groupe': 60,
-  'Autre': 60,
-};
-
-function formatTel(input) {
-  let v = input.value.replace(/\D/g, '').slice(0, 10);
-  let formatted = '';
-  for (let i = 0; i < v.length; i++) {
-    if (i > 0 && i % 2 === 0) formatted += ' ';
-    formatted += v[i];
-  }
-  input.value = formatted;
-}
-
-function telLink(tel) {
-  if (!tel) return '';
-  const clean = tel.replace(/\s/g, '');
-  return `<a href="tel:${clean}" style="color:inherit;text-decoration:none" onclick="event.stopPropagation()">${tel}</a>`;
-}
-
-function togglePremiereFields() {
-  const premiere = document.getElementById('rdv-premiere').checked;
-  document.getElementById('rdv-nouveau-client').style.display = premiere ? 'block' : 'none';
-  document.getElementById('rdv-client-row').style.display = premiere ? 'none' : 'block';
-  updateDureeFromType();
-  if (premiere) {
-    document.getElementById('rdv-nc-prenom').value = '';
-    document.getElementById('rdv-nc-nom').value = '';
-    document.getElementById('rdv-nc-tel').value = '';
-  }
-}
-function toggleAutreType() {
-  const type = document.getElementById('rdv-type').value;
-  document.getElementById('rdv-autre-row').style.display = type === 'Autre' ? 'block' : 'none';
-}
-
-function updateDureeFromType() {
-  const type = document.getElementById('rdv-type').value;
-  const premiere = document.getElementById('rdv-premiere').checked;
-  document.getElementById('rdv-duree').value = premiere ? 90 : (DUREES_TYPE[type] || 60);
-}
-
-// --- WHATSAPP ---
-let waRdvId = null;
-
-function openWhatsapp(rdvId) {
-  waRdvId = rdvId;
-  document.getElementById('wa-avec-lieu').checked = true;
-  updateWaPreview();
-  document.getElementById('modal-whatsapp').classList.add('open');
-}
-
-function updateWaPreview() {
-  const r = rdvs.find(x => x.id == waRdvId);
-  if (!r) return;
-  const c = getClient(r.clientId);
-  const prenom = c ? c.prenom : '';
-  const dateStr = new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-  const avecLieu = document.getElementById('wa-avec-lieu').checked;
-  const lieuPart = avecLieu && r.lieu ? ` — ${r.lieu}` : '';
-  const msg = `Bonjour ${prenom},\n\nJe vous confirme notre rendez-vous du ${dateStr} à ${r.heure}${lieuPart}.\n\nBelle journée à vous ! 🌞\n\nYoann🌿 - Prendre soin de son Hêtre`;
-  document.getElementById('wa-preview').innerText = msg;
-}
-
-function deleteRdvFromWa() {
-  if (!confirm('Supprimer ce rendez-vous ?')) return;
-  rdvs = rdvs.filter(r => r.id !== waRdvId);
-  persistAndSync();
-  closeModal('whatsapp');
-  toast('RDV supprimé', '#c05070');
-  renderDashboard();
-  renderCalendar();
-  if (document.getElementById('view-rdvs').classList.contains('active')) renderRdvs();
-}
-function sendWhatsapp() {
-  const r = rdvs.find(x => x.id == waRdvId);
-  if (!r) return;
-  const c = getClient(r.clientId);
-  if (!c || !c.tel) { alert('Numéro de téléphone manquant dans la fiche client'); return; }
-  const prenom = c.prenom;
-  const dateStr = new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-  const avecLieu = document.getElementById('wa-avec-lieu').checked;
-  const lieuPart = avecLieu && r.lieu ? ` — ${r.lieu}` : '';
-  const msg = `Bonjour ${prenom},\n\nJe vous confirme notre rendez-vous du ${dateStr} à ${r.heure}${lieuPart}.\n\nBelle journée à vous ! 🌞\n\nYoann🌿 - Prendre soin de son Hêtre`;
-  const tel = c.tel.replace(/\s/g, '').replace(/^0/, '33');
-  const url = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
-  window.open(url, '_blank');
-  closeModal('whatsapp');
-}
-
-// --- MODALS ---
-function confirmDeleteRdv(id) {
-  if (!confirm('Supprimer ce rendez-vous ?')) return;
-  rdvs = rdvs.filter(r => r.id !== id);
-  persistAndSync();
-  toast('RDV supprimé', '#c05070');
-  renderDashboard();
-  renderCalendar();
-  if (document.getElementById('view-rdvs').classList.contains('active')) renderRdvs();
-}
-
-function openRdvDetail(id) {
-  const r = rdvs.find(x => x.id == id);
-  if (!r) return;
-  const c = getClient(r.clientId);
-  const tt = (r.trajetAller||0) + (r.trajetRetour||0);
-  const dateStr = new Date(r.date+'T12:00:00').toLocaleDateString('fr-FR', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  document.getElementById('detail-title').textContent = `${c ? c.prenom+' '+c.nom : '?'} — ${r.type}`;
-  document.getElementById('detail-content').innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <div><i class="ti ti-calendar" style="color:var(--teal);margin-right:6px"></i>${dateStr}</div>
-      <div><i class="ti ti-clock" style="color:var(--teal);margin-right:6px"></i>${r.heure} · ${r.duree} min</div>
-      ${r.lieu ? `<div><i class="ti ti-map-pin" style="color:var(--teal);margin-right:6px"></i>${r.lieu}</div>` : ''}
-      ${tt > 0 ? `<div><i class="ti ti-car" style="color:var(--amber);margin-right:6px"></i>${r.trajetAller||0} min aller · ${r.trajetRetour||0} min retour</div>` : ''}
-      ${r.premiere ? `<div><i class="ti ti-star" style="color:var(--lavender-dark);margin-right:6px"></i>Première séance</div>` : ''}
-      ${r.notes ? `<div style="margin-top:4px;padding:8px;background:var(--warm-cream);border-radius:6px;font-style:italic">${r.notes}</div>` : ''}
-    </div>`;
-  document.getElementById('detail-delete-btn').onclick = () => { closeModal('rdv-detail'); confirmDeleteRdv(id); };
-  document.getElementById('detail-edit-btn').onclick = () => { closeModal('rdv-detail'); editRdv(id); };
-  document.getElementById('detail-note-btn').onclick = () => { closeModal('rdv-detail'); openNoteFromRdv(id); };
-  document.getElementById('modal-rdv-detail').classList.add('open');
-}
-
-
-function openNoteFromRdv(rdvId) {
-  const r = rdvs.find(x => x.id == rdvId);
-  if (!r) return;
-  currentClientId = r.clientId;
-  document.getElementById('note-edit-id').value = '';
-  document.getElementById('note-date').value = r.date;
-  document.getElementById('note-type').value = r.type;
-  document.getElementById('note-contenu').value = '';
-  document.getElementById('note-suite').value = '';
-  document.getElementById('modal-note').classList.add('open');
-}
-
-function toggleEnfantFields() {
-  const profil = document.getElementById('cl-profil').value;
-  document.getElementById('enfant-fields').style.display = profil === 'enfant' ? 'block' : 'none';
-  document.getElementById('structure-fields').style.display = profil === 'structure' ? 'block' : 'none';
-  const pf = document.getElementById('professionnel-fields');
-  if (pf) pf.style.display = profil === 'professionnel' ? 'block' : 'none';
-}
-
-let structureParticipants = [];
-
-function addParticipant() {
-  const input = document.getElementById('structure-participant-input');
-  const val = input.value.trim();
-  if (!val) return;
-  structureParticipants.push(val);
-  input.value = '';
-  renderParticipants();
-}
-
-function removeParticipant(i) {
-  structureParticipants.splice(i, 1);
-  renderParticipants();
-}
-
-function renderParticipants() {
-  const list = document.getElementById('structure-participants-list');
-  if (!list) return;
-  if (!structureParticipants.length) { list.innerHTML = ''; return; }
-  list.innerHTML = structureParticipants.map((p, i) =>
-    `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:white;border-radius:5px;margin-bottom:4px;border:0.5px solid var(--border)">
-      <i class="ti ti-user" style="font-size:13px;color:var(--amber)"></i>
-      <span style="flex:1;font-size:13px">${p}</span>
-      <button onclick="removeParticipant(${i})" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:15px;padding:0;display:flex"><i class="ti ti-x"></i></button>
-    </div>`
-  ).join('');
-}
-
-function updateAge() {
-  const naissance = document.getElementById('cl-naissance').value;
-  if (!naissance) { document.getElementById('cl-age').value = ''; return; }
-  const dn = new Date(naissance);
-  const now = new Date();
-  let age = now.getFullYear() - dn.getFullYear();
-  const m = now.getMonth() - dn.getMonth();
-  if (m < 0 || (m === 0 && now.getDate() < dn.getDate())) age--;
-  document.getElementById('cl-age').value = age + ' ans';
-}
-
-function calcAge(naissance) {
-  if (!naissance) return null;
-  const dn = new Date(naissance);
-  const now = new Date();
-  let age = now.getFullYear() - dn.getFullYear();
-  const m = now.getMonth() - dn.getMonth();
-  if (m < 0 || (m === 0 && now.getDate() < dn.getDate())) age--;
-  return age;
-}
-function openModal(type) {
-  if (type==='rdv') {
-    const sel = document.getElementById('rdv-client');
-    sel.innerHTML = '<option value="">— Sélectionner un client —</option>' + clients.map(c=>`<option value="${c.id}">${c.prenom} ${c.nom}</option>`).join('');
-    document.getElementById('rdv-date').value = fmt(today);
-    document.getElementById('rdv-premiere').checked = false;
-    document.getElementById('rdv-nouveau-client').style.display = 'none';
-    document.getElementById('rdv-client-row').style.display = 'block';
-    document.getElementById('rdv-autre-row').style.display = 'none';
-    document.getElementById('rdv-type-autre').value = '';
-    updateDureeFromType();
-  }
-  if (type==='note') document.getElementById('note-date').value=fmt(today);
-  if (type==='client') {
-    document.getElementById('enfant-fields').style.display='none';
-    document.getElementById('structure-fields').style.display='none';
-    document.getElementById('cl-naissance').value='';
-    document.getElementById('cl-age').value='';
-    document.getElementById('cl-resp1').value='';
-    document.getElementById('cl-resp1-tel').value='';
-    document.getElementById('cl-resp1-email').value='';
-    document.getElementById('cl-resp2').value='';
-    document.getElementById('cl-resp2-tel').value='';
-    document.getElementById('cl-resp2-email').value='';
-    document.getElementById('cl-structure').value='';
-    document.getElementById('cl-structure-type').value='';
-    document.getElementById('cl-structure-resp').value='';
-    document.getElementById('cl-structure-fonction').value='';
-    document.getElementById('cl-structure-tel').value='';
-    document.getElementById('cl-structure-email').value='';
-    structureParticipants = [];
-    renderParticipants();
-  }
-  document.getElementById('modal-'+type).classList.add('open');
-}
-function closeModal(type) {
-  document.getElementById('modal-'+type).classList.remove('open');
-  if (type==='rdv') { document.getElementById('rdv-edit-id').value=''; document.getElementById('rdv-modal-title').textContent='Nouveau rendez-vous'; }
-  if (type==='client') { document.getElementById('client-edit-id').value=''; document.getElementById('client-modal-title').textContent='Nouveau client'; }
-  if (type==='note') document.getElementById('note-edit-id').value='';
-}
-
-function rdvToMinutes(date, heure) {
-  const [h, m] = heure.split(':').map(Number);
-  const d = new Date(date + 'T00:00:00');
-  return d.getTime() / 60000 + h * 60 + m;
-}
-
-function checkConflict(data, excludeId) {
-  // Début réel = heure de départ (trajet aller avant la séance)
-  const newStart = rdvToMinutes(data.date, data.heure) - (data.trajetAller || 0);
-  // Fin réelle = heure de fin de séance + trajet retour
-  const newEnd = rdvToMinutes(data.date, data.heure) + data.duree + (data.trajetRetour || 0);
-
-  for (const r of rdvs) {
-    if (excludeId && r.id == excludeId) continue;
-    if (r.date !== data.date) continue;
-    const rStart = rdvToMinutes(r.date, r.heure) - (r.trajetAller || 0);
-    const rEnd = rdvToMinutes(r.date, r.heure) + r.duree + (r.trajetRetour || 0);
-    // Chevauchement si les plages se croisent
-    if (newStart < rEnd && newEnd > rStart) {
-      const c = getClient(r.clientId);
-      const nom = c ? c.prenom + ' ' + c.nom : '?';
-      // Calcul des heures d'affichage
-      const debutReel = new Date(r.date + 'T00:00:00');
-      const heureDebut = r.heure;
-      const minFin = rdvToMinutes(r.date, r.heure) + r.duree + (r.trajetRetour || 0);
-      const hFin = Math.floor(minFin % (24*60) / 60);
-      const mFin = Math.floor(minFin % 60);
-      const heureFin = String(hFin).padStart(2,'0') + 'h' + String(mFin).padStart(2,'0');
-      return `Conflit avec le RDV de ${nom} à ${heureDebut} (occupé jusqu'à ${heureFin} trajet inclus)`;
-    }
-  }
-  return null;
-}
-
-function saveRdv() {
-  const premiere = document.getElementById('rdv-premiere').checked;
-  let clientId;
-
-  if (premiere) {
-    const prenom = document.getElementById('rdv-nc-prenom').value.trim();
-    if (!prenom) { alert('Le prénom du nouveau client est requis'); return; }
-    const nouveauClient = {
-      id: newId(),
-      prenom,
-      nom: document.getElementById('rdv-nc-nom').value.trim(),
-      profil: document.getElementById('rdv-nc-profil').value,
-      tel: document.getElementById('rdv-nc-tel').value.trim(),
-      adresse: '', email: '', motif: '',
-      naissance: '', resp1: '', resp1Tel: '', resp1Email: '',
-      resp2: '', resp2Tel: '', resp2Email: '',
-      structure: '', structureResp: '', structureFonction: '',
-      structureTel: '', structureEmail: '', participants: [],
-    };
-    clients.push(nouveauClient);
-    clientId = nouveauClient.id;
-    toast(`Client "${prenom}" créé !`);
-  } else {
-    clientId = parseInt(document.getElementById('rdv-client').value);
-    if (!clientId) { alert('Sélectionne un client'); return; }
-  }
-
-  const editId = document.getElementById('rdv-edit-id').value;
-  const data = {
-    clientId,
-    type: document.getElementById('rdv-type').value === 'Autre' 
-      ? (document.getElementById('rdv-type-autre').value.trim() || 'Autre')
-      : document.getElementById('rdv-type').value,
-    date: document.getElementById('rdv-date').value,
-    heure: document.getElementById('rdv-heure').value,
-    duree: parseInt(document.getElementById('rdv-duree').value)||60,
-    trajetAller: parseInt(document.getElementById('rdv-trajet-aller').value)||0,
-    trajetRetour: parseInt(document.getElementById('rdv-trajet-retour').value)||0,
-    lieu: document.getElementById('rdv-lieu').value,
-    notes: document.getElementById('rdv-notes').value,
-    premiere: premiere,
-  };
-
-  const conflit = checkConflict(data, editId || null);
-  if (conflit) {
-    // Si on a créé un client, on l'annule
-    if (premiere) clients = clients.filter(c => c.id !== clientId);
-    toast('⚠️ ' + conflit, '#c05070');
-    setTimeout(() => alert('⚠️ Créneau impossible !\n\n' + conflit + '\n\nModifie l\'heure ou la durée.'), 100);
-    return;
-  }
-
-  if (editId) {
-    const idx = rdvs.findIndex(r => r.id == editId);
-    if (idx > -1) rdvs[idx] = {...rdvs[idx], ...data};
-    toast('RDV modifié');
-  } else {
-    const newRdvId = newId();
-    rdvs.push({id: newRdvId, ...data});
-    if (!premiere) toast('RDV ajouté');
-    // Ouvrir WhatsApp si le client a un numéro
-    const clientPourWa = clients.find(c => c.id === clientId);
-    if (clientPourWa && clientPourWa.tel) {
-      persistAndSync();
-      closeModal('rdv');
-      renderDashboard();
-      renderCalendar();
-      renderClients();
-      if (document.getElementById('view-rdvs').classList.contains('active')) renderRdvs();
-      setTimeout(() => openWhatsapp(newRdvId), 300);
-      return;
-    }
-  }
-  persistAndSync();
-  closeModal('rdv');
-  renderDashboard();
-  renderCalendar();
-  renderClients();
-  if (document.getElementById('view-rdvs').classList.contains('active')) renderRdvs();
-}
-
-function editRdv(id) {
-  const r = rdvs.find(x=>x.id==id); if(!r) return;
-  const sel = document.getElementById('rdv-client');
-  sel.innerHTML = '<option value="">— Sélectionner —</option>' + clients.map(c=>`<option value="${c.id}">${c.prenom} ${c.nom}</option>`).join('');
-  document.getElementById('rdv-edit-id').value=id;
-  document.getElementById('rdv-modal-title').textContent='Modifier le rendez-vous';
-  document.getElementById('rdv-client').value=r.clientId;
-  document.getElementById('rdv-type').value=r.type;
-  document.getElementById('rdv-date').value=r.date;
-  document.getElementById('rdv-heure').value=r.heure;
-  document.getElementById('rdv-duree').value=r.duree;
-  document.getElementById('rdv-trajet-aller').value=r.trajetAller||0;
-  document.getElementById('rdv-trajet-retour').value=r.trajetRetour||0;
-  document.getElementById('rdv-lieu').value=r.lieu||'';
-  document.getElementById('rdv-notes').value=r.notes||'';
-  document.getElementById('modal-rdv').classList.add('open');
-}
-
-function deleteRdv(id) {
-  if (!confirm('Supprimer ce rendez-vous ?')) return;
-  rdvs = rdvs.filter(r=>r.id!==id); persistAndSync(); toast('RDV supprimé','#993C1D');
-  renderDashboard(); renderCalendar(); if(document.getElementById('view-rdvs').classList.contains('active')) renderRdvs();
-}
-
-function saveClient() {
-  const prenom = document.getElementById('cl-prenom').value.trim();
-  const nom = document.getElementById('cl-nom').value.trim();
-  if (!prenom) { alert('Le prénom est requis'); return; }
-  const editId = document.getElementById('client-edit-id').value;
-  const profil = document.getElementById('cl-profil').value;
-  const data = {
-    prenom, nom, profil,
-    tel: document.getElementById('cl-tel').value,
-    adresse: document.getElementById('cl-adresse').value,
-    email: document.getElementById('cl-email').value,
-    motif: document.getElementById('cl-motif').value,
-    naissance: profil === 'enfant' ? document.getElementById('cl-naissance').value : '',
-    resp1: profil === 'enfant' ? document.getElementById('cl-resp1').value : '',
-    resp1Tel: profil === 'enfant' ? document.getElementById('cl-resp1-tel').value : '',
-    resp1Email: profil === 'enfant' ? document.getElementById('cl-resp1-email').value : '',
-    resp2: profil === 'enfant' ? document.getElementById('cl-resp2').value : '',
-    resp2Tel: profil === 'enfant' ? document.getElementById('cl-resp2-tel').value : '',
-    resp2Email: profil === 'enfant' ? document.getElementById('cl-resp2-email').value : '',
-    structure: profil === 'structure' ? document.getElementById('cl-structure-type').value : (profil === 'enfant' ? document.getElementById('cl-structure').value : ''),
-    structureResp: profil === 'enfant' ? document.getElementById('cl-structure-resp').value : (profil === 'structure' ? document.getElementById('cl-structure-resp').value : ''),
-    structureFonction: profil === 'enfant' ? document.getElementById('cl-structure-fonction').value : (profil === 'structure' ? document.getElementById('cl-structure-fonction').value : ''),
-    structureTel: profil === 'enfant' ? document.getElementById('cl-structure-tel').value : (profil === 'structure' ? document.getElementById('cl-structure-tel').value : ''),
-    structureEmail: profil === 'enfant' ? document.getElementById('cl-structure-email').value : (profil === 'structure' ? document.getElementById('cl-structure-email').value : ''),
-    participants: profil === 'structure' ? [...structureParticipants] : [],
-  };
-  if (editId) {
-    const idx = clients.findIndex(c => c.id == editId);
-    if (idx > -1) clients[idx] = {...clients[idx], ...data};
-    toast('Client modifié');
-  } else {
-    clients.push({id: newId(), ...data});
-    toast('Client ajouté');
-  }
-  persistAndSync();
-  closeModal('client');
-  renderClients();
-  renderDashboard();
-  if (editId && currentClientId == editId) showFiche(editId);
-}
-
-function editClient(id) {
-  const c = getClient(id); if(!c) return;
-  document.getElementById('client-edit-id').value=id;
-  document.getElementById('client-modal-title').textContent='Modifier le client';
-  document.getElementById('cl-prenom').value=c.prenom;
-  document.getElementById('cl-nom').value=c.nom;
-  document.getElementById('cl-profil').value=c.profil;
-  document.getElementById('cl-tel').value=c.tel||'';
-  document.getElementById('cl-adresse').value=c.adresse||'';
-  document.getElementById('cl-email').value=c.email||'';
-  document.getElementById('cl-motif').value=c.motif||'';
-  // Champs enfant
-  toggleEnfantFields();
-  if (c.profil === 'enfant') {
-    document.getElementById('cl-naissance').value=c.naissance||'';
-    document.getElementById('cl-resp1').value=c.resp1||'';
-    document.getElementById('cl-resp1-tel').value=c.resp1Tel||'';
-    document.getElementById('cl-resp1-email').value=c.resp1Email||'';
-    document.getElementById('cl-resp2').value=c.resp2||'';
-    document.getElementById('cl-resp2-tel').value=c.resp2Tel||'';
-    document.getElementById('cl-resp2-email').value=c.resp2Email||'';
-    document.getElementById('cl-structure').value=c.structure||'';
-    document.getElementById('cl-structure-resp').value=c.structureResp||'';
-    document.getElementById('cl-structure-tel').value=c.structureTel||'';
-    document.getElementById('cl-structure-email').value=c.structureEmail||'';
-    updateAge();
-  }
-  if (c.profil === 'structure') {
-    document.getElementById('cl-structure-type').value=c.structure||'';
-    document.getElementById('cl-structure-resp').value=c.structureResp||'';
-    document.getElementById('cl-structure-fonction').value=c.structureFonction||'';
-    document.getElementById('cl-structure-tel').value=c.structureTel||'';
-    document.getElementById('cl-structure-email').value=c.structureEmail||'';
-    structureParticipants = c.participants ? [...c.participants] : [];
-    renderParticipants();
-  }
-  document.getElementById('modal-client').classList.add('open');
-}
-
-function deleteClient(id) {
-  if (!confirm('Supprimer ce client et toutes ses données ?')) return;
-  clients = clients.filter(c=>c.id!==id);
-  rdvs = rdvs.filter(r=>r.clientId!==id);
-  notes = notes.filter(n=>n.clientId!==id);
-  persistAndSync(); toast('Client supprimé','#993C1D'); showView('clients');
-}
-
-function saveNote() {
-  if (!currentClientId) return;
-  const editId = document.getElementById('note-edit-id').value;
-  const data = {
-    clientId: currentClientId,
-    date: document.getElementById('note-date').value,
-    type: document.getElementById('note-type').value,
-    contenu: document.getElementById('note-contenu').value,
-    suite: document.getElementById('note-suite').value,
-  };
-  if (editId) { const idx=notes.findIndex(n=>n.id==editId); if(idx>-1) notes[idx]={...notes[idx],...data}; toast('Note modifiée'); }
-  else { notes.push({id:newId(),...data}); toast('Note ajoutée'); }
-  persistAndSync(); closeModal('note');
-  ['note-contenu','note-suite'].forEach(id=>document.getElementById(id).value='');
-  showFiche(currentClientId);
-}
-
-function editNote(id) {
-  const n = notes.find(x=>x.id==id); if(!n) return;
-  document.getElementById('note-edit-id').value=id;
-  document.getElementById('note-date').value=n.date;
-  document.getElementById('note-type').value=n.type;
-  document.getElementById('note-contenu').value=n.contenu;
-  document.getElementById('note-suite').value=n.suite||'';
-  document.getElementById('modal-note').classList.add('open');
-}
-
-function deleteNote(id) {
-  if (!confirm('Supprimer cette note ?')) return;
-  notes = notes.filter(n=>n.id!==id); persistAndSync(); toast('Note supprimée','#993C1D'); showFiche(currentClientId);
-}
-
-// Fermer modal en cliquant dehors
-document.querySelectorAll('.overlay').forEach(el => el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open'); }));
-
-// ---- PARAMÈTRES ----
-const PARAM_KEY = 'mac_parametres';
-const DEFAULT_PARAMS = {
-  prenom:'', nom:'', siret:'', adresse:'', email:'', tel:'', enseigne:'Prendre Soin de Son Être',
-  prix: 60, tauxKm: 0.518, tva: 'TVA non applicable — article 293 B du CGI',
-  ejsService:'', ejsTemplate:'', ejsPubkey:''
-};
-
-function loadParametres() {
-  const p = JSON.parse(localStorage.getItem(PARAM_KEY) || 'null') || DEFAULT_PARAMS;
-  document.getElementById('param-prenom').value = p.prenom || '';
-  document.getElementById('param-nom').value = p.nom || '';
-  document.getElementById('param-siret').value = p.siret || '';
-  document.getElementById('param-adresse').value = p.adresse || '';
-  document.getElementById('param-email').value = p.email || '';
-  document.getElementById('param-tel').value = p.tel || '';
-  document.getElementById('param-enseigne').value = p.enseigne || '';
-  document.getElementById('param-prix').value = p.prix || 60;
-  document.getElementById('param-taux-km').value = p.tauxKm || 0.518;
-  document.getElementById('param-tva').value = p.tva || DEFAULT_PARAMS.tva;
-  document.getElementById('param-ejs-service').value = p.ejsService || '';
-  document.getElementById('param-ejs-template').value = p.ejsTemplate || '';
-  document.getElementById('param-ejs-pubkey').value = p.ejsPubkey || '';
-}
-
-function saveParametres() {
-  const p = {
-    prenom: document.getElementById('param-prenom').value.trim(),
-    nom: document.getElementById('param-nom').value.trim(),
-    siret: document.getElementById('param-siret').value.trim(),
-    adresse: document.getElementById('param-adresse').value.trim(),
-    email: document.getElementById('param-email').value.trim(),
-    tel: document.getElementById('param-tel').value.trim(),
-    enseigne: document.getElementById('param-enseigne').value.trim(),
-    prix: parseFloat(document.getElementById('param-prix').value) || 60,
-    tauxKm: parseFloat(document.getElementById('param-taux-km').value) || 0.518,
-    tva: document.getElementById('param-tva').value.trim(),
-    ejsService: document.getElementById('param-ejs-service').value.trim(),
-    ejsTemplate: document.getElementById('param-ejs-template').value.trim(),
-    ejsPubkey: document.getElementById('param-ejs-pubkey').value.trim(),
-  };
-  localStorage.setItem(PARAM_KEY, JSON.stringify(p));
-  toast('Informations enregistrées ✓');
-}
-
-function getParams() {
-  return JSON.parse(localStorage.getItem(PARAM_KEY) || 'null') || DEFAULT_PARAMS;
-}
-
-// ---- DEVIS ----
-let devisList = JSON.parse(localStorage.getItem('mac_devis') || '[]');
-
-function saveDevisLocal() {
-  localStorage.setItem('mac_devis', JSON.stringify(devisList));
-}
-
-function onDevisClientChange() {
-  const id = parseInt(document.getElementById('devis-client').value);
-  const infoEl = document.getElementById('devis-client-info');
-  const editBtn = document.getElementById('devis-client-edit-btn');
-  if (!id) { infoEl.style.display = 'none'; editBtn.style.display = 'none'; return; }
-  const c = clients.find(x => x.id === id);
-  if (!c) { infoEl.style.display = 'none'; editBtn.style.display = 'none'; return; }
-  let lines = [];
-  if (c.adresse) lines.push(`<i class="ti ti-map-pin"></i> ${c.adresse}`);
-  if (c.tel) lines.push(`<i class="ti ti-phone"></i> ${c.tel}`);
-  if (c.email) lines.push(`<i class="ti ti-mail"></i> ${c.email}`);
-  if (c.profil === 'enfant') {
-    if (c.resp1) lines.push(`<i class="ti ti-user"></i> Père : ${c.resp1}${c.resp1Tel ? ' · '+c.resp1Tel : ''}`);
-    if (c.resp2) lines.push(`<i class="ti ti-user"></i> Mère : ${c.resp2}${c.resp2Tel ? ' · '+c.resp2Tel : ''}`);
-    if (c.structure) lines.push(`<i class="ti ti-building"></i> ${c.structure}${c.structureResp ? ' — '+c.structureResp : ''}`);
-  }
-  infoEl.innerHTML = lines.join('<br>');
-  infoEl.style.display = 'block';
-  editBtn.style.display = 'block';
-}
-
-function createClientFromDevis() {
-  closeModal('devis');
-  window._devisRetourClientId = null;
-  window._devisRetourNewClient = true;
-  // Ouvrir le modal client vierge
-  openModal('client');
-  // Après la sauvegarde du client, on reviendra au devis
-  // On surcharge temporairement saveClient pour intercepter
-  window._saveClientOriginal = window._saveClientOriginal || null;
-  document.getElementById('retour-devis-btn').style.display = '';
-}
-
-function retourAuDevis() {
-  document.getElementById('retour-devis-btn').style.display = 'none';
-  openModal('devis');
-  setTimeout(() => {
-    // Rafraîchir la liste des clients dans le select
-    const sel = document.getElementById('devis-client');
-    sel.innerHTML = '<option value="">— Sélectionner un client —</option>' + clients.map(c=>`<option value="${c.id}">${c.prenom} ${c.nom}</option>`).join('');
-    if (window._devisRetourClientId) {
-      sel.value = window._devisRetourClientId;
-      onDevisClientChange();
-    } else if (window._devisRetourNewClient) {
-      // Sélectionner le client le plus récemment créé
-      if (clients.length) {
-        const lastClient = clients[clients.length - 1];
-        sel.value = lastClient.id;
-        onDevisClientChange();
-      }
-      window._devisRetourNewClient = false;
-    }
-  }, 100);
-}
-
-function editClientFromDevis() {
-  const id = parseInt(document.getElementById('devis-client').value);
-  if (!id) return;
-  closeModal('devis');
-  window._devisRetourClientId = id;
-  showFiche(id);
-  document.getElementById('retour-devis-btn').style.display = '';
-}
-
-let devisPrestationIdx = 0;
-function addDevisPrestation() {
-  const p = getParams();
-  const idx = devisPrestationIdx++;
-  const container = document.getElementById('devis-prestations');
-  const div = document.createElement('div');
-  div.id = `dp-${idx}`;
-  div.style.cssText = 'display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:end;margin-bottom:8px';
-  div.innerHTML = `
-    <div class="form-row" style="margin:0"><label>Prestation</label>
-      <input type="text" id="dp-label-${idx}" placeholder="Ex: Séance d'hypnothérapie" oninput="calcDevisTotal()">
-    </div>
-    <div class="form-row" style="margin:0"><label>Prix (€)</label>
-      <input type="number" id="dp-prix-${idx}" value="${p.prix||60}" min="0" step="0.01" style="width:90px" oninput="calcDevisTotal()">
-    </div>
-    <button class="icon-btn danger" onclick="removeDevisPrestation(${idx})" style="margin-bottom:1px"><i class="ti ti-trash"></i></button>
-  `;
-  container.appendChild(div);
-  calcDevisTotal();
-}
-
-function removeDevisPrestation(idx) {
-  const el = document.getElementById(`dp-${idx}`);
-  if (el) el.remove();
-  calcDevisTotal();
-}
-
-function getDevisPrestations() {
-  const items = [];
-  document.querySelectorAll('#devis-prestations > div').forEach(div => {
-    const idx = div.id.replace('dp-', '');
-    const label = document.getElementById(`dp-label-${idx}`)?.value.trim() || 'Séance';
-    const prix = parseFloat(document.getElementById(`dp-prix-${idx}`)?.value) || 0;
-    items.push({ label, prix });
-  });
-  return items;
-}
-
-function calcDevisTotal() {
-  const duree = parseInt(document.getElementById('devis-duree').value) || 1;
-  const freq = parseInt(document.getElementById('devis-frequence').value) || 2;
-  const nbSeances = duree * freq;
-  const km = parseFloat(document.getElementById('devis-km').value) || 0;
-  const tauxKm = parseFloat(document.getElementById('devis-taux-km').value) || 0.518;
-  const prestations = getDevisPrestations();
-
-  const totalPrestations = prestations.reduce((s, p) => s + p.prix * nbSeances, 0);
-  const totalKm = km > 0 ? (km * 2 * nbSeances * tauxKm) : 0;
-  const total = totalPrestations + totalKm;
-
-  const freqLabel = { '4': '1/semaine', '2': '1/15 jours', '1': '1/mois' }[String(freq)] || '';
-  let html = `<strong>Durée :</strong> ${duree} mois · ${freqLabel} · <strong>${nbSeances} séances au total</strong><br>`;
-  prestations.forEach(p => {
-    html += `${p.label} : ${nbSeances} × ${p.prix.toFixed(2)} € = <strong>${(p.prix*nbSeances).toFixed(2)} €</strong><br>`;
-  });
-  if (km > 0) {
-    html += `Déplacements : ${nbSeances} × ${km*2} km × ${tauxKm} €/km = <strong>${totalKm.toFixed(2)} €</strong><br>`;
-  }
-  html += `<strong style="font-size:14px;color:var(--teal)">Total : ${total.toFixed(2)} €</strong>`;
-  document.getElementById('devis-resume').innerHTML = html;
-}
-
-function buildDevisData() {
-  const clientId = parseInt(document.getElementById('devis-client').value);
-  const client = clients.find(c => c.id === clientId);
-  const duree = parseInt(document.getElementById('devis-duree').value) || 1;
-  const freq = parseInt(document.getElementById('devis-frequence').value) || 2;
-  const nbSeances = duree * freq;
-  const km = parseFloat(document.getElementById('devis-km').value) || 0;
-  const tauxKm = parseFloat(document.getElementById('devis-taux-km').value) || 0.518;
-  const prestations = getDevisPrestations();
-  const totalPrestations = prestations.reduce((s, p) => s + p.prix * nbSeances, 0);
-  const totalKm = km > 0 ? km * 2 * nbSeances * tauxKm : 0;
-  return {
-    id: parseInt(document.getElementById('devis-edit-id').value) || newId(),
-    date: fmt(today),
-    clientId, client,
-    objet: document.getElementById('devis-objet').value.trim(),
-    duree, freq, nbSeances,
-    prestations,
-    km, tauxKm,
-    totalPrestations, totalKm,
-    total: totalPrestations + totalKm,
-    notes: document.getElementById('devis-notes').value.trim(),
-  };
-}
-
-function saveDevisBrouillon() {
-  const d = buildDevisData();
-  d.statut = 'brouillon';
-  const idx = devisList.findIndex(x => x.id === d.id);
-  if (idx >= 0) devisList[idx] = d;
-  else devisList.unshift(d);
-  saveDevisLocal();
-  closeModal('devis');
-  renderDevisList();
-  toast('Brouillon enregistré ✓');
-}
-
-function saveDevis() {
-  const d = buildDevisData();
-  if (!d.clientId) { alert('Veuillez sélectionner un client.'); return; }
-  if (!d.objet) { alert('Veuillez renseigner un objet.'); return; }
-  const existing = devisList.find(x => x.id === d.id);
-  d.statut = existing?.statut || 'finalise';
-  d.brouillon = false;
-  const idx = devisList.findIndex(x => x.id === d.id);
-  if (idx >= 0) devisList[idx] = d;
-  else devisList.unshift(d);
-  saveDevisLocal();
-  closeModal('devis');
-  renderDevisList();
-  toast('Devis enregistré ✓');
-}
-
-function setDevisStatut(id, statut) {
-  const idx = devisList.findIndex(x => x.id === id);
-  if (idx < 0) return;
-  devisList[idx].statut = statut;
-  if (statut === 'accepte') {
-    toast('Devis accepté ! Pense à créer la facture sur Kolecto 📋');
-  } else if (statut === 'envoye') {
-    toast('Devis marqué comme envoyé ✓');
-  } else if (statut === 'refuse') {
-    toast('Devis marqué comme refusé');
-  } else if (statut === 'brouillon') {
-    toast('Devis repassé en brouillon');
-  }
-  saveDevisLocal();
-  renderDevisList();
-}
-
-function renderDevisList() {
-  const el = document.getElementById('devis-list');
-  if (!devisList.length) {
-    el.innerHTML = '<div class="empty-state"><i class="ti ti-file-off"></i>Aucun devis</div>';
-    return;
-  }
-
-  const STATUTS = {
-    brouillon: { label:'Brouillon', color:'var(--text-hint)', bg:'#f0f0f0', icon:'ti-pencil' },
-    finalise:  { label:'Finalisé',  color:'var(--teal-dark)', bg:'var(--teal-light)', icon:'ti-file-check' },
-    envoye:    { label:'Envoyé',    color:'var(--amber)',     bg:'var(--amber-light)', icon:'ti-mail' },
-    accepte:   { label:'Accepté ✓', color:'#2d7a2d',         bg:'#e6f4e6',           icon:'ti-circle-check' },
-    refuse:    { label:'Refusé',    color:'var(--danger)',    bg:'var(--danger-light)', icon:'ti-circle-x' },
-  };
-
-  const devisCard = (d) => {
-    const c = d.client || clients.find(x => x.id === d.clientId);
-    const nom = c ? `${c.prenom} ${c.nom}` : 'Client inconnu';
-    const statut = d.statut || (d.brouillon ? 'brouillon' : 'finalise');
-    const st = STATUTS[statut] || STATUTS.finalise;
-    const locked = statut === 'accepte' || statut === 'envoye';
-
-    // Boutons de changement de statut
-    let statutBtns = '';
-    if (statut === 'brouillon' || statut === 'finalise') {
-      statutBtns = `<button class="btn" onclick="setDevisStatut(${d.id},'envoye')" style="font-size:11px;padding:3px 8px;border-color:var(--amber);color:var(--amber)" title="Marquer comme envoyé"><i class="ti ti-mail"></i> Envoyé</button>`;
-    }
-    if (statut === 'envoye') {
-      statutBtns = `
-        <button class="btn" onclick="setDevisStatut(${d.id},'accepte')" style="font-size:11px;padding:3px 8px;border-color:#2d7a2d;color:#2d7a2d" title="Marquer comme accepté"><i class="ti ti-circle-check"></i> Accepté</button>
-        <button class="btn" onclick="setDevisStatut(${d.id},'refuse')" style="font-size:11px;padding:3px 8px;border-color:var(--danger);color:var(--danger)" title="Marquer comme refusé"><i class="ti ti-circle-x"></i> Refusé</button>`;
-    }
-    if (locked || statut === 'refuse') {
-      statutBtns += `<button class="btn" onclick="setDevisStatut(${d.id},'brouillon')" style="font-size:11px;padding:3px 8px;color:var(--text-hint)" title="Repasser en brouillon"><i class="ti ti-rotate"></i></button>`;
-    }
-
-    const kolectoReminder = statut === 'accepte'
-      ? `<div style="background:#e6f4e6;border-left:3px solid #2d7a2d;padding:6px 10px;font-size:11px;color:#2d7a2d;margin-top:8px;border-radius:0 4px 4px 0"><i class="ti ti-alert-circle"></i> Pense à créer la facture sur Kolecto</div>`
-      : '';
-
-    return `<div class="rdv-card" style="flex-direction:column;align-items:stretch;gap:8px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div class="rdv-info" style="flex:1">
-          <div class="rdv-title" style="display:flex;align-items:center;gap:8px">
-            ${d.objet || 'Devis sans titre'}
-            <span style="background:${st.bg};color:${st.color};font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap"><i class="ti ${st.icon}"></i> ${st.label}</span>
-          </div>
-          <div class="rdv-meta">${nom} · ${fmtDate(d.date)} · <strong>${d.total.toFixed(2)} €</strong></div>
-        </div>
-        <div class="rdv-actions" style="flex-shrink:0">
-        ${statut !== 'accepte' && statut !== 'envoye' ? `<button class="icon-btn" onclick="editDevis(${d.id})" title="Modifier"><i class="ti ti-edit"></i></button>` : ''}
-          <button class="icon-btn" onclick="genDevisPDFById(${d.id})" title="PDF"><i class="ti ti-file-type-pdf"></i></button>
-          <button class="icon-btn danger" onclick="deleteDevis(${d.id})" title="Supprimer"><i class="ti ti-trash"></i></button>
-        </div>
-      </div>
-      ${statutBtns ? `<div style="display:flex;gap:6px;flex-wrap:wrap">${statutBtns}</div>` : ''}
-      ${kolectoReminder}
-    </div>`;
-  };
-
-  // Grouper par statut
-  const groupes = {
-    brouillon: devisList.filter(d => (d.statut||'finalise') === 'brouillon' || d.brouillon),
-    envoye:    devisList.filter(d => d.statut === 'envoye'),
-    finalise:  devisList.filter(d => (d.statut === 'finalise' || (!d.statut && !d.brouillon)) ),
-    accepte:   devisList.filter(d => d.statut === 'accepte'),
-    refuse:    devisList.filter(d => d.statut === 'refuse'),
-  };
-
-  let html = '';
-  const ordre = [
-    { key:'brouillon', label:'Brouillons', icon:'ti-pencil' },
-    { key:'finalise',  label:'Finalisés',  icon:'ti-file-description' },
-    { key:'envoye',    label:'Envoyés — en attente de réponse', icon:'ti-mail' },
-    { key:'accepte',   label:'Acceptés',   icon:'ti-circle-check' },
-    { key:'refuse',    label:'Refusés',    icon:'ti-circle-x' },
-  ];
-  ordre.forEach(({ key, label, icon }) => {
-    if (!groupes[key]?.length) return;
-    html += `<div class="section-title" style="margin-bottom:0.5rem"><i class="ti ${icon}" style="font-size:13px;margin-right:4px"></i>${label}</div>`;
-    html += groupes[key].map(devisCard).join('');
-    html += `<div style="margin-bottom:1.25rem"></div>`;
-  });
-  el.innerHTML = html;
-}
-
-function editDevis(id) {
-  const d = devisList.find(x => x.id === id);
-  if (!d) return;
-  const p = getParams();
-  const sel = document.getElementById('devis-client');
-  sel.innerHTML = '<option value="">— Sélectionner un client —</option>' + clients.map(c=>`<option value="${c.id}">${c.prenom} ${c.nom}</option>`).join('');
-  document.getElementById('devis-edit-id').value = d.id;
-  document.getElementById('devis-modal-title').textContent = 'Modifier le devis';
-  document.getElementById('devis-client').value = d.clientId;
-  onDevisClientChange();
-  document.getElementById('devis-objet').value = d.objet || '';
-  document.getElementById('devis-duree').value = d.duree;
-  document.getElementById('devis-frequence').value = String(d.freq);
-  document.getElementById('devis-km').value = d.km;
-  document.getElementById('devis-taux-km').value = d.tauxKm;
-  document.getElementById('devis-notes').value = d.notes || '';
-  document.getElementById('devis-client-info').style.display = 'none';
-  document.getElementById('devis-prestations').innerHTML = '';
-  devisPrestationIdx = 0;
-  (d.prestations || []).forEach(pr => {
-    addDevisPrestation();
-    const idx = devisPrestationIdx - 1;
-    document.getElementById(`dp-label-${idx}`).value = pr.label;
-    document.getElementById(`dp-prix-${idx}`).value = pr.prix;
-  });
-  calcDevisTotal();
-  document.getElementById('modal-devis').classList.add('open');
-}
-
-// ---- GÉNÉRATION PDF ----
-function genDevisPDFById(id) {
-  const d = devisList.find(x => x.id === id);
-  if (!d) return;
-  genDevisPDFFromData(d);
-}
-
-function genDevisPDF() {
-  const d = buildDevisData();
-  if (!d.clientId) { alert('Veuillez sélectionner un client.'); return; }
-  genDevisPDFFromData(d);
-}
-
-function genDevisPDFFromData(d) {
-  const p = getParams();
-  const c = d.client || clients.find(x => x.id === d.clientId) || {};
-  const freqLabel = { '4': '1 séance par semaine', '2': '1 séance tous les 15 jours', '1': '1 séance par mois' }[String(d.freq)] || '';
-  const numDevis = `DEV-${d.id}`;
-  const dateStr = fmtDate(d.date);
-
-  let prestationsRows = (d.prestations || []).map(pr =>
-    `<tr><td>${pr.label}</td><td style="text-align:center">${d.nbSeances}</td><td style="text-align:right">${pr.prix.toFixed(2)} €</td><td style="text-align:right">${(pr.prix*d.nbSeances).toFixed(2)} €</td></tr>`
-  ).join('');
-
-  if (d.km > 0) {
-    const kmTotal = d.km * 2 * d.nbSeances * d.tauxKm;
-    prestationsRows += `<tr><td>Déplacements (${d.km}km A/R × ${d.nbSeances} séances × ${d.tauxKm} €/km)</td><td style="text-align:center">${d.nbSeances}</td><td style="text-align:right">${(d.km*2*d.tauxKm).toFixed(2)} €</td><td style="text-align:right">${kmTotal.toFixed(2)} €</td></tr>`;
-  }
-
-  let clientAddr = [c.prenom+' '+c.nom];
-  if (c.adresse) clientAddr.push(c.adresse);
-  if (c.profil === 'enfant') {
-    if (c.resp1) clientAddr.push(`Père : ${c.resp1}${c.resp1Tel ? ' · '+c.resp1Tel : ''}`);
-    if (c.resp2) clientAddr.push(`Mère : ${c.resp2}${c.resp2Tel ? ' · '+c.resp2Tel : ''}`);
-    if (c.structure) clientAddr.push(`Structure : ${c.structure}`);
-    if (c.structureResp) clientAddr.push(`Référent : ${c.structureResp}${c.structureTel ? ' · '+c.structureTel : ''}`);
-  } else {
-    if (c.tel) clientAddr.push(c.tel);
-    if (c.email) clientAddr.push(c.email);
-  }
-
-  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
-<title>Devis ${numDevis}</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Nunito:wght@300;400;500;600;800&display=swap');
-  body { font-family: 'Nunito', Arial, sans-serif; font-size: 13px; color: #2d4a4a; margin: 0; padding: 40px; background: #faf8f5; }
-  h1 { font-family: 'Cormorant Garamond', serif; font-size: 28px; color: #1a7a7a; margin: 0 0 2px; font-weight: 600; letter-spacing: 0.02em; }
-  .subtitle { color: #b8a8d0; font-size: 13px; font-style: italic; margin-bottom: 16px; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 2px solid #1a7a7a; }
-  .emetteur { max-width: 55%; }
-  .meta { text-align: right; }
-  .meta .num { font-family: 'Cormorant Garamond', serif; font-size: 22px; color: #1a7a7a; font-weight: 600; }
-  .meta .info { font-size: 12px; color: #7a9a9a; line-height: 1.9; margin-top: 4px; }
-  .emetteur-info { font-size: 12px; color: #5a7a7a; line-height: 1.9; }
-  .parties { display: flex; gap: 24px; margin-bottom: 28px; }
-  .partie { flex: 1; border-radius: 8px; padding: 16px 18px; font-size: 12px; line-height: 1.8; }
-  .partie-emetteur { background: #e8f4f4; border-left: 3px solid #1a7a7a; }
-  .partie-client { background: #f0eaf8; border-left: 3px solid #b8a8d0; }
-  .partie-title { font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
-  .partie-emetteur .partie-title { color: #1a7a7a; }
-  .partie-client .partie-title { color: #7a6a9a; }
-  .objet { background: #1a7a7a; color: white; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-weight: 600; font-size: 14px; }
-  .periode { margin-bottom: 22px; background: #fdf0e6; border-left: 3px solid #d4956a; padding: 8px 14px; border-radius: 0 6px 6px 0; font-size: 12px; color: #8a5a3a; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 6px; border-radius: 8px; overflow: hidden; }
-  th { background: #1a7a7a; color: white; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-  td { padding: 9px 12px; border-bottom: 1px solid #e8f0f0; font-size: 12px; }
-  tr:nth-child(even) td { background: #f5fafa; }
-  .total-row td { font-weight: 700; font-size: 14px; color: white; background: #145f5f; border-top: none; }
-  .tva { font-size: 11px; color: #9ab0b0; margin: 6px 0 22px; font-style: italic; }
-  .notes { background: #fdf0e6; border-radius: 6px; padding: 12px 16px; font-size: 12px; color: #7a5a3a; margin-bottom: 22px; border-left: 3px solid #d4956a; }
-  .validity { font-size: 11px; color: #b8a8d0; text-align: center; margin-bottom: 20px; font-style: italic; }
-  .footer { font-size: 10px; color: #b0c8c8; border-top: 1px solid #d8eaea; padding-top: 14px; text-align: center; margin-top: 30px; line-height: 1.8; }
-  @media print { body { padding: 20px; background: white; } }
-</style></head><body>
-<div class="header">
-  <div class="emetteur">
-    <h1>${p.enseigne || 'Prendre Soin de Son Être'}</h1>
-    <div class="subtitle">Hypnothérapie · Coaching · Relaxation</div>
-    <div class="emetteur-info">
-      ${p.prenom || ''} ${p.nom || ''}<br>
-      ${p.adresse ? p.adresse+'<br>' : ''}
-      ${p.tel ? p.tel+'<br>' : ''}
-      ${p.email ? p.email+'<br>' : ''}
-      ${p.siret ? 'SIRET : '+p.siret : ''}
-    </div>
-  </div>
-  <div class="meta">
-    <div class="num">DEVIS</div>
-    <div class="info">
-      N° ${numDevis}<br>
-      Date : ${dateStr}<br>
-      Valable 30 jours
-    </div>
-  </div>
-</div>
-
-<div class="parties">
-  <div class="partie partie-emetteur">
-    <div class="partie-title">Prestataire</div>
-    ${p.prenom || ''} ${p.nom || ''}<br>
-    ${p.enseigne || ''}<br>
-    ${p.adresse || ''}<br>
-    ${p.siret ? 'SIRET : '+p.siret : ''}
-  </div>
-  <div class="partie partie-client">
-    <div class="partie-title">Client</div>
-    ${clientAddr.join('<br>')}
-  </div>
-</div>
-
-<div class="objet">📋 ${d.objet || 'Accompagnement'}</div>
-<div class="periode">Durée : <strong>${d.duree} mois</strong> · Fréquence : <strong>${freqLabel}</strong> · Total : <strong>${d.nbSeances} séances</strong></div>
-
-<table>
-  <thead><tr><th>Prestation</th><th style="text-align:center;width:60px">Qté</th><th style="text-align:right;width:80px">P.U.</th><th style="text-align:right;width:90px">Total</th></tr></thead>
-  <tbody>${prestationsRows}
-  <tr class="total-row"><td colspan="3" style="text-align:right;padding-right:16px">TOTAL</td><td style="text-align:right">${d.total.toFixed(2)} €</td></tr>
-  </tbody>
-</table>
-<div class="tva">${p.tva || 'TVA non applicable — article 293 B du CGI'}</div>
-
-${d.notes ? `<div class="notes"><strong>Notes :</strong><br>${d.notes}</div>` : ''}
-
-<div class="validity">Ce devis est valable 30 jours à compter de sa date d'émission.</div>
-
-<div class="footer">
-  ${p.enseigne || 'Prendre Soin de Son Être'} — ${p.prenom || ''} ${p.nom || ''}<br>
-  ${p.siret ? 'SIRET : '+p.siret+' — ' : ''}${p.tva || 'TVA non applicable — article 293 B du CGI'}<br>
-  Ce document est un devis. Il ne constitue pas une facture.
-</div>
-</body></html>`;
-
-  const w = window.open('', '_blank');
-  w.document.write(html);
-  w.document.close();
-  setTimeout(() => w.print(), 500);
-}
-
-// ---- ENVOI EMAIL ----
-async function sendDevisEmail() {
-  const p = getParams();
-  if (!p.ejsService || !p.ejsTemplate || !p.ejsPubkey) {
-    alert('Veuillez d\'abord configurer EmailJS dans "Mes informations" (Service ID, Template ID, Public Key).');
-    showView('parametres');
-    closeModal('devis');
-    return;
-  }
-  const d = buildDevisData();
-  if (!d.clientId) { alert('Veuillez sélectionner un client.'); return; }
-  const c = d.client || clients.find(x => x.id === d.clientId) || {};
-  const emailDest = c.email || (c.profil==='enfant' ? c.resp1Email || c.resp2Email || '' : '');
-  if (!emailDest) { alert(`Aucun email trouvé pour ${c.prenom} ${c.nom}. Veuillez renseigner son email dans la fiche client.`); return; }
-
-  const freqLabel = { '4': '1/semaine', '2': '1/15 jours', '1': '1/mois' }[String(d.freq)] || '';
-  const lignesPrest = (d.prestations||[]).map(pr => `${pr.label} × ${d.nbSeances} = ${(pr.prix*d.nbSeances).toFixed(2)} €`).join('\n');
-  const ligneKm = d.km > 0 ? `\nDéplacements : ${(d.km*2*d.nbSeances*d.tauxKm).toFixed(2)} €` : '';
-
-  const templateParams = {
-    to_email: emailDest,
-    to_name: `${c.prenom} ${c.nom}`,
-    from_name: `${p.prenom} ${p.nom} — ${p.enseigne || 'Prendre Soin de Son Être'}`,
-    reply_to: p.email,
-    objet: d.objet || 'Devis accompagnement',
-    duree: `${d.duree} mois · ${freqLabel} · ${d.nbSeances} séances`,
-    prestations: lignesPrest + ligneKm,
-    total: `${d.total.toFixed(2)} €`,
-    tva: p.tva || 'TVA non applicable — article 293 B du CGI',
-    notes: d.notes || '',
-    date: fmtDate(d.date),
-  };
-
-  try {
-    if (!window.emailjs) {
-      await new Promise((res, rej) => {
-        const s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
-        s.onload = res; s.onerror = rej;
-        document.head.appendChild(s);
-      });
-    }
-    emailjs.init(p.ejsPubkey);
-    await emailjs.send(p.ejsService, p.ejsTemplate, templateParams);
-    toast('Devis envoyé par email ✓');
-    closeModal('devis');
-  } catch(e) {
-    alert('Erreur lors de l\'envoi : ' + (e?.text || e?.message || JSON.stringify(e)));
-  }
-}
-
-
-
-// ---- SUPABASE SYNC ----
-const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
-let sbSyncing = false;
-
-function sbStatus(text, color) {
-  const el = document.getElementById('sb-status');
-  const ic = document.getElementById('sb-icon');
-  if (el) { el.textContent = text; el.style.color = color || 'var(--teal)'; }
-  if (ic) ic.style.color = color || 'var(--teal)';
-}
-
-async function sbFetch(path, opts={}) {
-  return fetch(`${SB_URL}/rest/v1/${path}`, {
-    ...opts,
-    headers: {
-      'apikey': SB_KEY,
-      'Authorization': `Bearer ${SB_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=minimal',
-      ...(opts.headers || {})
-    }
-  });
-}
-
-async function sbPull() {
-  sbStatus('Chargement...', 'var(--teal)');
-  try {
-    const res = await sbFetch('sync?id=eq.1&select=clients,rdvs,notes');
-    if (!res.ok) { sbStatus('Erreur de sync', 'var(--danger)'); return; }
-    const data = await res.json();
-    if (data && data[0]) {
-      if (data[0].clients && data[0].clients.length > 0) clients = data[0].clients;
-      if (data[0].rdvs && data[0].rdvs.length > 0) rdvs = data[0].rdvs;
-      if (data[0].notes && data[0].notes.length > 0) notes = data[0].notes;
-      save('mac_clients', clients); save('mac_rdvs', rdvs); save('mac_notes', notes);
-      renderDashboard(); renderCalendar();
-    }
-    const d = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
-    sbStatus(`Synchronisé à ${d}`, 'var(--teal)');
-  } catch(e) { sbStatus('Erreur de sync', 'var(--danger)'); }
-}
-
-async function sbPush() {
-  if (sbSyncing) return;
-  sbSyncing = true;
-  sbStatus('Sauvegarde...', 'var(--amber)');
-  try {
-    const body = JSON.stringify({ clients, rdvs, notes, updated_at: new Date().toISOString() });
-    const res = await sbFetch('sync?id=eq.1', {
-      method: 'PATCH', body,
-      headers: { 'Prefer': 'return=minimal' }
-    });
-    if (!res.ok) { sbStatus('Erreur de sync', 'var(--danger)'); sbSyncing = false; return; }
-    const d = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
-    sbStatus(`Synchronisé à ${d}`, 'var(--teal)');
-  } catch(e) { sbStatus('Erreur de sync', 'var(--danger)'); }
-  sbSyncing = false;
-}
-
-// Persist + auto-sync Supabase
-function persistAndSync() {
-  save('mac_clients', clients);
-  save('mac_rdvs', rdvs);
-  save('mac_notes', notes);
-  clearTimeout(window._sbPushTimer);
-  window._sbPushTimer = setTimeout(sbPush, 1500);
-}
-
-// Init Supabase au chargement
-window.addEventListener('load', () => {
-  sbStatus('Connexion...', 'var(--teal)');
-  sbPull();
-});
-
-
-// Service Worker pour PWA
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js');
-}
-
-// Init
-renderDashboard();
-renderCalendar();
 </script>
 </body>
 </html>
