@@ -148,6 +148,7 @@ html, body {
 .badge-adulte { background: var(--teal-light); color: var(--teal); }
 .badge-enfant { background: var(--lavender-light); color: var(--lavender-dark); }
 .badge-structure { background: var(--amber-light); color: var(--amber); }
+.badge-professionnel { background: #eef0fa; color: #8890c0; }
 .badge-gray { background: #f0f0ec; color: var(--text-muted); }
 
 /* FICHE CLIENT */
@@ -1364,7 +1365,7 @@ function renderClients() {
       <div class="client-meta"><i class="ti ti-map-pin"></i>${c.adresse||'—'}</div>
       <div class="client-meta" style="margin-top:3px"><i class="ti ti-notes"></i>${nb} note${nb>1?'s':''} · ${next?'Prochain : '+fmtDate(next.date):'Pas de RDV à venir'}</div>
       <div style="display:flex;gap:5px;flex-wrap:wrap">
-        <span class="badge badge-${c.profil}">${c.profil === 'adulte' ? 'Adulte' : c.profil === 'enfant' ? 'Enfant' : c.profil === 'structure' ? 'Structure' : c.profil}</span>
+        <span class="badge badge-${c.profil}">${c.profil === 'adulte' ? 'Adulte' : c.profil === 'enfant' ? 'Enfant' : c.profil === 'structure' ? 'Structure' : c.profil === 'professionnel' ? 'Professionnel' : c.profil}</span>
         ${c.profil === 'structure' && c.participants && c.participants.length ? `<span class="badge badge-gray">${c.participants.length} participant${c.participants.length>1?'s':''}</span>` : ''}
       </div>
     </div>`;
