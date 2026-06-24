@@ -153,6 +153,7 @@ html, body {
 .badge-adulte { background: var(--teal-light); color: var(--teal); }
 .badge-enfant { background: var(--lavender-light); color: var(--lavender-dark); }
 .badge-structure { background: var(--amber-light); color: var(--amber); }
+.badge-professionnel { background: #eef6ea; color: #4a7a3a; }
 .badge-gray { background: #f0f0ec; color: var(--text-muted); }
 
 /* FICHE CLIENT */
@@ -561,6 +562,7 @@ html, body {
         <select id="cl-profil" onchange="toggleEnfantFields()">
           <option value="adulte">Adulte</option>
           <option value="enfant">Enfant</option>
+          <option value="professionnel">Professionnel</option>
           <option value="structure">Structure</option>
         </select>
       </div>
@@ -642,6 +644,25 @@ html, body {
         </div>
       </div>
     </div>
+
+    <!-- Champs professionnel -->
+    <div id="professionnel-fields" style="display:none">
+      <div style="background:var(--sage-light);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:0.75rem;border:0.5px solid rgba(122,170,106,0.3)">
+        <div style="font-size:11px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem">Informations professionnelles</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:0.6rem;font-style:italic">Tous les champs sont optionnels</div>
+        <div class="form-grid form-grid-2">
+          <div class="form-row"><label>Fonction / Métier</label><input type="text" id="cl-pro-fonction" placeholder="Ex: Éducateur, Directeur..."></div>
+          <div class="form-row"><label>Structure / Entreprise</label><input type="text" id="cl-pro-structure" placeholder="Nom de l'établissement"></div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--sage);margin:0.5rem 0 0.4rem">Enfants suivis <span style="font-weight:400;font-style:italic;color:var(--text-muted)">(optionnel)</span></div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:0.5rem">Liste des enfants pour lesquels ce professionnel intervient</div>
+        <div id="pro-enfants-list" style="margin-bottom:0.5rem"></div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="pro-enfant-input" placeholder="Prénom de l'enfant" style="flex:1;padding:7px 10px;font-size:13px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--warm-cream);color:var(--text);font-family:'Nunito',sans-serif">
+          <button class="btn" type="button" onclick="addProEnfant()" style="flex-shrink:0"><i class="ti ti-plus"></i> Ajouter</button>
+        </div>
+      </div>
+    </div>
         </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal('client')">Annuler</button>
@@ -671,6 +692,9 @@ html, body {
     </div>
     <div class="form-row"><label>Ce qui s'est dit / observé</label>
       <textarea id="note-contenu" placeholder="Notes, observations, éléments clés échangés durant la séance..." style="min-height:130px"></textarea>
+    </div>
+    <div class="form-row"><label>Raison / Objet du rendez-vous <span style="color:var(--text-hint);font-weight:400">(optionnel)</span></label>
+      <input type="text" id="note-raison" placeholder="Ex: Suivi anxiété, Bilan de séances, Rencontre parents...">
     </div>
     <div class="form-row"><label>Prochaine étape</label>
       <input type="text" id="note-suite" placeholder="Point à travailler lors de la prochaine séance...">
@@ -1071,6 +1095,8 @@ function showFiche(id) {
         ${c.profil === 'enfant' && c.structure ? `<div class="fiche-meta"><i class="ti ti-building"></i><span><strong>${c.structure}</strong>${c.structureResp?' · '+c.structureResp:''}${c.structureTel?' · '+c.structureTel:''}${c.structureEmail?' · '+c.structureEmail:''}</span></div>` : ''}
         ${c.profil === 'structure' && c.structureResp ? `<div class="fiche-meta"><i class="ti ti-id-badge"></i><span><strong>${c.structureResp}</strong>${c.structureFonction?' — '+c.structureFonction:''}${c.structureTel?' · '+c.structureTel:''}${c.structureEmail?' · '+c.structureEmail:''}</span></div>` : ''}
         ${c.profil === 'structure' && c.participants && c.participants.length ? `<div class="fiche-meta" style="flex-wrap:wrap;gap:4px;margin-top:4px"><i class="ti ti-users" style="flex-shrink:0"></i>${c.participants.map(p=>`<span style="background:var(--amber-light);color:var(--amber);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${p}</span>`).join('')}</div>` : ''}
+        ${c.profil === 'professionnel' && c.proFonction ? `<div class="fiche-meta"><i class="ti ti-briefcase"></i>${c.proFonction}${c.proStructure?' — '+c.proStructure:''}</div>` : ''}
+        ${c.profil === 'professionnel' && c.proEnfants && c.proEnfants.length ? `<div class="fiche-meta" style="flex-wrap:wrap;gap:4px;margin-top:4px"><i class="ti ti-users" style="flex-shrink:0;color:#4a7a3a"></i>${c.proEnfants.map(p=>`<span style="background:#eef6ea;color:#4a7a3a;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${p}</span>`).join('')}</div>` : ''}
         <div class="fiche-badges">
           <span class="badge badge-${c.profil}">${c.profil.charAt(0).toUpperCase()+c.profil.slice(1)}</span>
           <span class="badge badge-gray">${nbRdv} RDV</span>
@@ -1118,6 +1144,7 @@ function showFiche(id) {
         <span class="seance-date">${fmtDateLong(n.date)}</span>
         <span class="seance-type-badge">${n.type}</span>
       </div>
+      ${n.raison ? `<div style="font-size:11px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px">${n.raison}</div>` : ''}
       <div class="seance-notes">${n.contenu}</div>
       ${n.suite ? `<div class="seance-suite"><i class="ti ti-arrow-right" style="font-size:14px;flex-shrink:0;margin-top:1px"></i>${n.suite}</div>` : ''}
       ${tt>0 ? `<div class="seance-trajet"><i class="ti ti-car"></i>${tt} min de trajet · ${rdv.lieu||''}</div>` : ''}
@@ -1406,6 +1433,8 @@ function toggleEnfantFields() {
   const profil = document.getElementById('cl-profil').value;
   document.getElementById('enfant-fields').style.display = profil === 'enfant' ? 'block' : 'none';
   document.getElementById('structure-fields').style.display = profil === 'structure' ? 'block' : 'none';
+  const pf = document.getElementById('professionnel-fields');
+  if (pf) pf.style.display = profil === 'professionnel' ? 'block' : 'none';
 }
 
 let structureParticipants = [];
@@ -1697,6 +1726,36 @@ function deleteRdv(id) {
   renderDashboard(); renderCalendar(); if(document.getElementById('view-rdvs').classList.contains('active')) renderRdvs();
 }
 
+let proEnfants = [];
+
+function addProEnfant() {
+  const input = document.getElementById('pro-enfant-input');
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) return;
+  proEnfants.push(val);
+  input.value = '';
+  renderProEnfants();
+}
+
+function removeProEnfant(i) {
+  proEnfants.splice(i, 1);
+  renderProEnfants();
+}
+
+function renderProEnfants() {
+  const list = document.getElementById('pro-enfants-list');
+  if (!list) return;
+  if (!proEnfants.length) { list.innerHTML = ''; return; }
+  list.innerHTML = proEnfants.map((p, i) =>
+    `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:white;border-radius:5px;margin-bottom:4px;border:0.5px solid var(--border)">
+      <i class="ti ti-user" style="font-size:13px;color:#7aaa6a"></i>
+      <span style="flex:1;font-size:13px">${p}</span>
+      <button onclick="removeProEnfant(${i})" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:15px;padding:0;display:flex"><i class="ti ti-x"></i></button>
+    </div>`
+  ).join('');
+}
+
 function saveClient() {
   const prenom = document.getElementById('cl-prenom').value.trim();
   const nom = document.getElementById('cl-nom').value.trim();
@@ -1722,6 +1781,9 @@ function saveClient() {
     structureTel: profil === 'enfant' ? document.getElementById('cl-structure-tel').value : (profil === 'structure' ? document.getElementById('cl-structure-tel').value : ''),
     structureEmail: profil === 'enfant' ? document.getElementById('cl-structure-email').value : (profil === 'structure' ? document.getElementById('cl-structure-email').value : ''),
     participants: profil === 'structure' ? [...structureParticipants] : [],
+    proFonction: profil === 'professionnel' ? document.getElementById('cl-pro-fonction').value : '',
+    proStructure: profil === 'professionnel' ? document.getElementById('cl-pro-structure').value : '',
+    proEnfants: profil === 'professionnel' ? [...proEnfants] : [],
   };
   if (editId) {
     const idx = clients.findIndex(c => c.id == editId);
@@ -1794,17 +1856,20 @@ function deleteClient(id) {
 function saveNote() {
   if (!currentClientId) return;
   const editId = document.getElementById('note-edit-id').value;
+  const raisonEl = document.getElementById('note-raison');
   const data = {
     clientId: currentClientId,
     date: document.getElementById('note-date').value,
     type: document.getElementById('note-type').value,
     contenu: document.getElementById('note-contenu').value,
+    raison: raisonEl ? raisonEl.value : '',
     suite: document.getElementById('note-suite').value,
   };
   if (editId) { const idx=notes.findIndex(n=>n.id==editId); if(idx>-1) notes[idx]={...notes[idx],...data}; toast('Note modifiée'); }
   else { notes.push({id:newId(),...data}); toast('Note ajoutée'); }
   persistAndSync(); closeModal('note');
   ['note-contenu','note-suite'].forEach(id=>document.getElementById(id).value='');
+  if (raisonEl) raisonEl.value = '';
   showFiche(currentClientId);
 }
 
@@ -3028,6 +3093,8 @@ function toggleEnfantFields() {
   const profil = document.getElementById('cl-profil').value;
   document.getElementById('enfant-fields').style.display = profil === 'enfant' ? 'block' : 'none';
   document.getElementById('structure-fields').style.display = profil === 'structure' ? 'block' : 'none';
+  const pf = document.getElementById('professionnel-fields');
+  if (pf) pf.style.display = profil === 'professionnel' ? 'block' : 'none';
 }
 
 let structureParticipants = [];
