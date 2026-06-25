@@ -3903,10 +3903,44 @@ tbody tr:last-child td { border-bottom: none; }
 </body>
 </html>`;
 
-  const w = window.open('', '_blank');
-  w.document.write(html);
-  w.document.close();
-  setTimeout(() => w.print(), 700);
+  // Stocker le HTML pour aperçu et téléchargement
+  window._factureHTML = html;
+  window._factureNum = numFact;
+  ouvrirApercuFacture(html, numFact);
+}
+
+function ouvrirApercuFacture(html, numFact) {
+  const old = document.getElementById('modale-apercu-facture');
+  if (old) old.remove();
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+
+  const mo = document.createElement('div');
+  mo.id = 'modale-apercu-facture';
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(20,60,60,0.55);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;padding:1rem';
+  mo.innerHTML = `
+    <div style="background:white;border-radius:12px;width:min(820px,96vw);height:90vh;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(26,122,122,0.25);overflow:hidden">
+      <!-- Barre du haut -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--cream-card);border-bottom:0.5px solid var(--border);flex-shrink:0">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:var(--teal)">Aperçu — ${numFact}</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-primary" id="btn-dl-facture" style="font-size:12px"><i class="ti ti-download"></i> Télécharger PDF</button>
+          <button onclick="document.getElementById('modale-apercu-facture').remove();URL.revokeObjectURL('${url}')" style="background:none;border:none;cursor:pointer;color:var(--text-hint);font-size:22px;display:flex;padding:4px"><i class="ti ti-x"></i></button>
+        </div>
+      </div>
+      <!-- Iframe aperçu -->
+      <iframe id="iframe-facture" src="${url}" style="flex:1;border:none;background:white"></iframe>
+    </div>`;
+
+  document.body.appendChild(mo);
+
+  // Bouton télécharger → print dans l'iframe (navigateur propose "Enregistrer en PDF")
+  document.getElementById('btn-dl-facture').onclick = () => {
+    const iframe = document.getElementById('iframe-facture');
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+  };
 }
 
 function envoyerFactureEmail(clientId, mois, annee) {
@@ -3915,24 +3949,12 @@ function envoyerFactureEmail(clientId, mois, annee) {
   if (!c) return;
   const moisLabel = MONTHS[mois]+' '+annee;
   const numFact = `FACT-${annee}${String(mois+1).padStart(2,'0')}-${String(clientId).padStart(3,'0')}`;
-  let dest = '';
-  if (c.profil === 'enfant') {
-    dest = c.resp1Email || c.resp2Email || c.ensEmail || '';
-  } else {
-    dest = c.email || c.proEmail || '';
-  }
-  if (!dest) { toast('Aucun email renseigné pour ce client'); return; }
-  const prenom = c.profil === 'enfant'
-    ? (c.resp1 ? c.resp1.split(' ')[0] : 'Madame, Monsieur')
-    : (c.prenom || 'Madame, Monsieur');
-  const sujet = encodeURIComponent(`Facture ${numFact} — ${moisLabel} · ${p.enseigne || 'Prendre Soin de Son Être'}`);
-  const corps = encodeURIComponent(
-    `Bonjour ${prenom},\n\n`+
-    `Veuillez trouver en pièce jointe la facture n° ${numFact} relative aux séances du mois de ${moisLabel}.\n\n`+
-    `N'hésitez pas à me contacter pour toute question.\n\n`+
-    `Bien cordialement,\n\n${p.prenom||''} ${p.nom||''}\n${p.enseigne||'Prendre Soin de Son Être'}\n${p.tel||''}`
-  );
-  window.location.href = `mailto:${dest}?subject=${sujet}&body=${corps}`;
+
+  // Ouvrir le webmail OVH dans un nouvel onglet
+  window.open('https://www.ovhcloud.com/fr/mail/', '_blank');
+
+  // Toast avec rappel
+  toast(`Pensez à attacher la facture ${numFact} avant d'envoyer 📎`);
 }
 
 function genDevisPDFById(id) {
