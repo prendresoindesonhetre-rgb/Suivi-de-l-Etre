@@ -3572,14 +3572,18 @@ body {
 }
 
 /* ── BRANCHES COINS ── */
-.coins {
+.coin-tl, .coin-tr, .coin-bl, .coin-br {
   position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  object-fit: cover;
-  opacity: 0.7;
+  width: 140px;
+  opacity: 0.82;
   z-index: 1;
+  pointer-events: none;
 }
+.coin-tl { top: 0; left: 0; }
+.coin-tr { top: 0; right: 0; transform: scaleX(-1); }
+.coin-bl { bottom: 0; left: 0; transform: scaleY(-1); }
+.coin-br { bottom: 0; right: 0; transform: scale(-1,-1); }
+
 
 /* ── CONTENU ── */
 .page {
@@ -3755,7 +3759,10 @@ tbody tr:last-child td { border-bottom: none; }
 <body>
 
 <img src="${BG_B64}" class="bg" alt="">
-<img src="${COINS_B64}" class="coins" alt="">
+<img src="${COINS_B64}" class="coin-tl" alt="">
+<img src="${COINS_B64}" class="coin-tr" alt="">
+<img src="${COINS_B64}" class="coin-bl" alt="">
+<img src="${COINS_B64}" class="coin-br" alt="">
 
 <div class="page">
 
@@ -3865,7 +3872,7 @@ function ouvrirApercuFacture(html, numFact) {
   mo.id = 'modale-apercu-facture';
   mo.style.cssText = 'position:fixed;inset:0;background:rgba(20,60,60,0.55);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;padding:1rem';
   mo.innerHTML = `
-    <div style="background:white;border-radius:12px;width:min(820px,96vw);height:90vh;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(26,122,122,0.25);overflow:hidden">
+    <div style="background:white;border-radius:12px;width:min(760px,96vw);height:92vh;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(26,122,122,0.25);overflow:hidden">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--cream-card);border-bottom:0.5px solid var(--border);flex-shrink:0">
         <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:var(--teal)">Aperçu — ${numFact}</div>
         <div style="display:flex;gap:8px;align-items:center">
@@ -3874,7 +3881,7 @@ function ouvrirApercuFacture(html, numFact) {
           <button onclick="document.getElementById('modale-apercu-facture').remove();URL.revokeObjectURL('${url}')" style="background:none;border:none;cursor:pointer;color:var(--text-hint);font-size:22px;display:flex;padding:4px"><i class="ti ti-x"></i></button>
         </div>
       </div>
-      <iframe id="iframe-facture" src="${url}" style="flex:1;border:none;background:white"></iframe>
+      <iframe id="iframe-facture" src="${url}" style="flex:1;border:none;background:white;width:100%;overflow-y:auto" scrolling="yes"></iframe>
     </div>`;
 
   document.body.appendChild(mo);
