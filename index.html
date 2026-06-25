@@ -3896,53 +3896,60 @@ function ouvrirApercuFacture(html, numFact) {
     iframe.contentWindow.print();
   };
 
-  // Bouton Télécharger PDF → html2pdf.js dans iframe
+  // Bouton Télécharger PDF → capture iframe avec html2canvas + jsPDF
   document.getElementById('btn-dl-facture').onclick = async () => {
     const btn = document.getElementById('btn-dl-facture');
     btn.disabled = true;
     btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite;display:inline-block"></i> Génération...';
 
     try {
-      // Charger html2pdf si besoin
-      if (!window.html2pdf) {
+      // Charger html2canvas
+      if (!window.html2canvas) {
         await new Promise((res, rej) => {
           const s = document.createElement('script');
-          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+          s.onload = res; s.onerror = rej;
+          document.head.appendChild(s);
+        });
+      }
+      // Charger jsPDF
+      if (!window.jspdf) {
+        await new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
           s.onload = res; s.onerror = rej;
           document.head.appendChild(s);
         });
       }
 
-      // Parser le HTML de la facture
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(window._factureHTML || '', 'text/html');
-      const el = doc.body;
+      // Attendre que l'iframe soit bien chargée
+      const iframe = document.getElementById('iframe-facture');
+      await new Promise(r => setTimeout(r, 1500));
 
-      // Injecter dans le DOM temporairement pour rendu
-      const wrapper = document.createElement('div');
-      wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;background:white;z-index:-999';
-      wrapper.appendChild(el);
-      document.body.appendChild(wrapper);
+      // Capturer l'iframe via html2canvas
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+      const canvas = await html2canvas(iframeDoc.body, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: iframeDoc.body.scrollWidth,
+        height: iframeDoc.body.scrollHeight,
+        windowWidth: iframeDoc.body.scrollWidth,
+        windowHeight: iframeDoc.body.scrollHeight,
+      });
 
-      // Attendre chargement images
-      const imgs = wrapper.querySelectorAll('img');
-      await Promise.all(Array.from(imgs).map(img =>
-        img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r; })
-      ));
-      await new Promise(r => setTimeout(r, 800));
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdfW = pdf.internal.pageSize.getWidth();
+      const pdfH = (canvas.height * pdfW) / canvas.width;
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+      pdf.save(`Facture-${window._factureNum || 'export'}.pdf`);
 
-      await html2pdf().set({
-        margin: 0,
-        filename: `Facture-${window._factureNum || 'export'}.pdf`,
-        image: { type: 'jpeg', quality: 0.92 },
-        html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      }).from(wrapper).save();
-
-      document.body.removeChild(wrapper);
     } catch(e) {
-      console.error('html2pdf error', e);
-      toast('Erreur lors de la génération PDF');
+      console.error('PDF error', e);
+      toast('Erreur lors de la génération PDF — essayez Imprimer');
     } finally {
       btn.disabled = false;
       btn.innerHTML = '<i class="ti ti-download"></i> Télécharger PDF';
