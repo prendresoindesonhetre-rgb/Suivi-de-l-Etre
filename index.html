@@ -3618,7 +3618,7 @@ body {
 .page {
   position: relative;
   z-index: 2;
-  padding: 32px 56px 28px;
+  padding: 16px 56px 28px;
 }
 
 /* ── EN-TÊTE ── */
@@ -3809,13 +3809,11 @@ tbody tr:last-child td { border-bottom: none; }
 <div class="page">
 
   <div style="text-align:center;margin-bottom:2px">
-    <table style="width:100%;border-collapse:collapse;border-spacing:0;padding:0;margin:0">
-      <tr><td style="padding:0;margin:0;text-align:center;line-height:0">
-        <img src="${LOGO_B64}" style="width:200px;height:auto;display:inline-block;vertical-align:bottom" alt="Logo">
-      </td></tr>
-      <tr><td style="padding:0;margin:0;text-align:center;font-family:'Palatino Linotype','Palatino','Book Antiqua',serif;font-style:italic;font-size:22px;color:#4a3a8a;line-height:1.25">Prendre soin<br>de son Hêtre</td></tr>
-      <tr><td style="padding:3px 0 4px;margin:0;text-align:center;font-family:'Palatino Linotype','Palatino','Book Antiqua',serif;font-style:italic;font-size:10px;color:#7a70aa;line-height:1.6">Là où les maux peuvent se dire,<br>se ressentir et s’alléger.</td></tr>
-    </table>
+    <div style="text-align:center">
+      <img src="${LOGO_B64}" style="width:200px;display:inline" alt="Logo"><br>
+      <span style="font-family:'Palatino Linotype',Palatino,serif;font-style:italic;font-size:22px;color:#4a3a8a;line-height:1.25;display:inline-block;margin-top:-20px">Prendre soin<br>de son Hêtre</span><br>
+      <span style="font-family:'Palatino Linotype',Palatino,serif;font-style:italic;font-size:10px;color:#7a70aa;line-height:1.6;display:inline-block;margin-top:3px">Là où les maux peuvent se dire,<br>se ressentir et s’alléger.</span>
+    </div>
     <img src="${DIV_B64}" style="width:55%;margin:0 auto 1px;display:block;opacity:0.8" alt="">
     <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:34px;font-weight:300;letter-spacing:0.28em;color:#3a3560;text-align:center;text-transform:uppercase;margin-bottom:1px">Facture</div>
     <img src="${DIV_B64}" style="width:55%;margin:0 auto 1px;display:block;opacity:0.8" alt="">
