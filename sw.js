@@ -77,7 +77,7 @@ async function fetchTodayFromSupabase() {
       const lieu = r.lieu || (c && c.adresse) || '';
       const [h, m] = r.heure.split(':').map(Number);
       const rdvTime = new Date(); rdvTime.setHours(h, m, 0, 0);
-      return { id: r.id, timestamp: rdvTime.getTime(), heure: r.heure, type: r.type || 'Séance', lieu, clientName: nom, duree: r.duree || 60 };
+      return { id: r.id, timestamp: rdvTime.getTime(), heure: r.heure, type: r.type || 'Séance', lieu, clientName: nom, duree: r.duree || 60, trajet: r.trajetAller || 0 };
     });
   } catch(e) { return []; }
 }
@@ -90,12 +90,14 @@ function scheduleTimeouts(appointments) {
   _timeouts = [];
   const now = Date.now();
   appointments.forEach(appt => {
-    const body = `${appt.heure} · ${appt.type} (${appt.duree} min)${appt.lieu ? '\n📍 ' + appt.lieu : ''}`;
-    const d30 = appt.timestamp - 30 * 60 * 1000 - now;
+    const trajet = appt.trajet || 0;
+    const alertMin = 30 + trajet;
+    const body = `${appt.heure} · ${appt.type} (${appt.duree} min)${appt.lieu ? '\n📍 ' + appt.lieu : ''}${trajet ? '\n🚗 ' + trajet + ' min de route' : ''}`;
+    const d30 = appt.timestamp - alertMin * 60 * 1000 - now;
     const d0  = appt.timestamp - now;
     const dEnd = appt.timestamp + (appt.duree || 60) * 60 * 1000 - now;
     if (d30 > 0) _timeouts.push(setTimeout(() =>
-      self.registration.showNotification(`⏰ RDV dans 30 min — ${appt.clientName}`, { body, tag: `rdv-${appt.id}-30`, requireInteraction: true }), d30));
+      self.registration.showNotification(`⏰ RDV dans ${alertMin} min — ${appt.clientName}`, { body, tag: `rdv-${appt.id}-30`, requireInteraction: true }), d30));
     if (d0 > 0) _timeouts.push(setTimeout(() =>
       self.registration.showNotification(`🌿 RDV maintenant — ${appt.clientName}`, { body, tag: `rdv-${appt.id}-0`, requireInteraction: true }), d0));
     if (dEnd > 0) _timeouts.push(setTimeout(() =>
@@ -133,10 +135,12 @@ async function checkAndNotify() {
   const now = Date.now();
   const window5m = 5 * 60 * 1000;
   for (const appt of appointments) {
-    const body = `${appt.heure} · ${appt.type} (${appt.duree} min)${appt.lieu ? '\n📍 ' + appt.lieu : ''}`;
-    const t30 = appt.timestamp - 30 * 60 * 1000;
+    const trajet = appt.trajet || 0;
+    const alertMin = 30 + trajet;
+    const body = `${appt.heure} · ${appt.type} (${appt.duree} min)${appt.lieu ? '\n📍 ' + appt.lieu : ''}${trajet ? '\n🚗 ' + trajet + ' min de route' : ''}`;
+    const t30 = appt.timestamp - alertMin * 60 * 1000;
     if (!appt.sent30 && t30 <= now && now < t30 + window5m) {
-      await self.registration.showNotification(`⏰ RDV dans 30 min — ${appt.clientName}`, { body, tag: `rdv-${appt.id}-30`, requireInteraction: true });
+      await self.registration.showNotification(`⏰ RDV dans ${alertMin} min — ${appt.clientName}`, { body, tag: `rdv-${appt.id}-30`, requireInteraction: true });
       appt.sent30 = true;
     }
     if (!appt.sent0 && appt.timestamp <= now && now < appt.timestamp + window5m) {
@@ -150,6 +154,19 @@ async function checkAndNotify() {
     }
   }
   if (appointments.length) await storeAppointments(appointments);
+
+  // Notification planning du jour (silencieuse, persistante dans la barre)
+  const remaining = appointments.filter(a => a.timestamp + (a.duree || 60) * 60 * 1000 > now);
+  if (remaining.length > 0) {
+    const sorted = [...remaining].sort((a, b) => a.timestamp - b.timestamp);
+    const body = sorted.map(a => `${a.heure} · ${a.clientName}`).join('\n');
+    await self.registration.showNotification(
+      `📅 Planning du jour · ${remaining.length} RDV`,
+      { body, tag: 'today-board', silent: true, renotify: false }
+    );
+  } else {
+    try { (await self.registration.getNotifications({ tag: 'today-board' })).forEach(n => n.close()); } catch {}
+  }
 }
 
 // ─── Événements ───────────────────────────────────────────────────────────────
