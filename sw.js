@@ -121,15 +121,13 @@ async function checkAndNotify() {
   }
 
   // Récapitulatif du matin entre 8h et 9h (une seule fois par jour)
-  if (hour >= 8 && hour < 9 && appointments.length > 0) {
+  if (hour >= 8 && hour < 9) {
     const lastSummary = await getMeta('lastSummaryDate');
     if (lastSummary !== today) {
       const sorted = [...appointments].sort((a, b) => a.timestamp - b.timestamp);
-      const body = sorted.map(a => `${a.heure} · ${a.clientName}`).join('\n');
-      await self.registration.showNotification(
-        `📅 ${appointments.length} RDV aujourd'hui`,
-        { body, icon: ICON, tag: 'daily-summary', requireInteraction: false }
-      );
+      const title = appointments.length > 0 ? `📅 ${appointments.length} RDV aujourd'hui` : `📅 Planning du jour`;
+      const body  = appointments.length > 0 ? sorted.map(a => `${a.heure} · ${a.clientName}`).join('\n') : 'Aucun RDV aujourd\'hui';
+      await self.registration.showNotification(title, { body, icon: ICON, tag: 'daily-summary', requireInteraction: false });
       await setMeta('lastSummaryDate', today);
     }
   }
@@ -158,7 +156,7 @@ async function checkAndNotify() {
   }
   if (appointments.length) await storeAppointments(appointments);
 
-  // Notification planning du jour — toujours visible quand un push arrive
+  // Notification planning du jour — seulement s'il reste des RDV
   const remaining = appointments.filter(a => a.timestamp + (a.duree || 60) * 60 * 1000 > now);
   if (remaining.length > 0) {
     const sorted = [...remaining].sort((a, b) => a.timestamp - b.timestamp);
@@ -166,11 +164,6 @@ async function checkAndNotify() {
     await self.registration.showNotification(
       `📅 Planning du jour · ${remaining.length} RDV`,
       { body, icon: ICON, tag: 'today-board', requireInteraction: false }
-    );
-  } else {
-    await self.registration.showNotification(
-      `📅 Planning du jour`,
-      { body: 'Aucun RDV restant aujourd\'hui', icon: ICON, tag: 'today-board', requireInteraction: false }
     );
   }
 }
