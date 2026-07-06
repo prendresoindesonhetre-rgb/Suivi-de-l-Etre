@@ -157,17 +157,20 @@ async function checkAndNotify() {
   }
   if (appointments.length) await storeAppointments(appointments);
 
-  // Notification planning du jour (silencieuse, persistante dans la barre)
+  // Notification planning du jour — toujours visible quand un push arrive
   const remaining = appointments.filter(a => a.timestamp + (a.duree || 60) * 60 * 1000 > now);
   if (remaining.length > 0) {
     const sorted = [...remaining].sort((a, b) => a.timestamp - b.timestamp);
     const body = sorted.map(a => `${a.heure} · ${a.clientName}`).join('\n');
     await self.registration.showNotification(
       `📅 Planning du jour · ${remaining.length} RDV`,
-      { body, tag: 'today-board', silent: true, renotify: false }
+      { body, tag: 'today-board', requireInteraction: false }
     );
   } else {
-    try { (await self.registration.getNotifications({ tag: 'today-board' })).forEach(n => n.close()); } catch {}
+    await self.registration.showNotification(
+      `📅 Planning du jour`,
+      { body: 'Aucun RDV restant aujourd\'hui', tag: 'today-board', requireInteraction: false }
+    );
   }
 }
 
