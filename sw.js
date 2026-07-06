@@ -47,6 +47,9 @@ function scheduleTimeouts(appointments) {
       self.registration.showNotification(`⏰ RDV dans 30 min — ${appt.clientName}`, { body, tag: `rdv-${appt.id}-30`, requireInteraction: true, icon: './icon.png' }), d30));
     if (d0  > 0) _timeouts.push(setTimeout(() =>
       self.registration.showNotification(`🌿 RDV maintenant — ${appt.clientName}`, { body, tag: `rdv-${appt.id}-0`,  requireInteraction: true, icon: './icon.png' }), d0));
+    const dEnd = appt.timestamp + (appt.duree || 60) * 60 * 1000 - now;
+    if (dEnd > 0) _timeouts.push(setTimeout(() =>
+      self.registration.showNotification(`📝 Séance terminée — ${appt.clientName}`, { body: 'Pensez à remplir la note de séance', tag: `rdv-${appt.id}-end`, requireInteraction: true, icon: './icon.png' }), dEnd));
   });
 }
 
@@ -66,6 +69,14 @@ async function checkAndNotify() {
     if (!appt.sent0 && t0 <= now && now < t0 + window5m) {
       await self.registration.showNotification(`🌿 RDV maintenant — ${appt.clientName}`, { body, tag: `rdv-${appt.id}-0`, requireInteraction: true });
       appt.sent0 = true;
+    }
+    const tEnd = appt.timestamp + (appt.duree || 60) * 60 * 1000;
+    if (!appt.sentEnd && tEnd <= now && now < tEnd + window5m) {
+      await self.registration.showNotification(`📝 Séance terminée — ${appt.clientName}`, {
+        body: `Pensez à remplir la note de séance`,
+        tag: `rdv-${appt.id}-end`, requireInteraction: true
+      });
+      appt.sentEnd = true;
     }
   }
   await storeAppointments(appointments);
