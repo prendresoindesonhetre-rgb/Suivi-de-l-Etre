@@ -189,13 +189,7 @@ self.addEventListener('message', async event => {
 });
 
 self.addEventListener('push', event => {
-  event.waitUntil(
-    self.registration.showNotification('🔔 Push reçu', {
-      body: new Date().toLocaleTimeString('fr-FR', { timeZone: 'Europe/Paris' }),
-      tag: 'push-diag',
-      requireInteraction: false
-    }).then(() => checkAndNotify())
-  );
+  event.waitUntil(checkAndNotify());
 });
 
 self.addEventListener('periodicsync', event => {
