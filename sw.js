@@ -82,6 +82,11 @@ self.addEventListener('message', async event => {
   }
 });
 
+// Réveil par push serveur (fonctionne même appli fermée)
+self.addEventListener('push', event => {
+  event.waitUntil(checkAndNotify());
+});
+
 // Réveil périodique (fonctionne même appli fermée, nécessite PWA installée)
 self.addEventListener('periodicsync', event => {
   if (event.tag === 'check-rdv') event.waitUntil(checkAndNotify());
