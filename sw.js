@@ -110,9 +110,11 @@ async function checkAndNotify() {
   const today = getFranceDate();
   const hour  = getFranceHour();
 
-  // Récupère les RDV — IndexedDB d'abord, Supabase si vide
+  // Récupère les RDV — IndexedDB si données d'aujourd'hui, sinon Supabase
   let appointments = await getAppointments();
-  if (!appointments.length) {
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const hasTodayData = appointments.some(a => a.timestamp >= todayStart.getTime());
+  if (!hasTodayData) {
     appointments = await fetchTodayFromSupabase();
     if (appointments.length) await storeAppointments(appointments);
   }
