@@ -110,13 +110,15 @@ async function checkAndNotify() {
   const today = getFranceDate();
   const hour  = getFranceHour();
 
-  // Récupère les RDV — IndexedDB si données d'aujourd'hui, sinon Supabase
-  let appointments = await getAppointments();
-  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-  const hasTodayData = appointments.some(a => a.timestamp >= todayStart.getTime());
-  if (!hasTodayData) {
-    appointments = await fetchTodayFromSupabase();
-    if (appointments.length) await storeAppointments(appointments);
+  // Toujours récupérer les données fraîches depuis Supabase
+  let appointments = await fetchTodayFromSupabase();
+  if (appointments.length) {
+    await storeAppointments(appointments);
+  } else {
+    // Fallback sur IndexedDB si Supabase inaccessible
+    const cached = await getAppointments();
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+    appointments = cached.filter(a => a.timestamp >= todayStart.getTime());
   }
 
   // Récapitulatif du matin entre 8h et 9h (une seule fois par jour)
@@ -184,7 +186,13 @@ self.addEventListener('message', async event => {
 });
 
 self.addEventListener('push', event => {
-  event.waitUntil(checkAndNotify());
+  event.waitUntil(
+    self.registration.showNotification('🔔 Push reçu', {
+      body: new Date().toLocaleTimeString('fr-FR', { timeZone: 'Europe/Paris' }),
+      tag: 'push-diag',
+      requireInteraction: false
+    }).then(() => checkAndNotify())
+  );
 });
 
 self.addEventListener('periodicsync', event => {
