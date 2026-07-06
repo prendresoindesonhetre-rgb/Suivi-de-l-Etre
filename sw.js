@@ -2,6 +2,7 @@
 const CACHE = 'suivi-etre-v1';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
+const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
@@ -97,11 +98,11 @@ function scheduleTimeouts(appointments) {
     const d0  = appt.timestamp - now;
     const dEnd = appt.timestamp + (appt.duree || 60) * 60 * 1000 - now;
     if (d30 > 0) _timeouts.push(setTimeout(() =>
-      self.registration.showNotification(`⏰ RDV dans ${alertMin} min — ${appt.clientName}`, { body, tag: `rdv-${appt.id}-30`, requireInteraction: true }), d30));
+      self.registration.showNotification(`⏰ RDV dans ${alertMin} min — ${appt.clientName}`, { body, icon: ICON, tag: `rdv-${appt.id}-30`, requireInteraction: true }), d30));
     if (d0 > 0) _timeouts.push(setTimeout(() =>
-      self.registration.showNotification(`🌿 RDV maintenant — ${appt.clientName}`, { body, tag: `rdv-${appt.id}-0`, requireInteraction: true }), d0));
+      self.registration.showNotification(`🌿 RDV maintenant — ${appt.clientName}`, { body, icon: ICON, tag: `rdv-${appt.id}-0`, requireInteraction: true }), d0));
     if (dEnd > 0) _timeouts.push(setTimeout(() =>
-      self.registration.showNotification(`📝 Séance terminée — ${appt.clientName}`, { body: 'Pensez à remplir la note de séance', tag: `rdv-${appt.id}-end`, requireInteraction: true }), dEnd));
+      self.registration.showNotification(`📝 Séance terminée — ${appt.clientName}`, { body: 'Pensez à remplir la note de séance', icon: ICON, tag: `rdv-${appt.id}-end`, requireInteraction: true }), dEnd));
   });
 }
 
@@ -110,12 +111,10 @@ async function checkAndNotify() {
   const today = getFranceDate();
   const hour  = getFranceHour();
 
-  // Toujours récupérer les données fraîches depuis Supabase
   let appointments = await fetchTodayFromSupabase();
   if (appointments.length) {
     await storeAppointments(appointments);
   } else {
-    // Fallback sur IndexedDB si Supabase inaccessible
     const cached = await getAppointments();
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
     appointments = cached.filter(a => a.timestamp >= todayStart.getTime());
@@ -129,7 +128,7 @@ async function checkAndNotify() {
       const body = sorted.map(a => `${a.heure} · ${a.clientName}`).join('\n');
       await self.registration.showNotification(
         `📅 ${appointments.length} RDV aujourd'hui`,
-        { body, tag: 'daily-summary', requireInteraction: false }
+        { body, icon: ICON, tag: 'daily-summary', requireInteraction: false }
       );
       await setMeta('lastSummaryDate', today);
     }
@@ -137,23 +136,23 @@ async function checkAndNotify() {
 
   // Notifications individuelles
   const now = Date.now();
-  const window5m = 5 * 60 * 1000;
+  const window5m = 20 * 60 * 1000;
   for (const appt of appointments) {
     const trajet = appt.trajet || 0;
     const alertMin = 30 + trajet;
     const body = `${appt.heure} · ${appt.type} (${appt.duree} min)${appt.lieu ? '\n📍 ' + appt.lieu : ''}${trajet ? '\n🚗 ' + trajet + ' min de route' : ''}`;
     const t30 = appt.timestamp - alertMin * 60 * 1000;
     if (!appt.sent30 && t30 <= now && now < t30 + window5m) {
-      await self.registration.showNotification(`⏰ RDV dans ${alertMin} min — ${appt.clientName}`, { body, tag: `rdv-${appt.id}-30`, requireInteraction: true });
+      await self.registration.showNotification(`⏰ RDV dans ${alertMin} min — ${appt.clientName}`, { body, icon: ICON, tag: `rdv-${appt.id}-30`, requireInteraction: true });
       appt.sent30 = true;
     }
     if (!appt.sent0 && appt.timestamp <= now && now < appt.timestamp + window5m) {
-      await self.registration.showNotification(`🌿 RDV maintenant — ${appt.clientName}`, { body, tag: `rdv-${appt.id}-0`, requireInteraction: true });
+      await self.registration.showNotification(`🌿 RDV maintenant — ${appt.clientName}`, { body, icon: ICON, tag: `rdv-${appt.id}-0`, requireInteraction: true });
       appt.sent0 = true;
     }
     const tEnd = appt.timestamp + (appt.duree || 60) * 60 * 1000;
     if (!appt.sentEnd && tEnd <= now && now < tEnd + window5m) {
-      await self.registration.showNotification(`📝 Séance terminée — ${appt.clientName}`, { body: 'Pensez à remplir la note de séance', tag: `rdv-${appt.id}-end`, requireInteraction: true });
+      await self.registration.showNotification(`📝 Séance terminée — ${appt.clientName}`, { body: 'Pensez à remplir la note de séance', icon: ICON, tag: `rdv-${appt.id}-end`, requireInteraction: true });
       appt.sentEnd = true;
     }
   }
@@ -166,12 +165,12 @@ async function checkAndNotify() {
     const body = sorted.map(a => `${a.heure} · ${a.clientName}`).join('\n');
     await self.registration.showNotification(
       `📅 Planning du jour · ${remaining.length} RDV`,
-      { body, tag: 'today-board', requireInteraction: false }
+      { body, icon: ICON, tag: 'today-board', requireInteraction: false }
     );
   } else {
     await self.registration.showNotification(
       `📅 Planning du jour`,
-      { body: 'Aucun RDV restant aujourd\'hui', tag: 'today-board', requireInteraction: false }
+      { body: 'Aucun RDV restant aujourd\'hui', icon: ICON, tag: 'today-board', requireInteraction: false }
     );
   }
 }
