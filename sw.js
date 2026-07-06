@@ -183,6 +183,9 @@ self.addEventListener('message', async event => {
     scheduleTimeouts(event.data.appointments);
     event.source?.postMessage({ type: 'SCHEDULED', count: event.data.appointments.length });
   }
+  if (event.data?.type === 'CHECK_NOW') {
+    await checkAndNotify();
+  }
 });
 
 self.addEventListener('push', event => {
