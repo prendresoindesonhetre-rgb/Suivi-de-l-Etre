@@ -131,7 +131,8 @@ async function checkAndNotify() {
       const sorted = [...appointments].sort((a, b) => a.timestamp - b.timestamp);
       const title = appointments.length > 0 ? `📅 ${appointments.length} RDV aujourd'hui` : `📅 Planning du jour`;
       const body  = appointments.length > 0 ? sorted.map(a => `${a.heure} · ${a.clientName}`).join('\n') : 'Aucun RDV aujourd\'hui';
-      await self.registration.showNotification(title, { body, icon: ICON, tag: 'daily-summary', requireInteraction: false });
+      const actions = appointments.length === 0 ? [{ action: 'pause-today', title: '🔕 Suspendre jusqu\'à demain' }] : [];
+      await self.registration.showNotification(title, { body, icon: ICON, tag: 'daily-summary', requireInteraction: false, actions });
       await setMeta('lastSummaryDate', today);
     }
   }
@@ -174,8 +175,8 @@ async function checkAndNotify() {
     const lastDone = await getMeta('lastDoneDate');
     if (lastDone !== today) {
       await self.registration.showNotification(`✅ Journée terminée`, {
-        body: 'Toutes vos séances du jour sont terminées.',
-        icon: ICON, tag: 'day-done', requireInteraction: false,
+        body: 'Toutes vos séances du jour sont terminées.\nAppuyez longuement pour voir les options.',
+        icon: ICON, tag: 'day-done', requireInteraction: true,
         actions: [{ action: 'pause-today', title: '🔕 Suspendre jusqu\'à demain' }]
       });
       await setMeta('lastDoneDate', today);
