@@ -111,6 +111,10 @@ async function checkAndNotify() {
   const today = getFranceDate();
   const hour  = getFranceHour();
 
+  // Pause manuelle jusqu'à demain
+  const pausedUntil = await getMeta('pausedUntil');
+  if (pausedUntil === today) return;
+
   let appointments = await fetchTodayFromSupabase();
   if (appointments.length) {
     await storeAppointments(appointments);
@@ -165,6 +169,17 @@ async function checkAndNotify() {
       `📅 Planning du jour · ${remaining.length} RDV`,
       { body, icon: ICON, tag: 'today-board', requireInteraction: false }
     );
+  } else if (appointments.length > 0 && hour >= 9) {
+    // Toutes les séances du jour sont terminées — notif unique avec bouton pause
+    const lastDone = await getMeta('lastDoneDate');
+    if (lastDone !== today) {
+      await self.registration.showNotification(`✅ Journée terminée`, {
+        body: 'Toutes vos séances du jour sont terminées.',
+        icon: ICON, tag: 'day-done', requireInteraction: false,
+        actions: [{ action: 'pause-today', title: '🔕 Suspendre jusqu\'à demain' }]
+      });
+      await setMeta('lastDoneDate', today);
+    }
   }
 }
 
@@ -190,6 +205,10 @@ self.addEventListener('periodicsync', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
+  if (event.action === 'pause-today') {
+    event.waitUntil(setMeta('pausedUntil', getFranceDate()));
+    return;
+  }
   event.waitUntil(
     self.clients.matchAll({ type: 'window' }).then(list => {
       if (list.length > 0) return list[0].focus();
