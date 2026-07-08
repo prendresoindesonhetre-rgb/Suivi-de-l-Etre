@@ -124,15 +124,23 @@ async function checkAndNotify() {
     appointments = cached.filter(a => a.timestamp >= todayStart.getTime());
   }
 
-  // Récapitulatif du matin entre 8h et 9h (une seule fois par jour)
-  if (hour >= 8 && hour < 9) {
+  // Récapitulatif du matin — fenêtre élargie 7h–12h pour absorber les push en retard
+  if (hour >= 7 && hour < 12) {
     const lastSummary = await getMeta('lastSummaryDate');
     if (lastSummary !== today) {
       const sorted = [...appointments].sort((a, b) => a.timestamp - b.timestamp);
-      const title = appointments.length > 0 ? `📅 ${appointments.length} RDV aujourd'hui` : `📅 Planning du jour`;
-      const body  = appointments.length > 0 ? sorted.map(a => `${a.heure} · ${a.clientName}`).join('\n') : 'Aucun RDV aujourd\'hui';
-      const actions = appointments.length === 0 ? [{ action: 'pause-today', title: '🔕 Suspendre jusqu\'à demain' }] : [];
-      await self.registration.showNotification(title, { body, icon: ICON, tag: 'daily-summary', requireInteraction: false, actions });
+      if (appointments.length > 0) {
+        const body = sorted.map(a => `${a.heure} · ${a.clientName}`).join('\n');
+        await self.registration.showNotification(`📅 ${appointments.length} RDV aujourd'hui`, {
+          body, icon: ICON, tag: 'daily-summary', requireInteraction: false
+        });
+      } else {
+        await self.registration.showNotification(`🌿 Journée sans rendez-vous`, {
+          body: 'Appuyez longuement pour suspendre les notifications de la journée.',
+          icon: ICON, tag: 'daily-summary', requireInteraction: true,
+          actions: [{ action: 'pause-today', title: '🔕 Suspendre jusqu\'à demain' }]
+        });
+      }
       await setMeta('lastSummaryDate', today);
     }
   }
