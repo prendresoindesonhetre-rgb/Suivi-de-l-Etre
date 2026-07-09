@@ -4,8 +4,8 @@ const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
 
-self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+self.addEventListener('install', e => e.waitUntil(self.skipWaiting()));
+self.addEventListener('activate', e => e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 
 // ─── IndexedDB ────────────────────────────────────────────────────────────────
 function openDB() {
@@ -57,12 +57,19 @@ function getFranceDate() {
   return `${p[2]}-${p[1]}-${p[0]}`;
 }
 
+function getFranceTomorrow() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  const p = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d).split('/');
+  return `${p[2]}-${p[1]}-${p[0]}`;
+}
+
 function getFranceHour() {
   return parseInt(new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', hour: 'numeric', hour12: false }).format(new Date()), 10);
 }
 
 // ─── Récupération depuis Supabase ─────────────────────────────────────────────
-async function fetchTodayFromSupabase() {
+async function fetchDayFromSupabase(date) {
   try {
     const res = await fetch(`${SB_URL}/rest/v1/sync?select=rdvs,clients&limit=1`, {
       headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
@@ -71,16 +78,37 @@ async function fetchTodayFromSupabase() {
     const rows = await res.json();
     if (!rows?.length) return [];
     const { rdvs = [], clients = [] } = rows[0];
-    const today = getFranceDate();
-    return rdvs.filter(r => r.date === today && !r.annule).map(r => {
+    return rdvs.filter(r => r.date === date && !r.annule).map(r => {
       const c = clients.find(x => x.id == r.clientId);
       const nom = c ? `${c.prenom}${c.nom ? ' ' + c.nom : ''}` : 'Client';
       const lieu = r.lieu || (c && c.adresse) || '';
       const [h, m] = r.heure.split(':').map(Number);
-      const rdvTime = new Date(); rdvTime.setHours(h, m, 0, 0);
+      const rdvTime = new Date(date + 'T' + r.heure + ':00');
       return { id: r.id, timestamp: rdvTime.getTime(), heure: r.heure, type: r.type || 'Séance', lieu, clientName: nom, duree: r.duree || 60, trajet: r.trajetAller || 0 };
     });
   } catch(e) { return []; }
+}
+
+async function fetchTodayFromSupabase() {
+  return fetchDayFromSupabase(getFranceDate());
+}
+
+async function showTomorrowPreview() {
+  const appts = await fetchDayFromSupabase(getFranceTomorrow());
+  const sorted = appts.sort((a, b) => a.timestamp - b.timestamp);
+  if (sorted.length === 0) {
+    await self.registration.showNotification('📆 Demain — aucun rendez-vous', {
+      body: 'Bonne journée libre !', icon: ICON, tag: 'tomorrow-preview', requireInteraction: false
+    });
+  } else {
+    const first = sorted[0];
+    const lieu = first.lieu ? ` · 📍 ${first.lieu}` : '';
+    const suite = sorted.slice(1).map(a => `${a.heure} · ${a.clientName}`).join('\n');
+    const body = `Premier RDV à ${first.heure} avec ${first.clientName}${lieu}${suite ? '\n' + suite : ''}`;
+    await self.registration.showNotification(`📆 Demain — ${sorted.length} RDV`, {
+      body, icon: ICON, tag: 'tomorrow-preview', requireInteraction: false
+    });
+  }
 }
 
 // ─── Planification (appli ouverte) ───────────────────────────────────────────
@@ -124,8 +152,8 @@ async function checkAndNotify() {
     appointments = cached.filter(a => a.timestamp >= todayStart.getTime());
   }
 
-  // Récapitulatif du matin — fenêtre élargie 7h–12h pour absorber les push en retard
-  if (hour >= 7 && hour < 12) {
+  // Récapitulatif du matin — à partir de 8h (une seule fois par jour)
+  if (hour >= 8 && hour < 12) {
     const lastSummary = await getMeta('lastSummaryDate');
     if (lastSummary !== today) {
       const sorted = [...appointments].sort((a, b) => a.timestamp - b.timestamp);
@@ -136,10 +164,11 @@ async function checkAndNotify() {
         });
       } else {
         await self.registration.showNotification(`🌿 Journée sans rendez-vous`, {
-          body: 'Appuyez longuement pour suspendre les notifications de la journée.',
-          icon: ICON, tag: 'daily-summary', requireInteraction: true,
-          actions: [{ action: 'pause-today', title: '🔕 Suspendre jusqu\'à demain' }]
+          body: 'Les notifications reprennent demain matin.',
+          icon: ICON, tag: 'daily-summary', requireInteraction: false
         });
+        await showTomorrowPreview();
+        await setMeta('pausedUntil', today);
       }
       await setMeta('lastSummaryDate', today);
     }
@@ -183,11 +212,12 @@ async function checkAndNotify() {
     const lastDone = await getMeta('lastDoneDate');
     if (lastDone !== today) {
       await self.registration.showNotification(`✅ Journée terminée`, {
-        body: 'Toutes vos séances du jour sont terminées.\nAppuyez longuement pour voir les options.',
-        icon: ICON, tag: 'day-done', requireInteraction: true,
-        actions: [{ action: 'pause-today', title: '🔕 Suspendre jusqu\'à demain' }]
+        body: 'Toutes vos séances sont terminées. Les notifications reprennent demain matin.',
+        icon: ICON, tag: 'day-done', requireInteraction: false
       });
+      await showTomorrowPreview();
       await setMeta('lastDoneDate', today);
+      await setMeta('pausedUntil', today);
     }
   }
 }
