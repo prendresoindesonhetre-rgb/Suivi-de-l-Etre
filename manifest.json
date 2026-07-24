@@ -4,8 +4,8 @@
   "description": "Application de gestion — Prendre soin de son Hêtre",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f0eaf8",
-  "theme_color": "#9B8EC4",
+  "background_color": "#f0f7f5",
+  "theme_color": "#1a7a7a",
   "icons": [
     {
       "src": "icon-192.png",
