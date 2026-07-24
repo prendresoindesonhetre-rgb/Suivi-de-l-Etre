@@ -2,7 +2,7 @@
   "name": "Suivi de l'Être",
   "short_name": "Suivi de l'Être",
   "description": "Application de gestion — Prendre soin de son Hêtre",
-  "start_url": "/Suivi-de-l-Etre/",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#f0eaf8",
   "theme_color": "#9B8EC4",
