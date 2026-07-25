@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v3';
+const CACHE = 'suivi-etre-v4';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -151,7 +151,7 @@ function scheduleTimeouts(appointments) {
     if (d0 > 0) _timeouts.push(setTimeout(() =>
       self.registration.showNotification(`🌿 RDV maintenant — ${appt.clientName}`, { body, icon: ICON, tag: `rdv-${appt.id}-0`, requireInteraction: true }), d0));
     if (dEnd > 0) _timeouts.push(setTimeout(() =>
-      self.registration.showNotification(`📝 Séance terminée — ${appt.clientName}`, { body: 'Pensez à remplir la note de séance', icon: ICON, tag: `rdv-${appt.id}-end`, requireInteraction: true }), dEnd));
+      self.registration.showNotification(`📝 Séance terminée — ${appt.clientName}`, { body: 'Pensez à remplir la note de séance', icon: ICON, tag: `rdv-${appt.id}-end`, requireInteraction: true, data: { rdvId: appt.id }, actions: [{ action: 'note', title: '✅ Remplir la note' }, { action: 'absent', title: '❌ Non venu' }] }), dEnd));
   });
 }
 
@@ -213,7 +213,7 @@ async function checkAndNotify() {
     }
     const tEnd = appt.timestamp + (appt.duree || 60) * 60 * 1000;
     if (!appt.sentEnd && tEnd <= now && now < tEnd + window5m) {
-      await self.registration.showNotification(`📝 Séance terminée — ${appt.clientName}`, { body: 'Pensez à remplir la note de séance', icon: ICON, tag: `rdv-${appt.id}-end`, requireInteraction: true });
+      await self.registration.showNotification(`📝 Séance terminée — ${appt.clientName}`, { body: 'Pensez à remplir la note de séance', icon: ICON, tag: `rdv-${appt.id}-end`, requireInteraction: true, data: { rdvId: appt.id }, actions: [{ action: 'note', title: '✅ Remplir la note' }, { action: 'absent', title: '❌ Non venu' }] });
       appt.sentEnd = true;
     }
   }
@@ -267,6 +267,20 @@ self.addEventListener('notificationclick', event => {
   event.notification.close();
   if (event.action === 'pause-today') {
     event.waitUntil(setMeta('pausedUntil', getFranceDate()));
+    return;
+  }
+  const rdvId = event.notification.data?.rdvId;
+  if ((event.action === 'note' || event.action === 'absent') && rdvId) {
+    event.waitUntil(
+      self.clients.matchAll({ type: 'window' }).then(list => {
+        if (list.length > 0) {
+          list[0].focus();
+          list[0].postMessage({ type: 'NOTIF_ACTION', action: event.action, rdvId });
+          return;
+        }
+        return self.clients.openWindow(`./?action=${event.action}&rdvId=${rdvId}`);
+      })
+    );
     return;
   }
   event.waitUntil(
