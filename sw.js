@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v37';
+const CACHE = 'suivi-etre-v38';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -7,7 +7,12 @@ const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
 const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => e.waitUntil(
-  caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
+  caches.open(CACHE).then(c =>
+    // fetch avec {cache:'reload'} pour ignorer le cache HTTP du navigateur :
+    // c.addAll() seul reste soumis au Cache-Control: max-age=600 de GitHub
+    // Pages et pouvait donc mettre en cache une version encore périmée.
+    Promise.all(ASSETS.map(url => fetch(url, { cache: 'reload' }).then(res => c.put(url, res))))
+  ).then(() => self.skipWaiting())
 ));
 self.addEventListener('activate', e => e.waitUntil(
   caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
