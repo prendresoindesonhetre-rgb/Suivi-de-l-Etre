@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v42';
+const CACHE = 'suivi-etre-v43';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -160,10 +160,57 @@ function scheduleTimeouts(appointments) {
   });
 }
 
+// ─── Rappel déclaration URSSAF ────────────────────────────────────────────────
+const MONTHS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+async function checkUrssafDeclaration() {
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/sync?select=parametres&limit=1`, {
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+    });
+    if (!res.ok) return;
+    const rows = await res.json();
+    if (!rows?.length) return;
+    const p = rows[0].parametres || {};
+    const paiements = p.paiements || [];
+    const declarations = p.urssafDeclarations || [];
+
+    const parMois = {};
+    paiements.forEach(pm => {
+      const d = new Date(pm.datePaiement + 'T12:00:00');
+      const mois = d.getMonth(), annee = d.getFullYear();
+      const key = annee + '-' + mois;
+      if (!parMois[key]) parMois[key] = { mois, annee, total: 0 };
+      parMois[key].total += pm.montant || 0;
+    });
+
+    const now = new Date();
+    const curMois = now.getMonth(), curAnnee = now.getFullYear();
+    const nonDeclares = Object.values(parMois)
+      .filter(m => (m.annee < curAnnee) || (m.annee === curAnnee && m.mois < curMois))
+      .filter(m => !declarations.some(d => d.mois === m.mois && d.annee === m.annee))
+      .sort((a,b) => (a.annee - b.annee) || (a.mois - b.mois));
+
+    if (nonDeclares.length) {
+      const total = nonDeclares.reduce((s,m) => s + m.total, 0);
+      const body = nonDeclares.map(m => `${MONTHS_FR[m.mois]} ${m.annee} — ${m.total.toFixed(2).replace('.',',')} €`).join('\n')
+        + (nonDeclares.length > 1 ? `\nTotal : ${total.toFixed(2).replace('.',',')} €` : '');
+      await self.registration.showNotification('🏛️ Déclaration URSSAF à faire', {
+        body, icon: ICON, tag: 'urssaf-declare', requireInteraction: true
+      });
+    } else {
+      const existing = await self.registration.getNotifications({ tag: 'urssaf-declare' });
+      existing.forEach(n => n.close());
+    }
+  } catch(e) {}
+}
+
 // ─── Vérification au réveil (push serveur) ───────────────────────────────────
 async function checkAndNotify() {
   const today = getFranceDate();
   const hour  = getFranceHour();
+
+  await checkUrssafDeclaration();
 
   // Pause manuelle jusqu'à demain
   const pausedUntil = await getMeta('pausedUntil');
@@ -258,6 +305,10 @@ self.addEventListener('message', async event => {
   if (event.data?.type === 'CHECK_NOW') {
     await checkAndNotify();
   }
+  if (event.data?.type === 'URSSAF_DECLARED') {
+    const existing = await self.registration.getNotifications({ tag: 'urssaf-declare' });
+    existing.forEach(n => n.close());
+  }
 });
 
 self.addEventListener('push', event => {
@@ -284,6 +335,19 @@ self.addEventListener('notificationclick', event => {
           return;
         }
         return self.clients.openWindow(`./?action=${event.action}&rdvId=${rdvId}`);
+      })
+    );
+    return;
+  }
+  if (event.notification.tag === 'urssaf-declare') {
+    event.waitUntil(
+      self.clients.matchAll({ type: 'window' }).then(list => {
+        if (list.length > 0) {
+          list[0].focus();
+          list[0].postMessage({ type: 'NOTIF_ACTION', action: 'urssaf' });
+          return;
+        }
+        return self.clients.openWindow('./?action=urssaf');
       })
     );
     return;
