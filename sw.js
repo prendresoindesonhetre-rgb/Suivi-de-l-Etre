@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v53';
+const CACHE = 'suivi-etre-v54';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -161,8 +161,8 @@ function scheduleTimeouts(appointments) {
 }
 
 // ─── Rappel déclaration URSSAF ────────────────────────────────────────────────
-const MONTHS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-
+// Modèle cumulatif : total encaissé depuis la date de la dernière déclaration,
+// tous mois confondus (aligné sur getMontantADeclarer() côté app).
 async function checkUrssafDeclaration() {
   try {
     const res = await fetch(`${SB_URL}/rest/v1/sync?select=parametres&limit=1`, {
@@ -175,26 +175,22 @@ async function checkUrssafDeclaration() {
     const paiements = p.paiements || [];
     const declarations = p.urssafDeclarations || [];
 
-    const parMois = {};
-    paiements.forEach(pm => {
-      const d = new Date(pm.datePaiement + 'T12:00:00');
-      const mois = d.getMonth(), annee = d.getFullYear();
-      const key = annee + '-' + mois;
-      if (!parMois[key]) parMois[key] = { mois, annee, total: 0 };
-      parMois[key].total += pm.montant || 0;
+    const versements = [];
+    paiements.forEach(raw => {
+      if (raw.versements) raw.versements.forEach(v => versements.push({ date: v.date, montant: v.montant || 0 }));
+      else versements.push({ date: raw.datePaiement, montant: raw.montant || 0 });
     });
 
-    const now = new Date();
-    const curMois = now.getMonth(), curAnnee = now.getFullYear();
-    const nonDeclares = Object.values(parMois)
-      .filter(m => (m.annee < curAnnee) || (m.annee === curAnnee && m.mois < curMois))
-      .filter(m => !declarations.some(d => d.mois === m.mois && d.annee === m.annee))
-      .sort((a,b) => (a.annee - b.annee) || (a.mois - b.mois));
+    const derniere = declarations.length
+      ? declarations.reduce((a, b) => (a.dateDeclaration > b.dateDeclaration ? a : b))
+      : null;
+    const limite = derniere ? derniere.dateDeclaration : null;
+    const total = versements
+      .filter(v => v.date && (!limite || v.date > limite))
+      .reduce((s, v) => s + (v.montant || 0), 0);
 
-    if (nonDeclares.length) {
-      const total = nonDeclares.reduce((s,m) => s + m.total, 0);
-      const body = nonDeclares.map(m => `${MONTHS_FR[m.mois]} ${m.annee} — ${m.total.toFixed(2).replace('.',',')} €`).join('\n')
-        + (nonDeclares.length > 1 ? `\nTotal : ${total.toFixed(2).replace('.',',')} €` : '');
+    if (total > 0) {
+      const body = `${total.toFixed(2).replace('.',',')} € encaissés depuis votre dernière déclaration`;
       await self.registration.showNotification('🏛️ Déclaration URSSAF à faire', {
         body, icon: ICON, tag: 'urssaf-declare', requireInteraction: true
       });
