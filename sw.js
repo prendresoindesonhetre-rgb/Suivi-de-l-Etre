@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v77';
+const CACHE = 'suivi-etre-v78';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -256,16 +256,37 @@ function withinWindow(nowHHMM, targetHHMM, toleranceMin) {
   return nowMin >= targetMin && nowMin < targetMin + toleranceMin;
 }
 
+function daysBetween(aStr, bStr) {
+  const a = new Date(aStr + 'T00:00:00Z');
+  const b = new Date(bStr + 'T00:00:00Z');
+  return Math.round((b - a) / 86400000);
+}
+
+function isDueIntervalle(anchorStr, todayStr, n, unite) {
+  const diffDays = daysBetween(anchorStr, todayStr);
+  if (diffDays < 0) return false;
+  if (unite === 'jour') return diffDays % n === 0;
+  if (unite === 'semaine') return diffDays % (n * 7) === 0;
+  const anchor = new Date(anchorStr + 'T00:00:00Z');
+  const todayD = new Date(todayStr + 'T00:00:00Z');
+  const anchorDay = anchor.getUTCDate();
+  const monthsDiff = (todayD.getUTCFullYear() - anchor.getUTCFullYear()) * 12 + (todayD.getUTCMonth() - anchor.getUTCMonth());
+  const daysInTodayMonth = new Date(Date.UTC(todayD.getUTCFullYear(), todayD.getUTCMonth() + 1, 0)).getUTCDate();
+  const dayMatches = todayD.getUTCDate() === anchorDay || (anchorDay > daysInTodayMonth && todayD.getUTCDate() === daysInTodayMonth);
+  if (!dayMatches) return false;
+  if (unite === 'mois') return monthsDiff % n === 0;
+  if (unite === 'an') return monthsDiff % (n * 12) === 0;
+  return false;
+}
+
 async function checkCustomReminders(templates) {
   const today = getFranceDate();
-  const dayOfWeek = new Date(today + 'T12:00:00').getDay();
   const nowHHMM = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
   const customs = (templates || []).filter(t => t.custom && t.actif !== false);
   for (const t of customs) {
     let dueToday = false;
     if (t.frequence === 'unique') dueToday = t.date === today;
-    else if (t.frequence === 'quotidien') dueToday = true;
-    else if (t.frequence === 'hebdomadaire') dueToday = (t.jours || []).includes(dayOfWeek);
+    else if (t.frequence === 'intervalle') dueToday = isDueIntervalle(t.date, today, t.intervalleN || 1, t.intervalleUnite || 'semaine');
     if (!dueToday || !withinWindow(nowHHMM, t.heure, 20)) continue;
 
     const sentKey = `custom-sent-${t.id}-${today}`;
