@@ -1,10 +1,51 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v74';
+const CACHE = 'suivi-etre-v75';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
 
 const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
+
+// ─── Modèles de notifications éditables (registre dupliqué depuis index.html,
+// à garder en phase — voir NOTIF_TYPES_BUILTIN) ───────────────────────────────
+const NOTIF_DEFAULTS = {
+  'rdv-30min': { titre: '⏰ RDV dans {minutes} min — {client}', corps: '{heure} · {type} ({duree} min){lieu}{trajet}' },
+  'rdv-now': { titre: '🌿 RDV maintenant — {client}', corps: '{heure} · {type} ({duree} min){lieu}{trajet}' },
+  'rdv-end': { titre: '📝 Séance terminée — {client}', corps: 'Pensez à remplir la note de séance' },
+  'daily-summary': { titre: "📅 {nombre} RDV aujourd'hui", corps: '{liste}' },
+  'daily-summary-empty': { titre: '🌿 Journée sans rendez-vous', corps: 'Les notifications reprennent demain matin.' },
+  'day-done': { titre: '✅ Journée terminée', corps: 'Toutes vos séances sont terminées. Les notifications reprennent demain matin.' },
+  'tomorrow-preview': { titre: '📆 Demain — {nombre} RDV', corps: '{liste}' },
+  'tomorrow-preview-empty': { titre: '📆 Demain — aucun rendez-vous', corps: 'Bonne journée libre !' },
+  'urssaf': { titre: '🏛️ Déclaration URSSAF à faire', corps: '{montant} € encaissés depuis votre dernière déclaration' },
+};
+
+function renderTpl(str, vars) {
+  return (str || '').replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : ''));
+}
+
+// Fusionne le défaut intégré avec la surcharge éventuelle (titre/corps/actif).
+function getTpl(templates, id) {
+  const def = NOTIF_DEFAULTS[id] || { titre: '', corps: '' };
+  const override = (templates || []).find(t => t.id === id);
+  const actif = override ? override.actif !== false : true;
+  return {
+    titre: (override && override.titre) || def.titre,
+    corps: (override && override.corps != null && override.corps !== '') ? override.corps : def.corps,
+    actif
+  };
+}
+
+async function fetchParametres() {
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/sync?select=parametres&limit=1`, {
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+    });
+    if (!res.ok) return {};
+    const rows = await res.json();
+    return (rows?.length && rows[0].parametres) || {};
+  } catch(e) { return {}; }
+}
 
 self.addEventListener('install', e => e.waitUntil(
   caches.open(CACHE).then(c =>
@@ -119,20 +160,25 @@ async function fetchTodayFromSupabase() {
   return fetchDayFromSupabase(getFranceDate());
 }
 
-async function showTomorrowPreview() {
+async function showTomorrowPreview(templates) {
   const appts = await fetchDayFromSupabase(getFranceTomorrow());
   const sorted = appts.sort((a, b) => a.timestamp - b.timestamp);
   if (sorted.length === 0) {
-    await self.registration.showNotification('📆 Demain — aucun rendez-vous', {
-      body: 'Bonne journée libre !', icon: ICON, tag: 'tomorrow-preview', requireInteraction: false
+    const tpl = getTpl(templates, 'tomorrow-preview-empty');
+    if (!tpl.actif) return;
+    await self.registration.showNotification(renderTpl(tpl.titre, {}), {
+      body: renderTpl(tpl.corps, {}), icon: ICON, tag: 'tomorrow-preview', requireInteraction: false
     });
   } else {
+    const tpl = getTpl(templates, 'tomorrow-preview');
+    if (!tpl.actif) return;
     const first = sorted[0];
     const lieu = first.lieu ? ` · 📍 ${first.lieu}` : '';
     const suite = sorted.slice(1).map(a => `${a.heure} · ${a.clientName}`).join('\n');
-    const body = `Premier RDV à ${first.heure} avec ${first.clientName}${lieu}${suite ? '\n' + suite : ''}`;
-    await self.registration.showNotification(`📆 Demain — ${sorted.length} RDV`, {
-      body, icon: ICON, tag: 'tomorrow-preview', requireInteraction: false
+    const liste = `Premier RDV à ${first.heure} avec ${first.clientName}${lieu}${suite ? '\n' + suite : ''}`;
+    const vars = { nombre: sorted.length, liste };
+    await self.registration.showNotification(renderTpl(tpl.titre, vars), {
+      body: renderTpl(tpl.corps, vars), icon: ICON, tag: 'tomorrow-preview', requireInteraction: false
     });
   }
 }
@@ -140,38 +186,37 @@ async function showTomorrowPreview() {
 // ─── Planification (appli ouverte) ───────────────────────────────────────────
 let _timeouts = [];
 
-function scheduleTimeouts(appointments) {
+function scheduleTimeouts(appointments, templates) {
   _timeouts.forEach(t => clearTimeout(t));
   _timeouts = [];
   const now = Date.now();
+  const tpl30 = getTpl(templates, 'rdv-30min');
+  const tplNow = getTpl(templates, 'rdv-now');
+  const tplEnd = getTpl(templates, 'rdv-end');
   appointments.forEach(appt => {
     const trajet = appt.trajet || 0;
     const alertMin = 30 + trajet;
-    const body = `${appt.heure} · ${appt.type} (${appt.duree} min)${appt.lieu ? '\n📍 ' + appt.lieu : ''}${trajet ? '\n🚗 ' + trajet + ' min de route' : ''}`;
+    const vars = {
+      client: appt.clientName, minutes: alertMin, heure: appt.heure, type: appt.type, duree: appt.duree,
+      lieu: appt.lieu ? '\n📍 ' + appt.lieu : '', trajet: trajet ? '\n🚗 ' + trajet + ' min de route' : ''
+    };
     const d30 = appt.timestamp - alertMin * 60 * 1000 - now;
     const d0  = appt.timestamp - now;
     const dEnd = appt.timestamp + (appt.duree || 60) * 60 * 1000 - now;
-    if (d30 > 0) _timeouts.push(setTimeout(() =>
-      self.registration.showNotification(`⏰ RDV dans ${alertMin} min — ${appt.clientName}`, { body, icon: ICON, tag: `rdv-${appt.id}-30`, requireInteraction: true }), d30));
-    if (d0 > 0) _timeouts.push(setTimeout(() =>
-      self.registration.showNotification(`🌿 RDV maintenant — ${appt.clientName}`, { body, icon: ICON, tag: `rdv-${appt.id}-0`, requireInteraction: true }), d0));
-    if (dEnd > 0) _timeouts.push(setTimeout(() =>
-      self.registration.showNotification(`📝 Séance terminée — ${appt.clientName}`, { body: 'Pensez à remplir la note de séance', icon: ICON, tag: `rdv-${appt.id}-end`, requireInteraction: true, data: { rdvId: appt.id }, actions: [{ action: 'note', title: '✅ Remplir la note' }, { action: 'absent', title: '❌ Non venu' }] }), dEnd));
+    if (d30 > 0 && tpl30.actif) _timeouts.push(setTimeout(() =>
+      self.registration.showNotification(renderTpl(tpl30.titre, vars), { body: renderTpl(tpl30.corps, vars), icon: ICON, tag: `rdv-${appt.id}-30`, requireInteraction: true }), d30));
+    if (d0 > 0 && tplNow.actif) _timeouts.push(setTimeout(() =>
+      self.registration.showNotification(renderTpl(tplNow.titre, vars), { body: renderTpl(tplNow.corps, vars), icon: ICON, tag: `rdv-${appt.id}-0`, requireInteraction: true }), d0));
+    if (dEnd > 0 && tplEnd.actif) _timeouts.push(setTimeout(() =>
+      self.registration.showNotification(renderTpl(tplEnd.titre, vars), { body: renderTpl(tplEnd.corps, vars), icon: ICON, tag: `rdv-${appt.id}-end`, requireInteraction: true, data: { rdvId: appt.id }, actions: [{ action: 'note', title: '✅ Remplir la note' }, { action: 'absent', title: '❌ Non venu' }] }), dEnd));
   });
 }
 
 // ─── Rappel déclaration URSSAF ────────────────────────────────────────────────
 // Modèle cumulatif : total encaissé depuis la date de la dernière déclaration,
 // tous mois confondus (aligné sur getMontantADeclarer() côté app).
-async function checkUrssafDeclaration() {
+async function checkUrssafDeclaration(p, templates) {
   try {
-    const res = await fetch(`${SB_URL}/rest/v1/sync?select=parametres&limit=1`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
-    });
-    if (!res.ok) return;
-    const rows = await res.json();
-    if (!rows?.length) return;
-    const p = rows[0].parametres || {};
     const paiements = p.paiements || [];
     const declarations = p.urssafDeclarations || [];
 
@@ -189,10 +234,11 @@ async function checkUrssafDeclaration() {
       .filter(v => v.date && (!limite || v.date > limite))
       .reduce((s, v) => s + (v.montant || 0), 0);
 
-    if (total > 0) {
-      const body = `${total.toFixed(2).replace('.',',')} € encaissés depuis votre dernière déclaration`;
-      await self.registration.showNotification('🏛️ Déclaration URSSAF à faire', {
-        body, icon: ICON, tag: 'urssaf-declare', requireInteraction: true
+    const tpl = getTpl(templates, 'urssaf');
+    if (total > 0 && tpl.actif) {
+      const vars = { montant: total.toFixed(2).replace('.',',') };
+      await self.registration.showNotification(renderTpl(tpl.titre, vars), {
+        body: renderTpl(tpl.corps, vars), icon: ICON, tag: 'urssaf-declare', requireInteraction: true
       });
     } else {
       const existing = await self.registration.getNotifications({ tag: 'urssaf-declare' });
@@ -201,12 +247,46 @@ async function checkUrssafDeclaration() {
   } catch(e) {}
 }
 
+// ─── Rappels personnalisés (indépendants des RDV/factures) ───────────────────
+function withinWindow(nowHHMM, targetHHMM, toleranceMin) {
+  if (!targetHHMM) return false;
+  const [nh, nm] = nowHHMM.split(':').map(Number);
+  const [th, tm] = targetHHMM.split(':').map(Number);
+  const nowMin = nh * 60 + nm, targetMin = th * 60 + tm;
+  return nowMin >= targetMin && nowMin < targetMin + toleranceMin;
+}
+
+async function checkCustomReminders(templates) {
+  const today = getFranceDate();
+  const dayOfWeek = new Date(today + 'T12:00:00').getDay();
+  const nowHHMM = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
+  const customs = (templates || []).filter(t => t.custom && t.actif !== false);
+  for (const t of customs) {
+    let dueToday = false;
+    if (t.frequence === 'unique') dueToday = t.date === today;
+    else if (t.frequence === 'quotidien') dueToday = true;
+    else if (t.frequence === 'hebdomadaire') dueToday = (t.jours || []).includes(dayOfWeek);
+    if (!dueToday || !withinWindow(nowHHMM, t.heure, 20)) continue;
+
+    const sentKey = `custom-sent-${t.id}-${today}`;
+    if (await getMeta(sentKey)) continue;
+    await self.registration.showNotification(t.titre || t.nom, {
+      body: t.corps || '', icon: ICON, tag: `custom-${t.id}`, requireInteraction: true
+    });
+    await setMeta(sentKey, true);
+  }
+}
+
 // ─── Vérification au réveil (push serveur) ───────────────────────────────────
 async function checkAndNotify() {
   const today = getFranceDate();
   const hour  = getFranceHour();
 
-  await checkUrssafDeclaration();
+  const p = await fetchParametres();
+  const templates = p.notifTemplates || [];
+
+  await checkUrssafDeclaration(p, templates);
+  await checkCustomReminders(templates);
 
   // Pause manuelle jusqu'à demain
   const pausedUntil = await getMeta('pausedUntil');
@@ -227,16 +307,21 @@ async function checkAndNotify() {
     if (lastSummary !== today) {
       const sorted = [...appointments].sort((a, b) => a.timestamp - b.timestamp);
       if (appointments.length > 0) {
-        const body = sorted.map(a => `${a.heure} · ${a.clientName}`).join('\n');
-        await self.registration.showNotification(`📅 ${appointments.length} RDV aujourd'hui`, {
-          body, icon: ICON, tag: 'daily-summary', requireInteraction: false
-        });
+        const tplSummary = getTpl(templates, 'daily-summary');
+        if (tplSummary.actif) {
+          const vars = { nombre: appointments.length, liste: sorted.map(a => `${a.heure} · ${a.clientName}`).join('\n') };
+          await self.registration.showNotification(renderTpl(tplSummary.titre, vars), {
+            body: renderTpl(tplSummary.corps, vars), icon: ICON, tag: 'daily-summary', requireInteraction: false
+          });
+        }
       } else {
-        await self.registration.showNotification(`🌿 Journée sans rendez-vous`, {
-          body: 'Les notifications reprennent demain matin.',
-          icon: ICON, tag: 'daily-summary', requireInteraction: false
-        });
-        await showTomorrowPreview();
+        const tplEmpty = getTpl(templates, 'daily-summary-empty');
+        if (tplEmpty.actif) {
+          await self.registration.showNotification(renderTpl(tplEmpty.titre, {}), {
+            body: renderTpl(tplEmpty.corps, {}), icon: ICON, tag: 'daily-summary', requireInteraction: false
+          });
+        }
+        await showTomorrowPreview(templates);
         await setMeta('pausedUntil', today);
       }
       await setMeta('lastSummaryDate', today);
@@ -246,22 +331,28 @@ async function checkAndNotify() {
   // Notifications individuelles
   const now = Date.now();
   const window5m = 20 * 60 * 1000;
+  const tpl30 = getTpl(templates, 'rdv-30min');
+  const tplNow = getTpl(templates, 'rdv-now');
+  const tplEnd = getTpl(templates, 'rdv-end');
   for (const appt of appointments) {
     const trajet = appt.trajet || 0;
     const alertMin = 30 + trajet;
-    const body = `${appt.heure} · ${appt.type} (${appt.duree} min)${appt.lieu ? '\n📍 ' + appt.lieu : ''}${trajet ? '\n🚗 ' + trajet + ' min de route' : ''}`;
+    const vars = {
+      client: appt.clientName, minutes: alertMin, heure: appt.heure, type: appt.type, duree: appt.duree,
+      lieu: appt.lieu ? '\n📍 ' + appt.lieu : '', trajet: trajet ? '\n🚗 ' + trajet + ' min de route' : ''
+    };
     const t30 = appt.timestamp - alertMin * 60 * 1000;
     if (!appt.sent30 && t30 <= now && now < t30 + window5m) {
-      await self.registration.showNotification(`⏰ RDV dans ${alertMin} min — ${appt.clientName}`, { body, icon: ICON, tag: `rdv-${appt.id}-30`, requireInteraction: true });
+      if (tpl30.actif) await self.registration.showNotification(renderTpl(tpl30.titre, vars), { body: renderTpl(tpl30.corps, vars), icon: ICON, tag: `rdv-${appt.id}-30`, requireInteraction: true });
       appt.sent30 = true;
     }
     if (!appt.sent0 && appt.timestamp <= now && now < appt.timestamp + window5m) {
-      await self.registration.showNotification(`🌿 RDV maintenant — ${appt.clientName}`, { body, icon: ICON, tag: `rdv-${appt.id}-0`, requireInteraction: true });
+      if (tplNow.actif) await self.registration.showNotification(renderTpl(tplNow.titre, vars), { body: renderTpl(tplNow.corps, vars), icon: ICON, tag: `rdv-${appt.id}-0`, requireInteraction: true });
       appt.sent0 = true;
     }
     const tEnd = appt.timestamp + (appt.duree || 60) * 60 * 1000;
     if (!appt.sentEnd && tEnd <= now && now < tEnd + window5m) {
-      await self.registration.showNotification(`📝 Séance terminée — ${appt.clientName}`, { body: 'Pensez à remplir la note de séance', icon: ICON, tag: `rdv-${appt.id}-end`, requireInteraction: true, data: { rdvId: appt.id }, actions: [{ action: 'note', title: '✅ Remplir la note' }, { action: 'absent', title: '❌ Non venu' }] });
+      if (tplEnd.actif) await self.registration.showNotification(renderTpl(tplEnd.titre, vars), { body: renderTpl(tplEnd.corps, vars), icon: ICON, tag: `rdv-${appt.id}-end`, requireInteraction: true, data: { rdvId: appt.id }, actions: [{ action: 'note', title: '✅ Remplir la note' }, { action: 'absent', title: '❌ Non venu' }] });
       appt.sentEnd = true;
     }
   }
@@ -280,11 +371,13 @@ async function checkAndNotify() {
     // Toutes les séances du jour sont terminées — notif unique avec bouton pause
     const lastDone = await getMeta('lastDoneDate');
     if (lastDone !== today) {
-      await self.registration.showNotification(`✅ Journée terminée`, {
-        body: 'Toutes vos séances sont terminées. Les notifications reprennent demain matin.',
-        icon: ICON, tag: 'day-done', requireInteraction: false
-      });
-      await showTomorrowPreview();
+      const tplDone = getTpl(templates, 'day-done');
+      if (tplDone.actif) {
+        await self.registration.showNotification(renderTpl(tplDone.titre, {}), {
+          body: renderTpl(tplDone.corps, {}), icon: ICON, tag: 'day-done', requireInteraction: false
+        });
+      }
+      await showTomorrowPreview(templates);
       await setMeta('lastDoneDate', today);
       await setMeta('pausedUntil', today);
     }
@@ -295,7 +388,7 @@ async function checkAndNotify() {
 self.addEventListener('message', async event => {
   if (event.data?.type === 'SCHEDULE') {
     await storeAppointments(event.data.appointments);
-    scheduleTimeouts(event.data.appointments);
+    scheduleTimeouts(event.data.appointments, event.data.notifTemplates || []);
     event.source?.postMessage({ type: 'SCHEDULED', count: event.data.appointments.length });
   }
   if (event.data?.type === 'CHECK_NOW') {
