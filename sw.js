@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v83';
+const CACHE = 'suivi-etre-v84';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -234,16 +234,26 @@ async function checkUrssafDeclaration(p, templates) {
       .filter(v => v.date && (!limite || v.date > limite))
       .reduce((s, v) => s + (v.montant || 0), 0);
 
-    const tpl = getTpl(templates, 'urssaf');
-    if (total > 0 && tpl.actif) {
-      const vars = { montant: total.toFixed(2).replace('.',',') };
-      await self.registration.showNotification(renderTpl(tpl.titre, vars), {
-        body: renderTpl(tpl.corps, vars), icon: ICON, tag: 'urssaf-declare', requireInteraction: true
-      });
-    } else {
+    if (total <= 0) {
       const existing = await self.registration.getNotifications({ tag: 'urssaf-declare' });
       existing.forEach(n => n.close());
+      return;
     }
+
+    const tpl = getTpl(templates, 'urssaf');
+    if (!tpl.actif) return;
+
+    // Seulement le 1er du mois, une fois par jour (pas à chaque vérification).
+    const today = getFranceDate();
+    if (today.slice(8, 10) !== '01') return;
+    const lastReminded = await getMeta('lastUrssafReminderDate');
+    if (lastReminded === today) return;
+
+    const vars = { montant: total.toFixed(2).replace('.',',') };
+    await self.registration.showNotification(renderTpl(tpl.titre, vars), {
+      body: renderTpl(tpl.corps, vars), icon: ICON, tag: 'urssaf-declare', requireInteraction: true
+    });
+    await setMeta('lastUrssafReminderDate', today);
   } catch(e) {}
 }
 
