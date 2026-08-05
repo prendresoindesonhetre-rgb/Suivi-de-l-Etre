@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v82';
+const CACHE = 'suivi-etre-v83';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -299,7 +299,7 @@ async function checkCustomReminders(templates) {
 }
 
 // ─── Vérification au réveil (push serveur) ───────────────────────────────────
-async function checkAndNotify() {
+async function checkAndNotify(force) {
   const today = getFranceDate();
   const hour  = getFranceHour();
 
@@ -309,9 +309,10 @@ async function checkAndNotify() {
   await checkUrssafDeclaration(p, templates);
   await checkCustomReminders(templates);
 
-  // Pause manuelle jusqu'à demain
+  // Pause manuelle jusqu'à demain (ignorée si vérification manuelle forcée,
+  // pour que "Vérifier maintenant" montre toujours l'état réel du jour).
   const pausedUntil = await getMeta('pausedUntil');
-  if (pausedUntil === today) return;
+  if (!force && pausedUntil === today) return;
 
   let appointments = await fetchTodayFromSupabase();
   if (appointments.length) {
@@ -322,10 +323,11 @@ async function checkAndNotify() {
     appointments = cached.filter(a => a.timestamp >= todayStart.getTime());
   }
 
-  // Récapitulatif du matin — à partir de 8h (une seule fois par jour)
-  if (hour >= 8 && hour < 12) {
+  // Récapitulatif du matin — à partir de 8h (une seule fois par jour), ou à
+  // tout moment si vérification manuelle forcée.
+  if (force || (hour >= 8 && hour < 12)) {
     const lastSummary = await getMeta('lastSummaryDate');
-    if (lastSummary !== today) {
+    if (force || lastSummary !== today) {
       const sorted = [...appointments].sort((a, b) => a.timestamp - b.timestamp);
       if (appointments.length > 0) {
         const tplSummary = getTpl(templates, 'daily-summary');
@@ -414,7 +416,7 @@ self.addEventListener('message', async event => {
   }
   if (event.data?.type === 'CHECK_NOW') {
     try {
-      await checkAndNotify();
+      await checkAndNotify(true);
       event.source?.postMessage({ type: 'CHECK_DONE' });
     } catch (e) {
       event.source?.postMessage({ type: 'CHECK_ERROR', message: e.message });
