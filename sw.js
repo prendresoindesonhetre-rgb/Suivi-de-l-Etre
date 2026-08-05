@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v84';
+const CACHE = 'suivi-etre-v85';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -218,7 +218,9 @@ function scheduleTimeouts(appointments, templates) {
 async function checkUrssafDeclaration(p, templates) {
   try {
     const paiements = p.paiements || [];
-    const declarations = p.urssafDeclarations || [];
+    // Une déclaration ne compte que si l'attestation est jointe (voir
+    // getDerniereDeclaration côté index.html — à garder en phase).
+    const declarations = (p.urssafDeclarations || []).filter(d => d.attestationBase64);
 
     const versements = [];
     paiements.forEach(raw => {
