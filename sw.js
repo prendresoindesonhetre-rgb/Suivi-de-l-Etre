@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v97';
+const CACHE = 'suivi-etre-v98';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -321,11 +321,6 @@ async function checkAndNotify(force) {
   await checkUrssafDeclaration(p, templates);
   await checkCustomReminders(templates);
 
-  // Pause manuelle jusqu'à demain (ignorée si vérification manuelle forcée,
-  // pour que "Vérifier maintenant" montre toujours l'état réel du jour).
-  const pausedUntil = await getMeta('pausedUntil');
-  if (!force && pausedUntil === today) return;
-
   let appointments = await fetchTodayFromSupabase();
   if (appointments.length) {
     await storeAppointments(appointments);
@@ -357,7 +352,6 @@ async function checkAndNotify(force) {
           });
         }
         await showTomorrowPreview(templates);
-        await setMeta('pausedUntil', today);
       }
       await setMeta('lastSummaryDate', today);
     }
@@ -414,7 +408,6 @@ async function checkAndNotify(force) {
       }
       await showTomorrowPreview(templates);
       await setMeta('lastDoneDate', today);
-      await setMeta('pausedUntil', today);
     }
   }
 }
@@ -450,10 +443,6 @@ self.addEventListener('periodicsync', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  if (event.action === 'pause-today') {
-    event.waitUntil(setMeta('pausedUntil', getFranceDate()));
-    return;
-  }
   const rdvId = event.notification.data?.rdvId;
   if ((event.action === 'note' || event.action === 'absent') && rdvId) {
     event.waitUntil(
