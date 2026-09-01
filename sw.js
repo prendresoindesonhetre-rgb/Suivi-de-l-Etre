@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v136';
+const CACHE = 'suivi-etre-v137';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -151,7 +151,7 @@ async function fetchDayFromSupabase(date) {
       const lieu = r.lieu || (c && c.adresse) || '';
       const [h, m] = r.heure.split(':').map(Number);
       const rdvTime = new Date(date + 'T' + r.heure + ':00');
-      return { id: r.id, timestamp: rdvTime.getTime(), heure: r.heure, type: r.type || 'Séance', lieu, clientName: nom, duree: r.duree || 60, trajet: r.trajetAller || 0 };
+      return { id: r.id, timestamp: rdvTime.getTime(), heure: r.heure, type: r.type || 'Séance', lieu, clientName: nom, duree: r.duree || 60, trajet: r.trajetAller || 0, profil: c ? c.profil : '' };
     });
   } catch(e) { return []; }
 }
@@ -160,9 +160,25 @@ async function fetchTodayFromSupabase() {
   return fetchDayFromSupabase(getFranceDate());
 }
 
-async function showTomorrowPreview(templates) {
+// ── Pause PAR CATÉGORIE (Perso / Pro) ──────────────────────────────────────
+// Réglée depuis index.html (voir notifPersoOffUntil/notifProOffUntil dans
+// parametres, synchronisées via la table sync) — lue ici pour décider quels
+// RDV donnent lieu à une notification. Contrairement à push_subscriptions.paused
+// (qui empêche même le réveil du service worker côté serveur), cette
+// coupure-là reste entièrement décidée ici, sans toucher à l'Edge Function.
+function isNotifScopeOff(p, profil) {
+  const today = getFranceDate();
+  if (profil === 'perso') return !!(p.notifPersoOffUntil && today <= p.notifPersoOffUntil);
+  if (profil === 'professionnel') return !!(p.notifProOffUntil && today <= p.notifProOffUntil);
+  return false;
+}
+function filterAppointmentsByScope(appointments, p) {
+  return appointments.filter(a => !isNotifScopeOff(p, a.profil));
+}
+
+async function showTomorrowPreview(templates, p) {
   const appts = await fetchDayFromSupabase(getFranceTomorrow());
-  const sorted = appts.sort((a, b) => a.timestamp - b.timestamp);
+  const sorted = filterAppointmentsByScope(appts, p || {}).sort((a, b) => a.timestamp - b.timestamp);
   if (sorted.length === 0) {
     const tpl = getTpl(templates, 'tomorrow-preview-empty');
     if (!tpl.actif) return;
@@ -321,14 +337,20 @@ async function checkAndNotify(force) {
   await checkUrssafDeclaration(p, templates);
   await checkCustomReminders(templates);
 
-  let appointments = await fetchTodayFromSupabase();
-  if (appointments.length) {
-    await storeAppointments(appointments);
+  let allAppointments = await fetchTodayFromSupabase();
+  if (allAppointments.length) {
+    await storeAppointments(allAppointments);
   } else {
     const cached = await getAppointments();
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-    appointments = cached.filter(a => a.timestamp >= todayStart.getTime());
+    allAppointments = cached.filter(a => a.timestamp >= todayStart.getTime());
   }
+  // Le cache garde le vrai total (ci-dessus, y compris Perso/Pro) ; seule la
+  // liste utilisée pour décider des notifications exclut les catégories
+  // coupées. Les deux tableaux partagent les mêmes objets (filter garde les
+  // références), donc marquer sent30/sent0/sentEnd plus bas met aussi à jour
+  // allAppointments avant sa réécriture en cache.
+  const appointments = filterAppointmentsByScope(allAppointments, p);
 
   // Récapitulatif du matin — à partir de 8h (une seule fois par jour), ou à
   // tout moment si vérification manuelle forcée.
@@ -351,7 +373,7 @@ async function checkAndNotify(force) {
             body: renderTpl(tplEmpty.corps, {}), icon: ICON, tag: 'daily-summary', requireInteraction: false
           });
         }
-        await showTomorrowPreview(templates);
+        await showTomorrowPreview(templates, p);
       }
       await setMeta('lastSummaryDate', today);
     }
@@ -385,7 +407,7 @@ async function checkAndNotify(force) {
       appt.sentEnd = true;
     }
   }
-  if (appointments.length) await storeAppointments(appointments);
+  if (allAppointments.length) await storeAppointments(allAppointments);
 
   // Notification planning du jour — seulement s'il reste des RDV
   const remaining = appointments.filter(a => a.timestamp + (a.duree || 60) * 60 * 1000 > now);
@@ -406,7 +428,7 @@ async function checkAndNotify(force) {
           body: renderTpl(tplDone.corps, {}), icon: ICON, tag: 'day-done', requireInteraction: false
         });
       }
-      await showTomorrowPreview(templates);
+      await showTomorrowPreview(templates, p);
       await setMeta('lastDoneDate', today);
     }
   }
