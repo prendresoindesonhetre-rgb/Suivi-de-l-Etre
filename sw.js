@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v138';
+const CACHE = 'suivi-etre-v139';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -220,9 +220,9 @@ function scheduleTimeouts(appointments, templates) {
     const d0  = appt.timestamp - now;
     const dEnd = appt.timestamp + (appt.duree || 60) * 60 * 1000 - now;
     if (d30 > 0 && tpl30.actif) _timeouts.push(setTimeout(() =>
-      self.registration.showNotification(renderTpl(tpl30.titre, vars), { body: renderTpl(tpl30.corps, vars), icon: ICON, tag: `rdv-${appt.id}-30`, requireInteraction: true }), d30));
+      self.registration.showNotification(renderTpl(tpl30.titre, vars), { body: renderTpl(tpl30.corps, vars), icon: ICON, tag: `rdv-${appt.id}-30`, requireInteraction: true, data: { rdvId: appt.id, lieu: appt.lieu } }), d30));
     if (d0 > 0 && tplNow.actif) _timeouts.push(setTimeout(() =>
-      self.registration.showNotification(renderTpl(tplNow.titre, vars), { body: renderTpl(tplNow.corps, vars), icon: ICON, tag: `rdv-${appt.id}-0`, requireInteraction: true }), d0));
+      self.registration.showNotification(renderTpl(tplNow.titre, vars), { body: renderTpl(tplNow.corps, vars), icon: ICON, tag: `rdv-${appt.id}-0`, requireInteraction: true, data: { rdvId: appt.id, lieu: appt.lieu } }), d0));
     if (dEnd > 0 && tplEnd.actif) _timeouts.push(setTimeout(() =>
       self.registration.showNotification(renderTpl(tplEnd.titre, vars), { body: renderTpl(tplEnd.corps, vars), icon: ICON, tag: `rdv-${appt.id}-end`, requireInteraction: true, data: { rdvId: appt.id }, actions: [{ action: 'note', title: '✅ Remplir la note' }, { action: 'absent', title: '❌ Non venu' }] }), dEnd));
   });
@@ -394,11 +394,11 @@ async function checkAndNotify(force) {
     };
     const t30 = appt.timestamp - alertMin * 60 * 1000;
     if (!appt.sent30 && t30 <= now && now < t30 + window5m) {
-      if (tpl30.actif) await self.registration.showNotification(renderTpl(tpl30.titre, vars), { body: renderTpl(tpl30.corps, vars), icon: ICON, tag: `rdv-${appt.id}-30`, requireInteraction: true });
+      if (tpl30.actif) await self.registration.showNotification(renderTpl(tpl30.titre, vars), { body: renderTpl(tpl30.corps, vars), icon: ICON, tag: `rdv-${appt.id}-30`, requireInteraction: true, data: { rdvId: appt.id, lieu: appt.lieu } });
       appt.sent30 = true;
     }
     if (!appt.sent0 && appt.timestamp <= now && now < appt.timestamp + window5m) {
-      if (tplNow.actif) await self.registration.showNotification(renderTpl(tplNow.titre, vars), { body: renderTpl(tplNow.corps, vars), icon: ICON, tag: `rdv-${appt.id}-0`, requireInteraction: true });
+      if (tplNow.actif) await self.registration.showNotification(renderTpl(tplNow.titre, vars), { body: renderTpl(tplNow.corps, vars), icon: ICON, tag: `rdv-${appt.id}-0`, requireInteraction: true, data: { rdvId: appt.id, lieu: appt.lieu } });
       appt.sent0 = true;
     }
     const tEnd = appt.timestamp + (appt.duree || 60) * 60 * 1000;
@@ -476,6 +476,16 @@ self.addEventListener('notificationclick', event => {
         }
         return self.clients.openWindow(`./?action=${event.action}&rdvId=${rdvId}`);
       })
+    );
+    return;
+  }
+  // Rappel "30 min avant" / "maintenant" avec une adresse connue : ouvrir
+  // directement l'itinéraire Google Maps plutôt que l'application — c'est
+  // à ce moment-là (juste avant de partir) que l'adresse est utile.
+  const lieu = event.notification.data?.lieu;
+  if (lieu) {
+    event.waitUntil(
+      self.clients.openWindow(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(lieu + ', France')}&region=fr`)
     );
     return;
   }
