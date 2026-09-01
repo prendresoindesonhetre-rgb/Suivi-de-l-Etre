@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v139';
+const CACHE = 'suivi-etre-v140';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -11,6 +11,7 @@ const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-51
 const NOTIF_DEFAULTS = {
   'rdv-30min': { titre: '⏰ RDV dans {minutes} min — {client}', corps: '{heure} · {type} ({duree} min){lieu}{trajet}' },
   'rdv-now': { titre: '🌿 RDV maintenant — {client}', corps: '{heure} · {type} ({duree} min){lieu}{trajet}' },
+  'rdv-materiel': { titre: '🎒 Liste à préparer — {client}', corps: 'RDV à {heure} · touchez pour voir la liste à cocher' },
   'rdv-end': { titre: '📝 Séance terminée — {client}', corps: 'Pensez à remplir la note de séance' },
   'daily-summary': { titre: "📅 {nombre} RDV aujourd'hui", corps: '{liste}' },
   'daily-summary-empty': { titre: '🌿 Journée sans rendez-vous', corps: 'Les notifications reprennent demain matin.' },
@@ -151,7 +152,7 @@ async function fetchDayFromSupabase(date) {
       const lieu = r.lieu || (c && c.adresse) || '';
       const [h, m] = r.heure.split(':').map(Number);
       const rdvTime = new Date(date + 'T' + r.heure + ':00');
-      return { id: r.id, timestamp: rdvTime.getTime(), heure: r.heure, type: r.type || 'Séance', lieu, clientName: nom, duree: r.duree || 60, trajet: r.trajetAller || 0, profil: c ? c.profil : '' };
+      return { id: r.id, timestamp: rdvTime.getTime(), heure: r.heure, type: r.type || 'Séance', lieu, clientName: nom, duree: r.duree || 60, trajet: r.trajetAller || 0, profil: c ? c.profil : '', materiel: r.materiel || '' };
     });
   } catch(e) { return []; }
 }
@@ -209,6 +210,7 @@ function scheduleTimeouts(appointments, templates) {
   const tpl30 = getTpl(templates, 'rdv-30min');
   const tplNow = getTpl(templates, 'rdv-now');
   const tplEnd = getTpl(templates, 'rdv-end');
+  const tplMateriel = getTpl(templates, 'rdv-materiel');
   appointments.forEach(appt => {
     const trajet = appt.trajet || 0;
     const alertMin = 30 + trajet;
@@ -216,6 +218,9 @@ function scheduleTimeouts(appointments, templates) {
       client: appt.clientName, minutes: alertMin, heure: appt.heure, type: appt.type, duree: appt.duree,
       lieu: appt.lieu ? '\n📍 ' + appt.lieu : '', trajet: trajet ? '\n🚗 ' + trajet + ' min de route' : ''
     };
+    const dMateriel = appt.timestamp - 120 * 60 * 1000 - now;
+    if (appt.materiel && dMateriel > 0 && tplMateriel.actif) _timeouts.push(setTimeout(() =>
+      self.registration.showNotification(renderTpl(tplMateriel.titre, vars), { body: renderTpl(tplMateriel.corps, vars), icon: ICON, tag: `rdv-${appt.id}-materiel`, requireInteraction: true, data: { rdvId: appt.id, action: 'materiel' } }), dMateriel));
     const d30 = appt.timestamp - alertMin * 60 * 1000 - now;
     const d0  = appt.timestamp - now;
     const dEnd = appt.timestamp + (appt.duree || 60) * 60 * 1000 - now;
@@ -385,6 +390,7 @@ async function checkAndNotify(force) {
   const tpl30 = getTpl(templates, 'rdv-30min');
   const tplNow = getTpl(templates, 'rdv-now');
   const tplEnd = getTpl(templates, 'rdv-end');
+  const tplMateriel = getTpl(templates, 'rdv-materiel');
   for (const appt of appointments) {
     const trajet = appt.trajet || 0;
     const alertMin = 30 + trajet;
@@ -392,6 +398,16 @@ async function checkAndNotify(force) {
       client: appt.clientName, minutes: alertMin, heure: appt.heure, type: appt.type, duree: appt.duree,
       lieu: appt.lieu ? '\n📍 ' + appt.lieu : '', trajet: trajet ? '\n🚗 ' + trajet + ' min de route' : ''
     };
+    // Rappel "matériel à préparer" 2h avant — seulement si ce RDV a une liste
+    // de matériel renseignée, et clique dessus ouvre directement sa checklist
+    // (voir notificationclick) plutôt que Google Maps ou l'app en général.
+    if (appt.materiel && !appt.sentMateriel) {
+      const tMateriel = appt.timestamp - 120 * 60 * 1000;
+      if (tMateriel <= now && now < tMateriel + window5m) {
+        if (tplMateriel.actif) await self.registration.showNotification(renderTpl(tplMateriel.titre, vars), { body: renderTpl(tplMateriel.corps, vars), icon: ICON, tag: `rdv-${appt.id}-materiel`, requireInteraction: true, data: { rdvId: appt.id, action: 'materiel' } });
+        appt.sentMateriel = true;
+      }
+    }
     const t30 = appt.timestamp - alertMin * 60 * 1000;
     if (!appt.sent30 && t30 <= now && now < t30 + window5m) {
       if (tpl30.actif) await self.registration.showNotification(renderTpl(tpl30.titre, vars), { body: renderTpl(tpl30.corps, vars), icon: ICON, tag: `rdv-${appt.id}-30`, requireInteraction: true, data: { rdvId: appt.id, lieu: appt.lieu } });
@@ -475,6 +491,22 @@ self.addEventListener('notificationclick', event => {
           return;
         }
         return self.clients.openWindow(`./?action=${event.action}&rdvId=${rdvId}`);
+      })
+    );
+    return;
+  }
+  // Rappel "matériel à préparer" 2h avant : ouvrir directement la fiche du
+  // RDV (qui affiche la liste à cocher), en un seul geste — accès direct
+  // demandé, pas juste ouvrir l'app sans rien montrer de précis.
+  if (event.notification.data?.action === 'materiel' && rdvId) {
+    event.waitUntil(
+      self.clients.matchAll({ type: 'window' }).then(list => {
+        if (list.length > 0) {
+          list[0].focus();
+          list[0].postMessage({ type: 'NOTIF_ACTION', action: 'materiel', rdvId });
+          return;
+        }
+        return self.clients.openWindow(`./?action=materiel&rdvId=${rdvId}`);
       })
     );
     return;
