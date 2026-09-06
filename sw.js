@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v156';
+const CACHE = 'suivi-etre-v157';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -19,6 +19,7 @@ const NOTIF_DEFAULTS = {
   'tomorrow-preview': { titre: '📆 Demain — {nombre} RDV', corps: '{liste}' },
   'tomorrow-preview-empty': { titre: '📆 Demain — aucun rendez-vous', corps: 'Bonne journée libre !' },
   'urssaf': { titre: '🏛️ Déclaration URSSAF à faire', corps: '{montant} € encaissés depuis votre dernière déclaration' },
+  'factures-impayees': { titre: '💰 {nombre} facture(s) en attente', corps: '{montant} € — la plus ancienne depuis {jours} jours' },
 };
 
 function renderTpl(str, vars) {
@@ -236,6 +237,43 @@ function scheduleTimeouts(appointments, templates) {
 // ─── Rappel déclaration URSSAF ────────────────────────────────────────────────
 // Modèle cumulatif : total encaissé depuis la date de la dernière déclaration,
 // tous mois confondus (aligné sur getMontantADeclarer() côté app).
+// Rappel des factures envoyées et toujours impayées. Le résumé est calculé
+// côté application (majResumeImpayes) et déposé dans parametres : ici on ne
+// fait que le lire, pour ne pas dupliquer la règle de facturation.
+async function checkFacturesImpayees(p, templates) {
+  try {
+    const resume = p.impayesResume;
+    if (!resume || !resume.nombre) {
+      const existing = await self.registration.getNotifications({ tag: 'factures-impayees' });
+      existing.forEach(n => n.close());
+      return;
+    }
+    // On ne dérange que si l'attente devient vraiment longue.
+    if ((resume.jours || 0) < 15) return;
+
+    const tpl = getTpl(templates, 'factures-impayees');
+    if (!tpl.actif) return;
+
+    // Une fois par semaine seulement (le lundi), pas à chaque vérification.
+    const today = getFranceDate();
+    const jourSemaine = new Date(today + 'T12:00:00').getDay();
+    if (jourSemaine !== 1) return;
+    const lastReminded = await getMeta('lastImpayesReminderDate');
+    if (lastReminded === today) return;
+
+    const vars = {
+      nombre: resume.nombre,
+      montant: (resume.montant || 0).toFixed(2).replace('.', ','),
+      jours: resume.jours || 0
+    };
+    await self.registration.showNotification(renderTpl(tpl.titre, vars), {
+      body: renderTpl(tpl.corps, vars), icon: ICON, tag: 'factures-impayees', requireInteraction: true,
+      data: { action: 'impayes' }
+    });
+    await setMeta('lastImpayesReminderDate', today);
+  } catch(e) {}
+}
+
 async function checkUrssafDeclaration(p, templates) {
   try {
     const paiements = p.paiements || [];
@@ -340,6 +378,7 @@ async function checkAndNotify(force) {
   const templates = p.notifTemplates || [];
 
   await checkUrssafDeclaration(p, templates);
+  await checkFacturesImpayees(p, templates);
   await checkCustomReminders(templates);
 
   let allAppointments = await fetchTodayFromSupabase();
@@ -518,6 +557,19 @@ self.addEventListener('notificationclick', event => {
   if (lieu) {
     event.waitUntil(
       self.clients.openWindow(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(lieu + ', France')}&region=fr`)
+    );
+    return;
+  }
+  if (event.notification.data?.action === 'impayes') {
+    event.waitUntil(
+      self.clients.matchAll({ type: 'window' }).then(list => {
+        if (list.length > 0) {
+          list[0].focus();
+          list[0].postMessage({ type: 'NOTIF_ACTION', action: 'impayes' });
+          return;
+        }
+        return self.clients.openWindow('./?action=impayes');
+      })
     );
     return;
   }
