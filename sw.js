@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v162';
+const CACHE = 'suivi-etre-v163';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -203,6 +203,19 @@ async function showTomorrowPreview(templates, p) {
   }
 }
 
+// Le rappel vise l'heure de DÉPART, pas celle de la séance : le temps de
+// route s'ajoute toujours au délai choisi dans les réglages, sans quoi une
+// heure de route rend le rappel systématiquement trop tardif.
+const ALERTE_DEPART_DEFAUT = 30;
+function alerteAvantDepart(p, appt) {
+  const v = parseInt((appt && appt.alerteAvant) ?? (p && p.alerteAvantDepart));
+  return Number.isFinite(v) && v > 0 ? v : ALERTE_DEPART_DEFAUT;
+}
+function hhmmFrom(ts) {
+  const d = new Date(ts);
+  return String(d.getHours()).padStart(2, '0') + 'h' + String(d.getMinutes()).padStart(2, '0');
+}
+
 // ─── Planification (appli ouverte) ───────────────────────────────────────────
 let _timeouts = [];
 
@@ -216,12 +229,13 @@ function scheduleTimeouts(appointments, templates) {
   const tplMateriel = getTpl(templates, 'rdv-materiel');
   appointments.forEach(appt => {
     const trajet = appt.trajet || 0;
-    const alertMin = 30 + trajet;
+    const alertMin = alerteAvantDepart(null, appt) + trajet;
     const vars = {
       client: appt.clientName, minutes: alertMin, heure: appt.heure, type: appt.type, duree: appt.duree,
-      lieu: appt.lieu ? '\n📍 ' + appt.lieu : '', trajet: trajet ? '\n🚗 ' + trajet + ' min de route' : ''
+      lieu: appt.lieu ? '\n📍 ' + appt.lieu : '',
+      trajet: trajet ? '\n🚗 Départ à ' + hhmmFrom(appt.timestamp - trajet * 60 * 1000) + ' · ' + trajet + ' min de route' : ''
     };
-    const dMateriel = appt.timestamp - 120 * 60 * 1000 - now;
+    const dMateriel = appt.timestamp - (120 + trajet) * 60 * 1000 - now;
     if (appt.materiel && dMateriel > 0 && tplMateriel.actif) _timeouts.push(setTimeout(() =>
       self.registration.showNotification(renderTpl(tplMateriel.titre, vars), { body: renderTpl(tplMateriel.corps, vars), icon: ICON, tag: `rdv-${appt.id}-materiel`, requireInteraction: true, data: { rdvId: appt.id, action: 'materiel' } }), dMateriel));
     const d30 = appt.timestamp - alertMin * 60 * 1000 - now;
@@ -434,16 +448,17 @@ async function checkAndNotify(force) {
   const tplMateriel = getTpl(templates, 'rdv-materiel');
   for (const appt of appointments) {
     const trajet = appt.trajet || 0;
-    const alertMin = 30 + trajet;
+    const alertMin = alerteAvantDepart(p, appt) + trajet;
     const vars = {
       client: appt.clientName, minutes: alertMin, heure: appt.heure, type: appt.type, duree: appt.duree,
-      lieu: appt.lieu ? '\n📍 ' + appt.lieu : '', trajet: trajet ? '\n🚗 ' + trajet + ' min de route' : ''
+      lieu: appt.lieu ? '\n📍 ' + appt.lieu : '',
+      trajet: trajet ? '\n🚗 Départ à ' + hhmmFrom(appt.timestamp - trajet * 60 * 1000) + ' · ' + trajet + ' min de route' : ''
     };
     // Rappel "matériel à préparer" 2h avant — seulement si ce RDV a une liste
     // de matériel renseignée, et clique dessus ouvre directement sa checklist
     // (voir notificationclick) plutôt que Google Maps ou l'app en général.
     if (appt.materiel && !appt.sentMateriel) {
-      const tMateriel = appt.timestamp - 120 * 60 * 1000;
+      const tMateriel = appt.timestamp - (120 + trajet) * 60 * 1000;
       if (tMateriel <= now && now < tMateriel + window5m) {
         if (tplMateriel.actif) await self.registration.showNotification(renderTpl(tplMateriel.titre, vars), { body: renderTpl(tplMateriel.corps, vars), icon: ICON, tag: `rdv-${appt.id}-materiel`, requireInteraction: true, data: { rdvId: appt.id, action: 'materiel' } });
         appt.sentMateriel = true;
