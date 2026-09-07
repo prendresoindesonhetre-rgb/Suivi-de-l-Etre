@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v161';
+const CACHE = 'suivi-etre-v162';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -150,10 +150,12 @@ async function fetchDayFromSupabase(date) {
     return rdvs.filter(r => r.date === date && !r.annule).map(r => {
       const c = clients.find(x => x.id == r.clientId);
       const nom = c ? `${c.prenom}${c.nom ? ' ' + c.nom : ''}` : 'Client';
-      const lieu = r.lieu || (c && c.adresse) || '';
-      const [h, m] = r.heure.split(':').map(Number);
-      const rdvTime = new Date(date + 'T' + r.heure + ':00');
-      return { id: r.id, timestamp: rdvTime.getTime(), heure: r.heure, type: r.type || 'Séance', lieu, clientName: nom, duree: r.duree || 60, trajet: r.trajetAller || 0, profil: c ? c.profil : '', materiel: r.materiel || '' };
+      // Un point de rencontre avance le rendez-vous : on prévient pour le
+      // premier endroit où il faut être, pas pour le lieu de la séance.
+      const lieu = r.pointRencontre || r.lieu || (c && c.adresse) || '';
+      const heureCible = (r.pointRencontre && r.pointRencontreHeure) ? r.pointRencontreHeure : r.heure;
+      const rdvTime = new Date(date + 'T' + heureCible + ':00');
+      return { id: r.id, timestamp: rdvTime.getTime(), heure: heureCible, type: r.type || 'Séance', lieu, clientName: nom, duree: r.duree || 60, trajet: r.trajetAller || 0, profil: c ? c.profil : '', materiel: r.materiel || '' };
     });
   } catch(e) { return []; }
 }
