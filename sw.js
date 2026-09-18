@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v201';
+const CACHE = 'suivi-etre-v202';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -38,7 +38,36 @@ function getTpl(templates, id) {
   };
 }
 
+// ─── Lecture sécurisée ────────────────────────────────────────────────────────
+// Les notifications ne lisent plus la table directement avec la clé publique :
+// elles présentent le code secret de l'appareil (remis par l'app une fois la
+// propriétaire connectée) à une fonction du serveur qui ne renvoie que le strict
+// nécessaire. Sans code valide, elle ne renvoie rien.
+// L'ancienne lecture reste en secours tant que l'étape 2 (fermeture) n'est pas faite.
+let derniereSource = 'aucune';
+let _donneesNotif = null;
+async function donneesNotif() {
+  if (_donneesNotif && Date.now() - _donneesNotif.t < 60000) return _donneesNotif.d;
+  const secret = await getMeta('notifSecret');
+  if (!secret) return null;
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/rpc/notif_donnees`, {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_secret: secret })
+    });
+    if (!res.ok) return null;
+    const d = await res.json();
+    if (!d) return null;
+    _donneesNotif = { t: Date.now(), d };
+    return d;
+  } catch(e) { return null; }
+}
+
 async function fetchParametres() {
+  const d = await donneesNotif();
+  if (d) { derniereSource = 'sécurisée'; return d.parametres || {}; }
+  derniereSource = 'ancienne';
   try {
     const res = await fetch(`${SB_URL}/rest/v1/sync?select=parametres&limit=1`, {
       headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
@@ -138,15 +167,24 @@ function getFranceHour() {
 }
 
 // ─── Récupération depuis Supabase ─────────────────────────────────────────────
+async function lireRdvsEtClients() {
+  const d = await donneesNotif();
+  if (d) { derniereSource = 'sécurisée'; return { rdvs: d.rdvs || [], clients: d.clients || [] }; }
+  derniereSource = 'ancienne';
+  const res = await fetch(`${SB_URL}/rest/v1/sync?select=rdvs,clients&limit=1`, {
+    headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+  });
+  if (!res.ok) return null;
+  const rows = await res.json();
+  if (!rows?.length) return null;
+  return { rdvs: rows[0].rdvs || [], clients: rows[0].clients || [] };
+}
+
 async function fetchDayFromSupabase(date) {
   try {
-    const res = await fetch(`${SB_URL}/rest/v1/sync?select=rdvs,clients&limit=1`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
-    });
-    if (!res.ok) return [];
-    const rows = await res.json();
-    if (!rows?.length) return [];
-    const { rdvs = [], clients = [] } = rows[0];
+    const lu = await lireRdvsEtClients();
+    if (!lu) return [];
+    const { rdvs, clients } = lu;
     return rdvs.filter(r => r.date === date && !r.annule).map(r => {
       const c = clients.find(x => x.id == r.clientId);
       const nom = c ? `${c.prenom}${c.nom ? ' ' + c.nom : ''}` : 'Client';
@@ -513,10 +551,16 @@ self.addEventListener('message', async event => {
     scheduleTimeouts(event.data.appointments, event.data.notifTemplates || []);
     event.source?.postMessage({ type: 'SCHEDULED', count: event.data.appointments.length });
   }
+  if (event.data?.type === 'NOTIF_SECRET' && event.data.secret) {
+    await setMeta('notifSecret', event.data.secret);
+    _donneesNotif = null;
+    event.source?.postMessage({ type: 'NOTIF_SECRET_OK' });
+  }
   if (event.data?.type === 'CHECK_NOW') {
     try {
+      _donneesNotif = null;
       await checkAndNotify(true);
-      event.source?.postMessage({ type: 'CHECK_DONE' });
+      event.source?.postMessage({ type: 'CHECK_DONE', source: derniereSource });
     } catch (e) {
       event.source?.postMessage({ type: 'CHECK_ERROR', message: e.message });
     }
