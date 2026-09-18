@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v202';
+const CACHE = 'suivi-etre-v203';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -42,8 +42,8 @@ function getTpl(templates, id) {
 // Les notifications ne lisent plus la table directement avec la clé publique :
 // elles présentent le code secret de l'appareil (remis par l'app une fois la
 // propriétaire connectée) à une fonction du serveur qui ne renvoie que le strict
-// nécessaire. Sans code valide, elle ne renvoie rien.
-// L'ancienne lecture reste en secours tant que l'étape 2 (fermeture) n'est pas faite.
+// nécessaire. Sans code valide, elle ne renvoie rien — et la table elle-même
+// est fermée à la clé publique : il n'y a plus d'autre chemin.
 let derniereSource = 'aucune';
 let _donneesNotif = null;
 async function donneesNotif() {
@@ -66,16 +66,8 @@ async function donneesNotif() {
 
 async function fetchParametres() {
   const d = await donneesNotif();
-  if (d) { derniereSource = 'sécurisée'; return d.parametres || {}; }
-  derniereSource = 'ancienne';
-  try {
-    const res = await fetch(`${SB_URL}/rest/v1/sync?select=parametres&limit=1`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
-    });
-    if (!res.ok) return {};
-    const rows = await res.json();
-    return (rows?.length && rows[0].parametres) || {};
-  } catch(e) { return {}; }
+  derniereSource = d ? 'sécurisée' : 'aucune';
+  return (d && d.parametres) || {};
 }
 
 self.addEventListener('install', e => e.waitUntil(
@@ -169,15 +161,8 @@ function getFranceHour() {
 // ─── Récupération depuis Supabase ─────────────────────────────────────────────
 async function lireRdvsEtClients() {
   const d = await donneesNotif();
-  if (d) { derniereSource = 'sécurisée'; return { rdvs: d.rdvs || [], clients: d.clients || [] }; }
-  derniereSource = 'ancienne';
-  const res = await fetch(`${SB_URL}/rest/v1/sync?select=rdvs,clients&limit=1`, {
-    headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
-  });
-  if (!res.ok) return null;
-  const rows = await res.json();
-  if (!rows?.length) return null;
-  return { rdvs: rows[0].rdvs || [], clients: rows[0].clients || [] };
+  derniereSource = d ? 'sécurisée' : 'aucune';
+  return d ? { rdvs: d.rdvs || [], clients: d.clients || [] } : null;
 }
 
 async function fetchDayFromSupabase(date) {
