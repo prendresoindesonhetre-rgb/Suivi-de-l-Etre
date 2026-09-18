@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v206';
+const CACHE = 'suivi-etre-v207';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -409,9 +409,31 @@ async function checkCustomReminders(templates) {
 }
 
 // ─── Vérification au réveil (push serveur) ───────────────────────────────────
+// ─── Demandes de rendez-vous en ligne ─────────────────────────────────────────
+// Chaque nouvelle demande est annoncée une fois, à toute heure (elle ne passe
+// pas par les fenêtres horaires des rappels) : on retient celles déjà annoncées.
+async function checkDemandesEnLigne() {
+  const d = await donneesNotif();
+  const demandes = (d && d.demandes) || [];
+  const annoncees = new Set((await getMeta('demandesAnnoncees')) || []);
+  for (const x of demandes.filter(x => !annoncees.has(x.id))) {
+    const quand = new Date(x.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    const quoi = x.type === 'appel' ? "Temps d'échange téléphonique" : x.type === 'premier' ? 'Premier rendez-vous' : 'Séance';
+    const ou = x.type === 'appel' ? '' : x.lieu === 'visio' ? ' · en visio' : x.lieu === 'domicile' ? ' · à domicile' : '';
+    await self.registration.showNotification(`📅 Nouvelle demande de rendez-vous — ${x.prenom}`, {
+      body: `${quoi} · ${quand} à ${String(x.heure).replace(':', 'h')}${ou}\nTouchez pour l'accepter ou la refuser`,
+      icon: ICON, tag: 'demande-' + x.id, data: { demande: x.id }, requireInteraction: true
+    });
+  }
+  // On ne garde que les demandes encore en attente : la liste ne grossit pas.
+  await setMeta('demandesAnnoncees', demandes.map(x => x.id));
+}
+
 async function checkAndNotify(force) {
   const today = getFranceDate();
   const hour  = getFranceHour();
+
+  await checkDemandesEnLigne();
 
   const p = await fetchParametres();
   const templates = p.notifTemplates || [];
@@ -566,6 +588,19 @@ self.addEventListener('periodicsync', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
+  if (event.notification.data?.demande) {
+    event.waitUntil(
+      self.clients.matchAll({ type: 'window' }).then(list => {
+        if (list.length > 0) {
+          list[0].focus();
+          list[0].postMessage({ type: 'NOTIF_ACTION', action: 'demandes' });
+          return;
+        }
+        return self.clients.openWindow('./?action=demandes');
+      })
+    );
+    return;
+  }
   const rdvId = event.notification.data?.rdvId;
   if ((event.action === 'note' || event.action === 'absent') && rdvId) {
     event.waitUntil(
