@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v217';
+const CACHE = 'suivi-etre-v218';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -176,7 +176,11 @@ async function fetchDayFromSupabase(date) {
       // Un point de rencontre avance le rendez-vous : on prévient pour le
       // premier endroit où il faut être, pas pour le lieu de la séance.
       const lieu = r.pointRencontre || r.lieu || (c && c.adresse) || '';
-      const heureCible = (r.pointRencontre && r.pointRencontreHeure) ? r.pointRencontreHeure : r.heure;
+      // Arriver en avance sur place (arriveeAvance, en minutes) compte comme un
+      // début plus tôt pour les rappels, comme un point de rencontre.
+      const avance = parseInt(r.arriveeAvance, 10) || 0;
+      const hhmm = (h, delta) => { const [a, b] = String(h).split(':').map(Number); const t = ((a * 60 + b - delta) % 1440 + 1440) % 1440; return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); };
+      const heureCible = (r.pointRencontre && r.pointRencontreHeure) ? r.pointRencontreHeure : (avance > 0 ? hhmm(r.heure, avance) : r.heure);
       const rdvTime = new Date(date + 'T' + heureCible + ':00');
       return { id: r.id, timestamp: rdvTime.getTime(), heure: heureCible, type: r.type || 'Séance', lieu, clientName: nom, duree: r.duree || 60, trajet: r.trajetAller || 0, profil: c ? c.profil : '', materiel: [r.materielPerso, r.materiel].filter(Boolean).join(String.fromCharCode(10)) };
     });
