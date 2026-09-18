@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v209';
+const CACHE = 'suivi-etre-v210';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -429,11 +429,41 @@ async function checkDemandesEnLigne() {
   await setMeta('demandesAnnoncees', demandes.map(x => x.id));
 }
 
+// ─── Rappels SMS de la veille (rendez-vous pris en ligne) ─────────────────────
+// Le serveur envoie le rappel par e-mail à ceux qui ont donné leur adresse.
+// Pour les autres, on prévient en fin d'après-midi, une fois par jour, que le
+// SMS de rappel est prêt à envoyer depuis l'app. Les réglages viennent de
+// l'app (message RAPPELS_SMS), ils ne sont pas lus sur le serveur.
+async function checkRappelsSms(force) {
+  const reglage = await getMeta('rappelsSms');
+  if (!reglage || !reglage.rappel || reglage.brevoSms) return;
+  const today = getFranceDate();
+  if (!force && (getFranceHour() < 16 || (await getMeta('rappelsSmsDate')) === today)) return;
+  const d = await donneesNotif();
+  if (!d) return;
+  const demain = getFranceTomorrow();
+  const aFaire = (d.rdvs || [])
+    .filter(r => r.date === demain && !r.annule && r.enLigne && !r.enLigne.avecEmail && !r.enLigne.rappelSms)
+    .sort((a, b) => String(a.heure).localeCompare(String(b.heure)));
+  if (!aFaire.length) return;
+  const noms = aFaire.map(r => {
+    const c = (d.clients || []).find(x => x.id == r.clientId);
+    return `${c ? c.prenom : 'Quelqu’un'} à ${String(r.heure).replace(':', 'h')}`;
+  });
+  const n = aFaire.length;
+  await self.registration.showNotification(`📱 ${n} rappel${n > 1 ? 's' : ''} SMS à envoyer pour demain`, {
+    body: `${noms.join(' · ')}\nTouchez pour ouvrir le message déjà prêt`,
+    icon: ICON, tag: 'rappels-sms', data: { action: 'rappels' }, requireInteraction: true
+  });
+  if (!force) await setMeta('rappelsSmsDate', today);
+}
+
 async function checkAndNotify(force) {
   const today = getFranceDate();
   const hour  = getFranceHour();
 
   await checkDemandesEnLigne();
+  await checkRappelsSms(force);
 
   const p = await fetchParametres();
   const templates = p.notifTemplates || [];
@@ -563,6 +593,9 @@ self.addEventListener('message', async event => {
     _donneesNotif = null;
     event.source?.postMessage({ type: 'NOTIF_SECRET_OK' });
   }
+  if (event.data?.type === 'RAPPELS_SMS') {
+    await setMeta('rappelsSms', { rappel: !!event.data.rappel, brevoSms: !!event.data.brevoSms });
+  }
   if (event.data?.type === 'CHECK_NOW') {
     try {
       _donneesNotif = null;
@@ -588,7 +621,7 @@ self.addEventListener('periodicsync', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  if (event.notification.data?.demande) {
+  if (event.notification.data?.demande || event.notification.data?.action === 'rappels') {
     event.waitUntil(
       self.clients.matchAll({ type: 'window' }).then(list => {
         if (list.length > 0) {
