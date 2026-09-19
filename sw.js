@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v219';
+const CACHE = 'suivi-etre-v220';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -433,6 +433,38 @@ async function checkDemandesEnLigne() {
   await setMeta('demandesAnnoncees', demandes.map(x => x.id));
 }
 
+// ─── Ateliers : nouvelles inscriptions, virements signalés ────────────────────
+// Annoncés une fois chacun, à toute heure. Les ajouts faits à la main depuis
+// l'app ne sont pas annoncés (c'est elle qui vient de les faire).
+async function checkAteliers() {
+  const d = await donneesNotif();
+  if (!d || !Array.isArray(d.ateliers)) return;   // serveur pas encore à jour : on ne touche à rien
+  const annonces = new Set((await getMeta('ateliersAnnonces')) || []);
+  const garder = [];
+  for (const x of d.ateliers) {
+    const quand = new Date(x.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    const heure = String(x.heure).replace(':', 'h');
+    garder.push('i' + x.id);
+    if (!annonces.has('i' + x.id) && x.nouvelle && !x.main) {
+      const etat = x.statut === 'attente' ? ' · virement attendu' : x.statut === 'reservee' ? ' · règlement sur place' : '';
+      await self.registration.showNotification(`🧘 Nouvelle inscription — ${x.prenom}`, {
+        body: `${x.titre} · ${quand} à ${heure}${x.lieu === 'visio' ? ' · en visio' : ''}${etat}`,
+        icon: ICON, tag: 'atelier-' + x.id, data: { action: 'ateliers' }
+      });
+    }
+    if (x.signale) {
+      garder.push('s' + x.id);
+      if (!annonces.has('s' + x.id) && x.statut === 'attente') {
+        await self.registration.showNotification(`💶 Virement signalé — ${x.prenom}`, {
+          body: `${x.titre} · ${quand}\nVérifiez votre compte, puis touchez « Reçu »`,
+          icon: ICON, tag: 'atelier-virement-' + x.id, data: { action: 'ateliers' }, requireInteraction: true
+        });
+      }
+    }
+  }
+  await setMeta('ateliersAnnonces', garder);
+}
+
 // ─── Rappels SMS de la veille (rendez-vous pris en ligne) ─────────────────────
 // Le serveur envoie le rappel par e-mail à ceux qui ont donné leur adresse.
 // Pour les autres, on prévient en fin d'après-midi, une fois par jour, que le
@@ -467,6 +499,7 @@ async function checkAndNotify(force) {
   const hour  = getFranceHour();
 
   await checkDemandesEnLigne();
+  try { await checkAteliers(); } catch (e) {}
   await checkRappelsSms(force);
 
   const p = await fetchParametres();
@@ -634,6 +667,19 @@ self.addEventListener('notificationclick', event => {
           return;
         }
         return self.clients.openWindow('./?action=demandes');
+      })
+    );
+    return;
+  }
+  if (event.notification.data?.action === 'ateliers') {
+    event.waitUntil(
+      self.clients.matchAll({ type: 'window' }).then(list => {
+        if (list.length > 0) {
+          list[0].focus();
+          list[0].postMessage({ type: 'NOTIF_ACTION', action: 'ateliers' });
+          return;
+        }
+        return self.clients.openWindow('./?action=ateliers');
       })
     );
     return;
