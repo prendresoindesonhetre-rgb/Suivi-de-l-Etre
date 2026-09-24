@@ -467,6 +467,7 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 <input type="file" id="f-musique" accept="audio/*" multiple class="cache">
 <input type="file" id="f-restaure" accept="application/json,.json" class="cache">
 <input type="file" id="f-relier" accept="audio/*" class="cache">
+<input type="file" id="f-ancienne" accept="application/json,.json" class="cache">
 
 <script>
 "use strict";
@@ -1777,6 +1778,36 @@ function v14Seance(etat) {
   };
 }
 
+// Une sauvegarde de l'ancienne régie peut contenir plusieurs séances.
+function v14Seances(etat) {
+  const liste = Array.isArray(etat.sessions) && etat.sessions.length
+    ? etat.sessions.filter(x => x && Array.isArray(x.phases) && x.phases.length).map(x => ({ title: x.title || x.name || 'Séance', phases: x.phases }))
+    : (Array.isArray(etat.phases) && etat.phases.length ? [{ title: etat.title, phases: etat.phases }] : []);
+  return liste.map(v14Seance);
+}
+function ajouterSeances(seances, origine) {
+  if (!seances.length) { toast('Aucune séance trouvée dans ce fichier'); return }
+  const resume = seances.map(s => `• « ${s.titre} » — ${s.blocs.length} temps, ${dureeTxt(total(s))}`).join('\n');
+  if (!confirm(`${seances.length} séance${seances.length > 1 ? 's' : ''} ${origine} :\n\n${resume}\n\nLes ajouter à vos séances ?`)) return;
+  seances.forEach(s => D.seances.push(s));
+  delete D.depart; sauver();
+  aller(seances.length === 1 ? 'editer' : 'seances', seances.length === 1 ? seances[0].id : undefined);
+  toast(seances.length > 1 ? `${seances.length} séances reprises` : 'Séance reprise de l’ancienne régie');
+}
+// Fichier de sauvegarde : ancienne régie (phases) ou nouvelle régie (séances).
+$('#f-ancienne').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const x = JSON.parse(await f.text());
+    if (Array.isArray(x.seances)) {
+      const connues = new Set(D.seances.map(s => s.id));
+      const neuves = x.seances.filter(s => s && Array.isArray(s.blocs) && !connues.has(s.id));
+      return ajouterSeances(neuves, 'dans cette sauvegarde');
+    }
+    ajouterSeances(v14Seances(x), 'dans ce fichier');
+  } catch (err) { toast('Ce fichier n’est pas une sauvegarde de régie') }
+};
+
 function fenetreImport() {
   if ($('#voile-import')) return;
   const v = document.createElement('div'); v.className = 'voile'; v.id = 'voile-import';
@@ -1787,10 +1818,12 @@ function fenetreImport() {
     <label class="champ">Mot de passe<input type="password" id="im-mdp" autocomplete="off"></label>
     <p class="aide">Votre mot de passe ne quitte pas cet appareil.</p>
     <div class="err cache" id="im-err"></div>
+    <p class="aide" style="margin:10px 0 0">Mot de passe perdu ? <button type="button" class="lien" id="im-fichier">Importer un fichier de l’ancienne régie</button></p>
     <div class="actions"><button type="button" class="btn" id="im-annuler">Plus tard</button><button type="submit" class="btn p" id="im-ok">Récupérer ma séance</button></div>
   </form>`;
   document.body.appendChild(v);
   $('#im-annuler').onclick = () => v.remove();
+  $('#im-fichier').onclick = () => { v.remove(); $('#f-ancienne').click() };
   v.onclick = e => { if (e.target === v) v.remove() };
   $('#f-import').onsubmit = async e => {
     e.preventDefault();
@@ -1798,11 +1831,8 @@ function fenetreImport() {
     ok.disabled = true; ok.textContent = 'Un instant…'; err.classList.add('cache');
     try {
       const etat = await v14Ouvrir($('#im-nom').value, $('#im-mdp').value);
-      const s = v14Seance(etat);
       v.remove();
-      if (!confirm(`« ${s.titre} » : ${s.blocs.length} temps, ${dureeTxt(total(s))}.\n\nL’ajouter à vos séances ?`)) return;
-      D.seances.push(s); delete D.depart; sauver(); aller('editer', s.id);
-      toast('Séance reprise de l’ancienne régie');
+      ajouterSeances(v14Seances(etat), 'dans votre ancienne régie');
     } catch (x) {
       err.classList.remove('cache');
       err.textContent = x.message === 'espace' ? 'Ce nom d’espace n’existe pas sur l’ancienne régie.'
