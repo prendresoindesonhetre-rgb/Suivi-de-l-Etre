@@ -596,9 +596,10 @@ $$('#onglets button').forEach(b=>b.onclick=()=>aller(b.dataset.v));
 /* =============================== MES SÉANCES =============================== */
 function vueSeances(){
   $('#vue').innerHTML=`<div class="page">
-    <div class="tete-page"><div><h1 class="titre">Mes séances</h1><p class="sous">Prépare une séance une fois, guide-la en présentiel comme en visio.</p></div>
+    <div class="tete-page"><div><h1 class="titre">Mes séances</h1><p class="sous">Préparez une séance une fois, guidez-la en présentiel comme en visio.</p></div>
       <div class="menu"><button class="btn s">${IC.points} Sauvegarde</button><div class="menu-liste">
-        <button id="b-sauve">${IC.sauve} Télécharger une sauvegarde</button><button id="b-restaure">${IC.restaure} Restaurer une sauvegarde</button></div></div></div>
+        <button id="b-sauve">${IC.sauve} Télécharger une sauvegarde</button><button id="b-restaure">${IC.restaure} Restaurer une sauvegarde</button>
+        <button id="b-import">${IC.restaure} Reprendre l’ancienne régie</button></div></div></div>
     <div class="liste-seances">
       ${D.seances.map(s=>`<div class="ls">
         <div><h3 data-editer="${s.id}">${esc(s.titre)}</h3>
@@ -621,7 +622,7 @@ function vueSeances(){
   $$('[data-dupliquer]').forEach(b=>b.onclick=()=>{const s=clone(trouverSeance(b.dataset.dupliquer));s.id=uid();s.titre+=' (copie)';s.blocs.forEach(x=>x.id=uid());D.seances.push(s);sauver();vueSeances();toast('Séance dupliquée')});
   $$('[data-supprimer]').forEach(b=>b.onclick=()=>{const s=trouverSeance(b.dataset.supprimer);if(confirm(`Supprimer « ${s.titre} » ?`)){D.seances=D.seances.filter(x=>x!==s);sauver();vueSeances();toast('Séance supprimée')}});
   $('#b-nouvelle').onclick=()=>{const s={id:uid(),titre:'Nouvelle séance',genre:'atelier',debut:'',finH:'',blocs:[nb('parole','Accueil',5)]};D.seances.push(s);sauver();aller('editer',s.id);setTimeout(()=>{const t=$('#e-titre');t.focus();t.select()},60)};
-  $('#b-sauve').onclick=exporter;$('#b-restaure').onclick=()=>$('#f-restaure').click();
+  $('#b-sauve').onclick=exporter;$('#b-restaure').onclick=()=>$('#f-restaure').click();$('#b-import').onclick=fenetreImport;
 }
 
 /* =============================== PRÉPARER =============================== */
@@ -680,7 +681,7 @@ function majJauge(){
 }
 function rendreListe(){
   $('#e-liste').innerHTML=S.blocs.map((b,i)=>`<div class="ti ${b.id===selId?'sel':''}" data-i="${i}" draggable="true">
-    <span class="b f-${b.type}"></span><span class="n"><b>${esc(b.nom)}</b><small>${sousTitre(b)}</small></span><span class="d">${dureeTxt(b.min)}${b.souple?'<span class="souple">souple</span>':''}</span></div>`).join('')||'<div class="vide">Ajoute un premier temps.</div>';
+    <span class="b f-${b.type}"></span><span class="n"><b>${esc(b.nom)}</b><small>${sousTitre(b)}</small></span><span class="d">${dureeTxt(b.min)}${b.souple?'<span class="souple">souple</span>':''}</span></div>`).join('')||'<div class="vide">Ajoutez un premier temps.</div>';
   $$('#e-liste .ti').forEach(el=>{
     el.onclick=()=>{selId=S.blocs[+el.dataset.i].id;rendreListe();rendreTemps();ouvrirDetail()};
     el.ondragstart=e=>{dragI=+el.dataset.i;el.classList.add('drag');e.dataTransfer.effectAllowed='move'};
@@ -759,30 +760,30 @@ function brancherSouffle(el,b,apres){
 }
 function rendreTemps(){
   const b=S.blocs.find(x=>x.id===selId),c=$('#e-centre'),o=$('#e-outils');
-  if(!b){c.innerHTML='<div class="vide" style="margin:auto">Choisis un temps dans la liste, ou ajoutes-en un.</div>';o.innerHTML='';return}
+  if(!b){c.innerHTML='<div class="vide" style="margin:auto">Choisissez un temps dans la liste, ou ajoutez-en un.</div>';o.innerHTML='';return}
   const i=S.blocs.indexOf(b);
   c.innerHTML=`<div class="edit-texte">
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button class="btn s retour-mobile" id="e-liste-retour">${IC.retour} Les temps</button><span class="chip t-${b.type}">${IC[b.type]} ${TYPES[b.type].nom}</span><span style="font-size:12.5px;color:var(--muted)">Temps ${i+1} sur ${S.blocs.length}</span></div>
     <input type="text" class="nom-temps" data-k="nom" value="${esc(b.nom)}" aria-label="Nom du temps">
     ${visuelHTML(b)?`<div class="e-visuel">${visuelHTML(b)}</div>`:''}
-    <textarea class="texte" data-k="texte" placeholder="${b.type==='musique'?'Pas de parole pendant la musique ? Laisse vide, ou note une phrase d’introduction.':'Écris ici le texte que tu diras. Il défilera en grand pendant la séance.'}">${esc(b.texte)}</textarea>
-    <div class="note">Ce que tu écris ici s’affiche tel quel pendant la séance, en grand.</div>
+    <textarea class="texte" data-k="texte" placeholder="${b.type==='musique'?'Pas de parole pendant la musique ? Laissez vide, ou notez une phrase d’introduction.':'Écrivez ici le texte que vous direz. Il défilera en grand pendant la séance.'}">${esc(b.texte)}</textarea>
+    <div class="note">Ce que vous écrivez ici s’affiche tel quel pendant la séance, en grand.</div>
   </div>`;
   o.innerHTML=`<h3 class="panneau-titre">Réglages du temps</h3>
     <div class="champ">Durée<div class="pas"><button class="btn" data-dur="-1">−</button><b id="e-min">${b.min} min</b><button class="btn" data-dur="1">+</button></div></div>
     <label class="bascule" style="margin:-4px 0 4px"><input type="checkbox" data-k="souple" ${b.souple?'checked':''}>Temps souple</label>
-    <span class="aide" style="margin:0 0 14px">Si tu prends du retard, la régie te proposera de le raccourcir.</span>
+    <span class="aide" style="margin:0 0 14px">Si vous prenez du retard, la régie vous proposera de le raccourcir.</span>
     <label class="champ">Type<select data-k="type">${Object.entries(TYPES).map(([k,t])=>`<option value="${k}" ${b.type===k?'selected':''}>${t.nom}</option>`).join('')}</select></label>
     ${b.type==='instrument'?`<div class="sect"><label class="champ">Instrument<select data-k="instrument">${Object.entries(INSTR).map(([k,v])=>`<option value="${k}" ${b.instrument===k?'selected':''}>${v}</option>`).join('')}</select></label>
       ${reglagesRythme(b)}</div>`:''}
-    ${b.type==='musique'?`<div class="sect"><label class="champ">Morceau<select data-k="musiqueId"><option value="">— Choisir un morceau —</option>${D.musiques.map(m=>`<option value="${m.id}" ${b.musiqueId===m.id?'selected':''}>${esc(m.nom)} (${mmss(m.duree*1000)})</option>`).join('')}</select>${D.musiques.length?'':'<span class="aide">Ajoute d’abord tes morceaux dans l’onglet « Musiques ».</span>'}</label>
+    ${b.type==='musique'?`<div class="sect"><label class="champ">Morceau<select data-k="musiqueId"><option value="">— Choisir un morceau —</option>${D.musiques.map(m=>`<option value="${m.id}" ${b.musiqueId===m.id?'selected':''}>${esc(m.nom)} (${mmss(m.duree*1000)})</option>`).join('')}</select>${D.musiques.length?'':'<span class="aide">Ajoutez d’abord vos morceaux dans l’onglet « Musiques ».</span>'}</label>
       <div class="champ">Volume<div class="pas"><button class="btn" data-vol="-5">−</button><b id="e-vol">${b.volume} %</b><button class="btn" data-vol="5">+</button></div></div>
       <div class="champ">Entrée en douceur<div class="pas"><button class="btn" data-fondu="entree:-1">−</button><b id="e-entree">${b.entree} s</b><button class="btn" data-fondu="entree:1">+</button></div></div>
       <div class="champ">Sortie en douceur<div class="pas"><button class="btn" data-fondu="sortie:-1">−</button><b id="e-sortie">${b.sortie} s</b><button class="btn" data-fondu="sortie:1">+</button></div><span class="aide">avant la fin du temps</span></div></div>`:''}
     ${b.type==='silence'?`<div class="sect"><label class="champ">Pour clore le silence<select data-k="fin">${Object.entries(FINS).map(([k,v])=>`<option value="${k}" ${b.fin===k?'selected':''}>${v}</option>`).join('')}</select><span class="aide">Un rappel discret s’affiche 30 secondes avant la fin.</span></label></div>`:''}
     <div class="sect">
       <label class="champ">Position<select data-k="position"><option value="">—</option>${Object.entries(POS).map(([k,v])=>`<option value="${k}" ${b.position===k?'selected':''}>${v}</option>`).join('')}</select></label>
-      <label class="champ">Repère de conduite <span style="font-weight:500;color:var(--muted)">(pour toi)</span><textarea data-k="repere" rows="3">${esc(b.repere)}</textarea></label>
+      <label class="champ">Repère de conduite <span style="font-weight:500;color:var(--muted)">(pour vous)</span><textarea data-k="repere" rows="3">${esc(b.repere)}</textarea></label>
       <label class="champ">En visio, la salle passe en mode<select data-k="visio">${Object.entries(VISIO).map(([k,v])=>`<option value="${k}" ${b.visio===k?'selected':''}>${k==='auto'?`Automatique (${VISIO[TYPES[b.type].visio]})`:v}</option>`).join('')}</select></label>
     </div>
     <div class="actions-temps">
@@ -815,7 +816,7 @@ function rendreTemps(){
     if(a==='haut'&&i>0){S.blocs.splice(i,1);S.blocs.splice(i-1,0,b)}
     if(a==='bas'&&i<S.blocs.length-1){S.blocs.splice(i,1);S.blocs.splice(i+1,0,b)}
     if(a==='dup'){const cp=clone(b);cp.id=uid();S.blocs.splice(i+1,0,cp);selId=cp.id;toast('Temps dupliqué')}
-    if(a==='garder'){const cp=clone(b);cp.id=uid();D.mesBlocs.push(cp);rendreMesBlocsMenu();toast(`« ${esc(b.nom)} » est gardé dans tes blocs`)}
+    if(a==='garder'){const cp=clone(b);cp.id=uid();D.mesBlocs.push(cp);rendreMesBlocsMenu();toast(`« ${esc(b.nom)} » est gardé dans vos blocs`)}
     if(a==='suppr'){if(!confirm(`Supprimer le temps « ${b.nom} » ?`))return;S.blocs.splice(i,1);selId=S.blocs[Math.min(i,S.blocs.length-1)]?.id||null;$('#espace').classList.remove('detail')}
     sauver();rendreListe();rendreTemps();majJauge();
   });
@@ -825,7 +826,7 @@ function rendreTemps(){
 /* =============================== MES BLOCS =============================== */
 function vueBlocs(){
   $('#vue').innerHTML=`<div class="page"><h1 class="titre">Mes blocs</h1>
-    <p class="sous">Les temps que tu réutilises souvent. Garde-les depuis une séance (« Garder dans mes blocs »), puis ajoute-les partout avec « Depuis mes blocs ».</p>
+    <p class="sous">Les temps que vous réutilisez souvent. Gardez-les depuis une séance (« Garder dans mes blocs »), puis ajoutez-les partout avec « Depuis mes blocs ».</p>
     <div>${D.mesBlocs.map(b=>`<div class="ligne"><span class="ic t-${b.type}">${IC[b.type]}</span>
       <div class="txt"><input type="text" value="${esc(b.nom)}" data-nom="${b.id}" aria-label="Nom du bloc"><small>${sousTitre(b)} · ${dureeTxt(b.min)}</small></div>
       <button class="btn rond nu danger" data-suppr="${b.id}" title="Supprimer">${IC.poubelle}</button></div>`).join('')||'<div class="vide">Aucun bloc gardé pour l’instant.</div>'}</div></div>`;
@@ -854,20 +855,20 @@ async function jouer(id,vol,entree,depuisDebut=true){
 function sortie(s){if(!A.joue)return;fondu(0,s);clearTimeout(A.stopT);A.stopT=setTimeout(()=>{A.el.pause();A.joue=false;majMusique()},s*1000+120)}
 let ecouteId=null;
 function vueMusiques(){
-  $('#vue').innerHTML=`<div class="page"><h1 class="titre">Mes musiques</h1><p class="sous">Les morceaux que tu utilises dans tes séances.</p>
-    <div class="info-bloc">${IC.info}<span>Tes morceaux sont gardés <b>sur cet appareil</b> : ils marchent même sans internet dans la salle. La liste se retrouve sur tes autres appareils ; le fichier, lui, s’ajoute une fois sur chacun. Utilise des musiques dont tu as les droits (achetées avec une licence, ou libres de droits).</span></div>
+  $('#vue').innerHTML=`<div class="page"><h1 class="titre">Mes musiques</h1><p class="sous">Les morceaux que vous utilisez dans vos séances.</p>
+    <div class="info-bloc">${IC.info}<span>Vos morceaux sont gardés <b>sur cet appareil</b> : ils marchent même sans internet dans la salle. La liste se retrouve sur vos autres appareils ; le fichier, lui, s’ajoute une fois sur chacun. Utilisez des musiques dont vous avez les droits (achetées avec une licence, ou libres de droits).</span></div>
     <button class="btn p" id="m-ajout">${IC.plus} Ajouter des morceaux</button>
     <div style="margin-top:14px">${D.musiques.map(m=>`<div class="ligne"><span class="ic t-musique">${IC.musique}</span>
       <div class="txt"><input type="text" value="${esc(m.nom)}" data-mnom="${m.id}" aria-label="Nom du morceau"><small>${mmss(m.duree*1000)} · ${(m.taille/1048576).toFixed(1)} Mo<span class="manque cache" data-mmanque="${m.id}">Pas encore sur cet appareil</span></small></div>
       <button class="btn s cache" data-mrelier="${m.id}">${IC.plus} Ajouter le fichier ici</button>
       <button class="btn rond" data-ecoute="${m.id}" title="Écouter">${ecouteId===m.id?IC.stop:IC.play}</button>
-      <button class="btn rond nu danger" data-msuppr="${m.id}" title="Supprimer">${IC.poubelle}</button></div>`).join('')||'<div class="vide">Aucun morceau pour l’instant. Ajoute tes fichiers audio (mp3, m4a, wav…).</div>'}</div></div>`;
+      <button class="btn rond nu danger" data-msuppr="${m.id}" title="Supprimer">${IC.poubelle}</button></div>`).join('')||'<div class="vide">Aucun morceau pour l’instant. Ajoutez vos fichiers audio (mp3, m4a, wav…).</div>'}</div></div>`;
   $('#m-ajout').onclick=()=>$('#f-musique').click();
   $$('[data-mnom]').forEach(x=>x.oninput=()=>{D.musiques.find(m=>m.id===x.dataset.mnom).nom=x.value;sauverBientot()});
   $$('[data-ecoute]').forEach(x=>x.onclick=async()=>{const id=x.dataset.ecoute;if(ecouteId===id){sortie(.4);ecouteId=null}else{ecouteId=id;await jouer(id,.8,.4)}vueMusiques()});
   D.musiques.forEach(async m=>{if(await idbGet(m.id))return;$$(`[data-mmanque="${m.id}"],[data-mrelier="${m.id}"]`).forEach(x=>x.classList.remove('cache'))});
   $$('[data-mrelier]').forEach(x=>x.onclick=()=>{relierId=x.dataset.mrelier;$('#f-relier').click()});
-  $$('[data-msuppr]').forEach(x=>x.onclick=()=>{const m=D.musiques.find(y=>y.id===x.dataset.msuppr);if(!confirm(`Retirer « ${m.nom} » de tes morceaux ?`))return;idbDel(m.id);D.musiques=D.musiques.filter(y=>y!==m);D.seances.forEach(s=>s.blocs.forEach(b=>{if(b.musiqueId===m.id)b.musiqueId=null}));sauver();vueMusiques()});
+  $$('[data-msuppr]').forEach(x=>x.onclick=()=>{const m=D.musiques.find(y=>y.id===x.dataset.msuppr);if(!confirm(`Retirer « ${m.nom} » de vos morceaux ?`))return;idbDel(m.id);D.musiques=D.musiques.filter(y=>y!==m);D.seances.forEach(s=>s.blocs.forEach(b=>{if(b.musiqueId===m.id)b.musiqueId=null}));sauver();vueMusiques()});
 }
 let relierId=null;
 $('#f-relier').onchange=async e=>{
@@ -1013,7 +1014,7 @@ function rendreAide(b){
   $('#g-visuel').innerHTML=visuelHTML(b,true);
   const rythme=b.type==='instrument'&&['pluie','ocean','tambour'].includes(b.instrument);
   if(rythme)h=`<div class="o-carte"><span class="kicker">${b.instrument==='pluie'?'Rythme du bâton de pluie':b.instrument==='ocean'?'Rythme de la vague':'Battement du tambour'}</span>${reglagesRythme(b)}${b.instrument==='pluie'?`<button class="btn s nu" id="b-recaler" style="margin-top:8px">${IC.recaler} Recaler sur « inspire »</button>`:''}</div>`;
-  else if(b.type==='instrument')h=`<div class="o-carte"><span class="kicker">${INSTR[b.instrument]||'Instrument'}</span><div class="o-repere">Jeu libre. Laisse résonner, prends ton temps.</div></div>`;
+  else if(b.type==='instrument')h=`<div class="o-carte"><span class="kicker">${INSTR[b.instrument]||'Instrument'}</span><div class="o-repere">Jeu libre. Laissez résonner, prenez votre temps.</div></div>`;
   else if(b.type==='silence')h=`<div class="o-carte"><span class="kicker">Silence</span>${b.fin?`<div class="fin-rappel" id="a-fin">${IC.cloche}<span>À la fin : <b>${FINS[b.fin].toLowerCase()}</b></span></div>`:'<div class="o-repere">Le temps continue, sans intervention.</div>'}</div>`;
   else if(b.type==='transition')h=`<div class="o-carte"><span class="kicker">Transition</span><div class="o-repere">${b.position?`Vers la position <b>${POS[b.position].toLowerCase()}</b>. `:''}En douceur, sans urgence.</div></div>`;
   el.innerHTML=h;
@@ -1042,7 +1043,7 @@ function majMusique(){
   if(!G)return;const el=$('#g-musique');if(!el)return;
   if(!A.joue||!G.piste)G.piste=pisteParDefaut();
   const b=G.blocs[G.i],enTemps=b.type==='musique';
-  if(!D.musiques.length){el.innerHTML=enTemps?'<div class="o-carte"><span class="kicker">Musique</span><div class="o-repere">Aucun morceau sur cet appareil. Ajoute tes morceaux dans l’onglet « Musiques ».</div></div>':'';return}
+  if(!D.musiques.length){el.innerHTML=enTemps?'<div class="o-carte"><span class="kicker">Musique</span><div class="o-repere">Aucun morceau sur cet appareil. Ajoutez vos morceaux dans l’onglet « Musiques ».</div></div>':'';return}
   const ouvert=enTemps||lecteurOuvert||A.joue;
   if(volLecteur===null||enTemps)volLecteur=volumeVise();
   el.innerHTML=`<div class="o-carte lecteur ${enTemps?'fort':''}">
@@ -1053,7 +1054,7 @@ function majMusique(){
       <div class="lc-vol">${IC_VOL}<input type="range" id="lc-vol" min="0" max="100" step="1" aria-label="Volume"><b id="lc-vol-v"></b></div>
       <div class="lc-fondus"><span>En douceur, sur</span>${[5,10,20].map(s=>`<button class="${dureeFondu===s?'on':''}" data-df="${s}">${s} s</button>`).join('')}</div>
       <div class="lc-actions"><button class="btn s" id="lc-monter" title="Monter en douceur jusqu’au volume prévu">Faire monter</button><button class="btn s" id="lc-min" title="Descendre tout bas, sans couper">Au minimum</button><button class="btn s" id="lc-couper" title="Descendre jusqu’au silence, puis arrêter">Couper</button></div>`
-      :'<div class="o-repere" style="margin-top:4px">Touche pour préparer une musique : tu peux la lancer tout bas avant son temps.</div>'}
+      :'<div class="o-repere" style="margin-top:4px">Touchez pour préparer une musique : vous pouvez la lancer tout bas avant son temps.</div>'}
   </div>`;
   $('#lc-tete').onclick=()=>{lecteurOuvert=!ouvert;majMusique()};
   if(!ouvert)return majLecteur();
@@ -1204,7 +1205,7 @@ function vueBilan(){
         return `<div class="bi"><span class="b f-${l.type}"></span><span>${esc(l.nom)}</span><span>${dureeTxt(l.prevu)}</span><span>${pas?'—':dureeTxt(Math.max(1,l.reel))}</span><span class="ecart ${cls}">${pas?'sauté':Math.abs(d)<1?'juste':(d>0?'+':'−')+dureeTxt(Math.abs(d))}</span><input type="checkbox" data-maj="${k}" ${!pas&&Math.abs(d)>=1?'checked':''} ${pas?'disabled':''} title="Mettre à jour la durée prévue"></div>`}).join('')}
       <p style="font-size:12.5px;color:var(--muted);margin:12px 0 0">Les cases cochées ↻ remplacent la durée prévue par la durée réelle, pour la prochaine fois.</p>
     </div>
-    <div class="carte"><label class="champ" style="margin:0">Comment ça s’est passé ?<textarea id="bi-note" placeholder="Le groupe, l’énergie, ce que tu garderais ou changerais…" style="min-height:110px"></textarea></label></div>
+    <div class="carte"><label class="champ" style="margin:0">Comment ça s’est passé ?<textarea id="bi-note" placeholder="Le groupe, l’énergie, ce que vous garderiez ou changeriez…" style="min-height:110px"></textarea></label></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="btn p" id="bi-ok">Enregistrer le bilan</button><button class="btn" id="bi-non">Ne pas enregistrer</button></div>
   </div>`;
   $('#bi-ok').onclick=()=>{
@@ -1216,7 +1217,7 @@ function vueBilan(){
   $('#bi-non').onclick=()=>{bilanEnCours=null;aller('seances')};
 }
 function vueBilans(){
-  $('#vue').innerHTML=`<div class="page"><h1 class="titre">Mes bilans</h1><p class="sous">Après chaque séance guidée : le temps réel de chaque temps, et tes notes.</p>
+  $('#vue').innerHTML=`<div class="page"><h1 class="titre">Mes bilans</h1><p class="sous">Après chaque séance guidée : le temps réel de chaque temps, et vos notes.</p>
     ${D.bilans.map(B=>{const prevu=B.lignes.reduce((a,l)=>a+l.prevu,0);const d=new Date(B.date);
       return `<details class="bilan-item"><summary><div><h4>${esc(B.titre)}</h4><span style="font-size:12.5px;color:var(--muted)">${d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})} · ${heureTxt(d)}</span></div>
         <span class="chip ${Math.abs(B.duree/60000-prevu)<2?'ecart-ok':B.duree/60000>prevu?'ecart-retard':'ecart-avance'}">${dureeTxt(B.duree/60000)} / ${dureeTxt(prevu)}</span></summary>
@@ -1238,15 +1239,15 @@ function exporter(){
 $('#f-restaure').onchange=async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
   try{const x=JSON.parse(await f.text());if(x.schema!==1||!Array.isArray(x.seances))throw 0;
-    if(!confirm(`Remplacer tes séances actuelles par celles de la sauvegarde (${x.seances.length} séance${x.seances.length>1?'s':''}) ?`))return;
+    if(!confirm(`Remplacer vos séances actuelles par celles de la sauvegarde (${x.seances.length} séance${x.seances.length>1?'s':''}) ?`))return;
     D=x;D.prefs=Object.assign({},PREFS,D.prefs||{});sauver();nuit(D.prefs.nuit);aller('seances');toast('Sauvegarde restaurée')}
   catch(err){toast('Ce fichier n’est pas une sauvegarde de la régie')}
 };
 
 /* ======================== SYNCHRONISATION ========================
-   Tes séances, tes blocs, tes bilans et la liste de tes morceaux se retrouvent
-   sur tous tes appareils, avec le même compte que ton application Suivi de
-   l'Être (table « regie », lisible par toi seulement). Tout reste d'abord sur
+   Vos séances, vos blocs, vos bilans et la liste de vos morceaux se retrouvent
+   sur tous vos appareils, avec le même compte que votre application Suivi de
+   l'Être (table « regie », lisible par vous seulement). Tout reste d'abord sur
    l'appareil : sans internet, la régie marche normalement et se remet à jour
    au retour du réseau. Les fichiers audio restent sur chaque appareil.
    Pendant qu'une séance est guidée ou préparée, rien ne vient la modifier :
@@ -1321,7 +1322,7 @@ async function synchroniser(){
   try{
     for(let essai=0;essai<4;essai++){
       const r=await sb('regie?id=eq.1&select=donnees,version',{},jeton);
-      if(r.status===401){localStorage.removeItem('sb_expires_at');etatSync('compte','Session terminée : reconnecte-toi');return}
+      if(r.status===401){localStorage.removeItem('sb_expires_at');etatSync('compte','Session terminée : reconnectez-vous');return}
       if(r.status===404){etatSync('erreur','Synchronisation pas encore activée (table « regie » à créer)');return}
       if(r.status===403){etatSync('refuse');return}
       if(!r.ok)throw new Error('lecture '+r.status);
@@ -1373,7 +1374,7 @@ function fenetreConnexion(){
   const v=document.createElement('div');v.className='voile';v.id='voile-cx';
   v.innerHTML=`<form class="fenetre" id="f-cx" autocomplete="on">
     <h2>Synchroniser mes appareils</h2>
-    <p class="sous" style="margin:0 0 14px">Connecte-toi avec le compte de ton application <b>Suivi de l’Être</b> : tes séances se retrouveront sur ton ordinateur, ta tablette et ton téléphone.</p>
+    <p class="sous" style="margin:0 0 14px">Connectez-vous avec le compte de votre application <b>Suivi de l’Être</b>  : vos séances se retrouveront sur votre ordinateur, votre tablette et votre téléphone.</p>
     <label class="champ">E-mail<input type="email" id="cx-mail" required autocomplete="username"></label>
     <label class="champ">Mot de passe<input type="password" id="cx-mdp" required autocomplete="current-password"></label>
     <div class="err cache" id="cx-err"></div>
@@ -1407,15 +1408,15 @@ function demarrerSync(){
 /* =========================== SALLE DE VISIO ===========================
    Guider une séance en visio : la régie devient la console de la salle.
    Chaque temps porte un mode (Cercle, Écoute, Musique, Retour) que les
-   participants suivent tout seuls ; tu peux le changer à la main à tout moment.
+   participants suivent tout seuls ; vous pouvez le changer à la main à tout moment.
    Les participants sont dans la colonne de gauche (la liste des temps passe
    dans le tiroir). La musique du lecteur part directement chez eux, en qualité
-   musique ; ton micro garde le vrai son des instruments pendant les temps
+   musique ; votre micro garde le vrai son des instruments pendant les temps
    « Musique ». Moteur vidéo : LiveKit (clé d'entrée donnée par la page de
-   rendez-vous, qui vérifie ta session). */
+   rendez-vous, qui vérifie votre session). */
 const RDV_API='https://rendez-vous.prendresoindesonhetre.fr';
 const LK_SRC='https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js';
-const MODES={cercle:{nom:'Cercle',aide:'Tout le monde se voit et peut parler'},ecoute:{nom:'Écoute',aide:'Micros coupés, lumière baissée'},musique:{nom:'Musique',aide:'Lumière baissée, ton micro garde le vrai son'},retour:{nom:'Retour',aide:'« Comment vous sentez-vous ? »'}};
+const MODES={cercle:{nom:'Cercle',aide:'Tout le monde se voit et peut parler'},ecoute:{nom:'Écoute',aide:'Micros coupés, lumière baissée'},musique:{nom:'Musique',aide:'Lumière baissée, votre micro garde le vrai son'},retour:{nom:'Retour',aide:'« Comment vous sentez-vous ? »'}};
 const SALLE={actif:false,room:null,atelier:null,mode:'cercle',manuel:false,pause:false,aparte:null,ecoute:false,instruments:null,micId:'',camId:'',alertes:[],pubMusique:null,grand:false,etat:''};
 const IC_VISIO=I('<rect x="3" y="6" width="12" height="12" rx="2"/><path d="M15 10l6-3v10l-6-3"/>',15);
 const IC_MAIN='✋';
@@ -1432,7 +1433,7 @@ function diffuserEtat(a){
 /* ——— Ouvrir la salle : choisir l'atelier, vérifier caméra et micro ——— */
 async function fenetreSalle(seanceId,atelierId){
   const jeton=await jetonValide();
-  if(!jeton){toast('Connecte-toi d’abord : la salle utilise ton compte');fenetreConnexion();return}
+  if(!jeton){toast('Connectez-vous d’abord : la salle utilise votre compte');fenetreConnexion();return}
   if($('#voile-salle'))return;
   const v=document.createElement('div');v.className='voile';v.id='voile-salle';
   v.innerHTML=`<div class="fenetre large">
@@ -1447,7 +1448,7 @@ async function fenetreSalle(seanceId,atelierId){
         <div class="fs-info" id="fs-info"></div>
         <label class="champ">Séance guidée<select id="fs-seance">${D.seances.map(s=>`<option value="${s.id}" ${s.id===seanceId?'selected':''}>${esc(s.titre)}</option>`).join('')}</select></label>
         <label class="bascule"><input type="checkbox" id="fs-ecoute"> J’entends aussi la musique (avec un casque)</label>
-        <p class="aide" style="margin:6px 0 0">Sans casque, laisse décoché : la musique part directement chez les participants, sans repasser par ton micro.</p>
+        <p class="aide" style="margin:6px 0 0">Sans casque, laissez décoché : la musique part directement chez les participants, sans repasser par votre micro.</p>
         <div class="err cache" id="fs-err"></div>
       </div>
     </div>
@@ -1478,32 +1479,45 @@ async function fenetreSalle(seanceId,atelierId){
   let ateliers=[];
   try{
     const r=await sb(`ateliers?lieu=eq.visio&annule=eq.false&date=gte.${iso}&order=date.asc,heure_debut.asc&select=id,titre,date,heure_debut,heure_fin,seance_id&limit=20`,{},jeton);
-    if(r.ok)ateliers=await r.json();
+    if(r.ok)ateliers=(await r.json()).map(a=>Object.assign(a,{genre:'atelier',cle:'a'+a.id}));
     if(ateliers.length){const ri=await sb(`inscriptions_ateliers?atelier_id=in.(${ateliers.map(a=>a.id).join(',')})&statut=in.(payee,invitee)&select=atelier_id`,{},jeton);const ins=ri.ok?await ri.json():[];ateliers.forEach(a=>a.nb=ins.filter(x=>x.atelier_id===a.id).length)}
+    // Les rendez-vous individuels du jour qui ont lieu en visio (l'agenda fait foi).
+    const rs=await sb('sync?id=eq.1&select=rdvs,clients',{},jeton);
+    if(rs.ok){const s0=(await rs.json())[0]||{};
+      (s0.rdvs||[]).filter(x=>x.date===iso&&!x.annule&&x.enLigne&&x.enLigne.demandeId&&(x.enLigne.lieu==='visio'||/visio/i.test(x.lieu||''))).forEach(x=>{
+        const c=(s0.clients||[]).find(y=>String(y.id)===String(x.clientId));
+        ateliers.push({genre:'rdv',cle:'r'+x.enLigne.demandeId,demandeId:x.enLigne.demandeId,titre:c?`Séance avec ${c.prenom}`:'Séance individuelle',date:x.date,heure_debut:x.heure,heure_fin:'',nb:1});
+      });
+      ateliers.sort((x,y)=>(x.date+x.heure_debut).localeCompare(y.date+y.heure_debut));
+    }
   }catch(e){}
   const jour=d=>new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
-  $('#fs-atelier').innerHTML=ateliers.length?ateliers.map(a=>`<option value="${a.id}" ${String(a.id)===String(atelierId)?'selected':''}>${a.date===iso?'Aujourd’hui':jour(a.date)} · ${a.heure_debut.replace(':',' h ')} · ${esc(a.titre)}</option>`).join(''):'<option value="">Aucun atelier en visio à venir</option>';
-  const majInfo=()=>{const a=ateliers.find(x=>String(x.id)===$('#fs-atelier').value);
-    $('#fs-info').innerHTML=a?`<b>${a.nb||0}</b> place${a.nb>1?'s':''} confirmée${a.nb>1?'s':''} · la salle ouvre aux participants 30 min avant.`:'Crée d’abord un atelier en visio dans ton application (Mes ateliers).';
-    if(a&&a.seance_id&&D.seances.some(s=>s.id===a.seance_id))$('#fs-seance').value=a.seance_id;
+  $('#fs-atelier').innerHTML=ateliers.length?ateliers.map(a=>`<option value="${a.cle}" ${String(a.id)===String(atelierId)?'selected':''}>${a.date===iso?'Aujourd’hui':jour(a.date)} · ${a.heure_debut.replace(':',' h ')} · ${esc(a.titre)}${a.genre==='rdv'?' (individuel)':''}</option>`).join(''):'<option value="">Rien en visio pour le moment</option>';
+  const majInfo=()=>{const a=ateliers.find(x=>x.cle===$('#fs-atelier').value);
+    $('#fs-info').innerHTML=!a?'Créez d’abord un atelier en visio dans votre application (Mes ateliers), ou acceptez une demande de rendez-vous en visio.'
+      :a.genre==='rdv'?'Rendez-vous individuel · la salle ouvre un quart d’heure avant.'
+      :`<b>${a.nb||0}</b> place${a.nb>1?'s':''} confirmée${a.nb>1?'s':''} · la salle ouvre aux participants 30 min avant.`;
+    if(a&&a.genre==='rdv'){const ind=D.seances.find(s=>s.genre==='individuel');if(ind)$('#fs-seance').value=ind.id}
+    else if(a&&a.seance_id&&D.seances.some(s=>s.id===a.seance_id))$('#fs-seance').value=a.seance_id;
     $('#fs-ok').disabled=!a};
   $('#fs-atelier').onchange=majInfo;majInfo();
   $('#fs-ok').onclick=async()=>{
-    const a=ateliers.find(x=>String(x.id)===$('#fs-atelier').value);if(!a)return;
+    const a=ateliers.find(x=>x.cle===$('#fs-atelier').value);if(!a)return;
     const ok=$('#fs-ok');ok.disabled=true;ok.textContent='Ouverture…';$('#fs-err').classList.add('cache');
     SALLE.camId=$('#fs-cam').value;SALLE.micId=$('#fs-mic').value;SALLE.ecoute=$('#fs-ecoute').checked;
     const seance=$('#fs-seance').value;
-    if(a.seance_id!==seance)sb(`ateliers?id=eq.${a.id}`,{method:'PATCH',body:JSON.stringify({seance_id:seance})},jeton).catch(()=>{});
+    if(a.genre!=='rdv'&&a.seance_id!==seance)sb(`ateliers?id=eq.${a.id}`,{method:'PATCH',body:JSON.stringify({seance_id:seance})},jeton).catch(()=>{});
     if(flux)flux.getTracks().forEach(t=>t.stop());flux=null;
     try{await ouvrirSalle(a,seance);fermer()}
     catch(e){ok.disabled=false;ok.innerHTML=`${IC_VISIO} Ouvrir la salle`;const x=$('#fs-err');x.classList.remove('cache');
-      x.textContent=e.message==='non-configure'?'La salle n’est pas encore branchée : il manque le service vidéo (LiveKit). Tu peux quand même guider la séance ici, sans visio.':e.message==='session'?'Ta session a expiré : reconnecte-toi.':'La salle n’a pas pu s’ouvrir (connexion ?). Réessaie dans un instant.';apercu()}
+      x.textContent=e.message==='non-configure'?'La salle n’est pas encore branchée : il manque le service vidéo (LiveKit). Vous pouvez quand même guider la séance ici, sans visio.':e.message==='session'?'Votre session a expiré : reconnectez-vous.':'La salle n’a pas pu s’ouvrir (connexion ?). Réessayez dans un instant.';apercu()}
   };
 }
 
 async function ouvrirSalle(atelier,seanceId){
   const jeton=await jetonValide();if(!jeton)throw new Error('session');
-  const r=await fetch(`${RDV_API}/api/salle`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${jeton}`},body:JSON.stringify({hote:true,atelierId:atelier.id})});
+  const corps=atelier.genre==='rdv'?{hote:true,demandeId:atelier.demandeId}:{hote:true,atelierId:atelier.id};
+  const r=await fetch(`${RDV_API}/api/salle`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${jeton}`},body:JSON.stringify(corps)});
   if(r.status===503)throw new Error('non-configure');
   if(r.status===401)throw new Error('session');
   if(!r.ok)throw new Error('serveur');
@@ -1531,7 +1545,7 @@ async function ouvrirSalle(atelier,seanceId){
   diffuserEtat();
 }
 function avantDeFermer(e){if(SALLE.actif){e.preventDefault();e.returnValue=''}}
-// Musique : chez eux toujours ; chez toi seulement si tu as un casque.
+// Musique : chez eux toujours ; chez vous seulement si vous avez un casque.
 function ecouteMusique(oui){
   SALLE.ecoute=oui;if(!A.ctx||!A.gain)return;
   try{A.gain.disconnect(A.ctx.destination)}catch(e){}
@@ -1600,7 +1614,7 @@ async function profilMicro(instruments){
   try{await pub.track.restartTrack({deviceId:SALLE.micId||undefined,echoCancellation:!instruments,noiseSuppression:!instruments,autoGainControl:!instruments})}catch(e){}
   rendreSalle();
 }
-// En aparté, la personne choisie a ta voix et ton image ; les autres gardent la musique.
+// En aparté, la personne choisie a votre voix et votre image ; les autres gardent la musique.
 function permissionsHote(){
   const r=SALLE.room;if(!r)return;const lp=r.localParticipant;
   if(!SALLE.aparte)return lp.setTrackSubscriptionPermissions(true,[]);
@@ -1659,7 +1673,7 @@ function rendreSalle(){
       const aide=SALLE.alertes.some(x=>x.id===p.identity&&x.type==='aide');
       return `<div class="sl-tuile ${aide?'aide':''} ${a.main?'main':''} ${SALLE.aparte===p.identity?'aparte':''}" data-p="${esc(p.identity)}">${v?'':`<span class="sl-init">${esc((p.name||'?')[0])}</span>`}
         <span class="sl-nom">${esc(p.name||'')}${a.main?' '+IC_MAIN:''}</span>
-        <span class="sl-badges">${SALLE.mode==='retour'||a.ok?(a.ok?'<i class="ok" title="Tout va bien">✓</i>':'<i class="att" title="Pas encore répondu">…</i>'):''}<i title="${a.vu==='tous'?'Visible par tout le groupe':'Visible par toi seulement'}">${a.vu==='tous'||a.ok?'👥':'🔒'}</i></span></div>`}).join('')||`<div class="sl-vide">${etat?'':'La salle est ouverte. Les participants arrivent avec leur lien personnel.'}</div>`}</div>
+        <span class="sl-badges">${SALLE.mode==='retour'||a.ok?(a.ok?'<i class="ok" title="Tout va bien">✓</i>':'<i class="att" title="Pas encore répondu">…</i>'):''}<i title="${a.vu==='tous'?'Visible par tout le groupe':'Visible par vous seulement'}">${a.vu==='tous'||a.ok?'👥':'🔒'}</i></span></div>`}).join('')||`<div class="sl-vide">${etat?'':'La salle est ouverte. Les participants arrivent avec leur lien personnel.'}</div>`}</div>
     <div class="sl-moi">
       <div class="sl-moi-v" id="sl-moi-v">${camOn?'':'<span>Caméra coupée</span>'}</div>
       <div class="sl-moi-b">
@@ -1690,7 +1704,7 @@ function ouvrirMenuTuile(id,t){
   fermerMenuTuile();const p=SALLE.room&&SALLE.room.remoteParticipants.get(id);if(!p)return;
   const a=p.attributes||{};
   const m=document.createElement('div');m.className='sl-menu';menuTuile=m;
-  m.innerHTML=`<b>${esc(p.name)}</b><small>${a.vu==='tous'||a.ok?'Visible par tout le groupe':'Visible par toi seulement'}${a.camera?'':' · sans caméra'}</small>
+  m.innerHTML=`<b>${esc(p.name)}</b><small>${a.vu==='tous'||a.ok?'Visible par tout le groupe':'Visible par vous seulement'}${a.camera?'':' · sans caméra'}</small>
     <button data-a="aparte">${SALLE.aparte===id?'Terminer l’aparté':'Aparté (vous deux seulement)'}</button>
     <button data-a="appel">Appeler doucement</button>
     <button data-a="parole">${a.main?'Donner la parole (main levée)':'Donner la parole'}</button>
@@ -1706,8 +1720,103 @@ function ouvrirMenuTuile(id,t){
 function fermerMenuTuile(){if(menuTuile){menuTuile.remove();menuTuile=null}}
 document.addEventListener('click',e=>{if(menuTuile&&!e.target.closest('.sl-menu'))fermerMenuTuile()});
 
+/* ================= REPRENDRE L'ANCIENNE RÉGIE (v14) =================
+   L'ancienne régie garde la séance chiffrée sur son propre serveur : elle se
+   déverrouille avec le nom d'espace et le mot de passe choisis à l'époque.
+   Le mot de passe ne quitte jamais cet appareil : seul un code dérivé est
+   envoyé, comme le faisait l'ancienne page. Rien n'est modifié là-bas : la
+   séance est simplement recopiée ici. */
+const V14_URL = 'https://kzviewbnnnzdyocdjtah.supabase.co/functions/v1/regie-sync';
+const V14_TYPE = { 0: 'parole', 1: 'instrument', 2: 'instrument', 3: 'musique', 4: 'silence' };
+const V14_INSTR = { 1: 'pluie', 2: 'ocean' };
+const teB = new TextEncoder(), tdB = new TextDecoder();
+const versB64u = o => { let s = ''; for (const b of o) s += String.fromCharCode(b); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '') };
+const depuisB64u = s => { s = String(s).replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; const x = atob(s), a = new Uint8Array(x.length); for (let i = 0; i < x.length; i++) a[i] = x.charCodeAt(i); return a };
+const sha256 = async o => new Uint8Array(await crypto.subtle.digest('SHA-256', o));
+const colle = (...p) => { const r = new Uint8Array(p.reduce((a, x) => a + x.length, 0)); let o = 0; for (const x of p) { r.set(x, o); o += x.length } return r };
+async function v14Api(action, payload) {
+  const r = await fetch(V14_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...payload }) });
+  let j = {}; try { j = await r.json() } catch (e) {}
+  if (!r.ok) { const e = new Error(j.error || 'http_' + r.status); e.status = r.status; throw e }
+  return j;
+}
+async function v14Ouvrir(nom, motDePasse) {
+  const normal = String(nom || '').normalize('NFKC').trim().toLocaleLowerCase('fr-FR').replace(/\s+/g, ' ');
+  const empreinte = [...await sha256(teB.encode('regie-user-v1|' + normal))].map(b => b.toString(16).padStart(2, '0')).join('');
+  const ch = await v14Api('challenge', { usernameHash: empreinte });
+  if (!ch.exists) throw new Error('espace');
+  const materiel = await crypto.subtle.importKey('raw', teB.encode(motDePasse), 'PBKDF2', false, ['deriveBits']);
+  const bits = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: depuisB64u(ch.authSalt), iterations: 250000 }, materiel, 512));
+  const authKey = bits.slice(0, 32), wrapKey = bits.slice(32, 64);
+  const verifieur = versB64u(await sha256(colle(teB.encode('regie-auth-v1|'), authKey)));
+  const r = await v14Api('login', { usernameHash: empreinte, authVerifier: verifieur });
+  const ouvre = async (cle, iv, ct) => new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: depuisB64u(iv) }, await crypto.subtle.importKey('raw', cle, { name: 'AES-GCM' }, false, ['decrypt']), depuisB64u(ct)));
+  const dek = await ouvre(wrapKey, r.passwordBundle.iv, r.passwordBundle.ciphertext);
+  if (!r.dataCiphertext) throw new Error('vide');
+  const etat = JSON.parse(tdB.decode(await ouvre(dek, r.dataIv, r.dataCiphertext)));
+  if (!etat || !Array.isArray(etat.phases) || !etat.phases.length) throw new Error('vide');
+  return etat;
+}
+// « Atelier de méditation — 19h30 à 21h » → titre, début et fin
+function v14Seance(etat) {
+  const brut = String(etat.title || 'Séance reprise de l’ancienne régie');
+  const h = brut.match(/(\d{1,2})\s*h\s*(\d{2})?\s*(?:à|-|–)\s*(\d{1,2})\s*h\s*(\d{2})?/i);
+  const deux = n => String(n).padStart(2, '0');
+  return {
+    id: uid(), genre: 'atelier',
+    titre: brut.replace(/\s*[—–-]\s*\d{1,2}\s*h.*$/i, '').trim() || brut,
+    debut: h ? `${deux(h[1])}:${h[2] || '00'}` : '', finH: h ? `${deux(h[3])}:${h[4] || '00'}` : '',
+    blocs: etat.phases.map(p => {
+      const i = Number(p.instrument) || 0;
+      return nb(V14_TYPE[i] || 'parole', String(p.name || 'Temps').slice(0, 80), Math.max(1, Number(p.minutes) || 5), {
+        texte: String(p.text || ''), repere: p.cue && p.cue !== '[silence]' ? String(p.cue) : '',
+        instrument: V14_INSTR[i] || null, rythme: i === 1 ? 5 : i === 2 ? 8 : null, expire: i === 1 ? 5 : null,
+        position: i === 4 ? 'assis' : null,
+      });
+    }),
+  };
+}
+
+function fenetreImport() {
+  if ($('#voile-import')) return;
+  const v = document.createElement('div'); v.className = 'voile'; v.id = 'voile-import';
+  v.innerHTML = `<form class="fenetre" id="f-import" autocomplete="off">
+    <h2>Reprendre l’ancienne régie</h2>
+    <p class="sous" style="margin:0 0 14px">Votre séance de l’ancienne page (« Régie de mon Hêtre ») est protégée par le nom d’espace et le mot de passe que vous aviez choisis. Elle sera <b>recopiée ici</b>, sans rien changer là-bas.</p>
+    <label class="champ">Nom d’espace<input type="text" id="im-nom" autocomplete="off"></label>
+    <label class="champ">Mot de passe<input type="password" id="im-mdp" autocomplete="off"></label>
+    <p class="aide">Votre mot de passe ne quitte pas cet appareil.</p>
+    <div class="err cache" id="im-err"></div>
+    <div class="actions"><button type="button" class="btn" id="im-annuler">Plus tard</button><button type="submit" class="btn p" id="im-ok">Récupérer ma séance</button></div>
+  </form>`;
+  document.body.appendChild(v);
+  $('#im-annuler').onclick = () => v.remove();
+  v.onclick = e => { if (e.target === v) v.remove() };
+  $('#f-import').onsubmit = async e => {
+    e.preventDefault();
+    const ok = $('#im-ok'), err = $('#im-err');
+    ok.disabled = true; ok.textContent = 'Un instant…'; err.classList.add('cache');
+    try {
+      const etat = await v14Ouvrir($('#im-nom').value, $('#im-mdp').value);
+      const s = v14Seance(etat);
+      v.remove();
+      if (!confirm(`« ${s.titre} » : ${s.blocs.length} temps, ${dureeTxt(total(s))}.\n\nL’ajouter à vos séances ?`)) return;
+      D.seances.push(s); delete D.depart; sauver(); aller('editer', s.id);
+      toast('Séance reprise de l’ancienne régie');
+    } catch (x) {
+      err.classList.remove('cache');
+      err.textContent = x.message === 'espace' ? 'Ce nom d’espace n’existe pas sur l’ancienne régie.'
+        : /invalid|401/.test(x.message || '') ? 'Mot de passe incorrect.'
+        : x.message === 'vide' ? 'Aucune séance n’est enregistrée dans cet espace.'
+        : 'Récupération impossible pour le moment (connexion ?).';
+      ok.disabled = false; ok.textContent = 'Récupérer ma séance';
+    }
+  };
+  setTimeout(() => $('#im-nom').focus(), 50);
+}
+
 /* =============================== DÉMARRAGE =============================== */
-if(!stockOK)$('#bandeau').innerHTML=`<div class="bandeau">${IC.info}<span><b>Aperçu :</b> cet affichage ne permet pas d’enregistrer. Ouvre ce fichier dans ton navigateur (Chrome, Edge…) pour garder tes séances.</span></div>`;
+if(!stockOK)$('#bandeau').innerHTML=`<div class="bandeau">${IC.info}<span><b>Aperçu :</b> cet affichage ne permet pas d’enregistrer. Ouvrez ce fichier dans votre navigateur (Chrome, Edge…) pour garder vos séances.</span></div>`;
 document.body.classList.toggle('nuit',D.prefs.nuit);
 if(D.depart===null)D.depart=hache(contenu(D));
 ecrire(D);etatSave('Enregistré');
