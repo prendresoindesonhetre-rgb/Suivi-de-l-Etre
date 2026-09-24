@@ -1246,7 +1246,7 @@ $('#f-restaure').onchange=async e=>{
 /* ======================== SYNCHRONISATION ========================
    Tes séances, tes blocs, tes bilans et la liste de tes morceaux se retrouvent
    sur tous tes appareils, avec le même compte que ton application Suivi de
-   l'Être (table « regie », lisible par toi seule). Tout reste d'abord sur
+   l'Être (table « regie », lisible par toi seulement). Tout reste d'abord sur
    l'appareil : sans internet, la régie marche normalement et se remet à jour
    au retour du réseau. Les fichiers audio restent sur chaque appareil.
    Pendant qu'une séance est guidée ou préparée, rien ne vient la modifier :
@@ -1659,7 +1659,7 @@ function rendreSalle(){
       const aide=SALLE.alertes.some(x=>x.id===p.identity&&x.type==='aide');
       return `<div class="sl-tuile ${aide?'aide':''} ${a.main?'main':''} ${SALLE.aparte===p.identity?'aparte':''}" data-p="${esc(p.identity)}">${v?'':`<span class="sl-init">${esc((p.name||'?')[0])}</span>`}
         <span class="sl-nom">${esc(p.name||'')}${a.main?' '+IC_MAIN:''}</span>
-        <span class="sl-badges">${SALLE.mode==='retour'||a.ok?(a.ok?'<i class="ok" title="Tout va bien">✓</i>':'<i class="att" title="Pas encore répondu">…</i>'):''}<i title="${a.vu==='tous'?'Visible par tout le groupe':'Visible par toi seule'}">${a.vu==='tous'||a.ok?'👥':'🔒'}</i></span></div>`}).join('')||`<div class="sl-vide">${etat?'':'La salle est ouverte. Les participants arrivent avec leur lien personnel.'}</div>`}</div>
+        <span class="sl-badges">${SALLE.mode==='retour'||a.ok?(a.ok?'<i class="ok" title="Tout va bien">✓</i>':'<i class="att" title="Pas encore répondu">…</i>'):''}<i title="${a.vu==='tous'?'Visible par tout le groupe':'Visible par toi seulement'}">${a.vu==='tous'||a.ok?'👥':'🔒'}</i></span></div>`}).join('')||`<div class="sl-vide">${etat?'':'La salle est ouverte. Les participants arrivent avec leur lien personnel.'}</div>`}</div>
     <div class="sl-moi">
       <div class="sl-moi-v" id="sl-moi-v">${camOn?'':'<span>Caméra coupée</span>'}</div>
       <div class="sl-moi-b">
@@ -1690,7 +1690,7 @@ function ouvrirMenuTuile(id,t){
   fermerMenuTuile();const p=SALLE.room&&SALLE.room.remoteParticipants.get(id);if(!p)return;
   const a=p.attributes||{};
   const m=document.createElement('div');m.className='sl-menu';menuTuile=m;
-  m.innerHTML=`<b>${esc(p.name)}</b><small>${a.vu==='tous'||a.ok?'Visible par tout le groupe':'Visible par toi seule'}${a.camera?'':' · sans caméra'}</small>
+  m.innerHTML=`<b>${esc(p.name)}</b><small>${a.vu==='tous'||a.ok?'Visible par tout le groupe':'Visible par toi seulement'}${a.camera?'':' · sans caméra'}</small>
     <button data-a="aparte">${SALLE.aparte===id?'Terminer l’aparté':'Aparté (vous deux seulement)'}</button>
     <button data-a="appel">Appeler doucement</button>
     <button data-a="parole">${a.main?'Donner la parole (main levée)':'Donner la parole'}</button>
