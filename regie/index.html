@@ -1535,7 +1535,14 @@ async function ouvrirSalle(atelier,seanceId){
   Object.assign(SALLE,{actif:true,room,atelier,mode:'cercle',manuel:false,pause:false,aparte:null,instruments:null,alertes:[],pubMusique:null,etat:'connexion'});
   brancherSalle(room,RoomEvent);
   try{await room.connect(j.url,j.token)}
-  catch(e){SALLE.actif=false;throw Object.assign(new Error('connexion'),{detail:'le service vidéo a refusé la connexion : '+(e.message||e)+' · adresse '+String(j.url||'').split('//').pop()})}
+  catch(e){SALLE.actif=false;
+    let sup='';
+    try{
+      const v=await fetch(`${RDV_API}/api/salle`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${jeton}`},body:JSON.stringify({hote:true,verifier:true})}).then(x=>x.json());
+      sup=v.ok?' · les clés sont acceptées par le service vidéo : le refus vient d’ailleurs'
+        :' · le service vidéo refuse les clés ('+(v.statut||v.raison||'')+' '+(v.message||'')+') · clé '+(v.cle||'?')+', secret de '+(v.secret||'?')+(v.espaces?' · une espace ou un retour à la ligne traîne au début ou à la fin':'');
+    }catch(_){}
+    throw Object.assign(new Error('connexion'),{detail:'le service vidéo a refusé la connexion : '+(e.message||e)+' · adresse '+String(j.url||'').split('//').pop()+sup})}
   SALLE.etat='ok';
   const {Track,AudioPresets}=LivekitClient;
   try{await room.localParticipant.setCameraEnabled(true)}catch(e){}
