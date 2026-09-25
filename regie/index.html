@@ -1842,12 +1842,13 @@ function ouvrirMenuTuile(id,t){
     <button data-a="appel">Appeler doucement</button>
     <button data-a="parole">${a.main?'Donner la parole (main levée)':'Donner la parole'}</button>
     <button data-a="finparole">Reprendre la parole</button>
+    <button data-a="micro-on">Ouvrir son micro</button>
     <button data-a="micro">Couper son micro</button>`;
   document.body.appendChild(m);
   const b=t.getBoundingClientRect();m.style.left=Math.min(innerWidth-230,b.left)+'px';m.style.top=Math.min(innerHeight-250,b.bottom+4)+'px';
   m.onclick=e=>{const x=e.target.closest('[data-a]');if(!x)return;const k=x.dataset.a;
     if(k==='aparte')aparte(id);else if(k==='appel'){envoyerSalle({t:'appel'},id);toast('Un son très doux, chez cette personne seulement')}
-    else if(k==='parole')envoyerSalle({t:'parole',on:true},id);else if(k==='finparole')envoyerSalle({t:'parole',on:false},id);else if(k==='micro')envoyerSalle({t:'micro',on:false},id);
+    else if(k==='parole')envoyerSalle({t:'parole',on:true},id);else if(k==='finparole')envoyerSalle({t:'parole',on:false},id);else if(k==='micro')envoyerSalle({t:'micro',on:false},id);else if(k==='micro-on')envoyerSalle({t:'micro',on:true},id);
     fermerMenuTuile()};
 }
 function fermerMenuTuile(){if(menuTuile){menuTuile.remove();menuTuile=null}}
