@@ -285,6 +285,8 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .lc-transport{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:8px}
 .lc-transport .btn.rond{width:46px;height:46px;font-size:13px;font-weight:800}
 .lc-transport #lc-play{width:58px;height:58px}
+.rap{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:13px;color:var(--muted)}
+.rap .pas{margin:0}
 .lc-vol{display:grid;grid-template-columns:auto minmax(0,1fr) 46px;gap:8px;align-items:center;margin-top:12px;color:var(--muted)}
 .lc-vol b{font-size:13px;text-align:right;color:var(--ink)}
 .lc-fondus{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--muted)}
@@ -923,6 +925,7 @@ function vueGuider(id){
         <div id="g-aide"></div>
         <div id="g-musique"></div>
         <div id="g-repere"></div>
+        <div id="g-rapide"></div>
       </aside>
     </div>
     <div class="g-bas">
@@ -951,8 +954,19 @@ function rendreReglagesGuide(){
     <div class="bloc-reglage"><label class="bascule"><input type="checkbox" id="r-blocs" ${p.autoBlocs?'checked':''}>Passer au temps suivant tout seul</label></div>
     <div class="sep"></div>
     <div class="bloc-reglage" style="color:var(--muted);line-height:1.6;font-size:12.5px">Pédale tourne-page ou clavier :<br>→ temps suivant · ← précédent<br>Espace : démarrer / pause · N : mode nuit<br>↑ ↓ : faire défiler le texte</div>`;
-  $('#r-auto').onchange=e=>{p.autoTexte=e.target.checked;sauverBientot()};
-  $('#r-blocs').onchange=e=>{p.autoBlocs=e.target.checked;sauverBientot()};
+  const rapide=$('#g-rapide');
+  if(rapide)rapide.innerHTML=`<div class="o-carte"><span class="kicker">Réglages</span>
+    <div class="rap"><span>Vitesse de lecture</span><div class="pas"><button class="btn" data-rr="wpm:-5">−</button><b>${p.wpm}</b><button class="btn" data-rr="wpm:5">+</button></div></div>
+    <div class="rap"><span>Taille du texte</span><div class="pas"><button class="btn" data-rr="taille:-2">A−</button><b>${p.taille}</b><button class="btn" data-rr="taille:2">A+</button></div></div>
+    <label class="bascule petit"><input type="checkbox" id="rr-auto" ${p.autoTexte?'checked':''}>Le texte défile tout seul</label>
+    <label class="bascule petit"><input type="checkbox" id="rr-blocs" ${p.autoBlocs?'checked':''}>Passer au temps suivant tout seul</label></div>`;
+  if(rapide){
+    $('#rr-auto').onchange=e=>{p.autoTexte=e.target.checked;sauverBientot();rendreReglagesGuide()};
+    $('#rr-blocs').onchange=e=>{p.autoBlocs=e.target.checked;sauverBientot();rendreReglagesGuide()};
+    $$('#g-rapide [data-rr]').forEach(x=>x.onclick=()=>{const [k,d]=x.dataset.rr.split(':');p[k]=k==='wpm'?clamp(p.wpm+ +d,40,180):clamp(p.taille+ +d,18,52);if(k==='wpm')p.autoTexte=true;document.documentElement.style.setProperty('--taille',p.taille+'px');sauverBientot();rendreReglagesGuide()});
+  }
+  $('#r-auto').onchange=e=>{p.autoTexte=e.target.checked;sauverBientot();rendreReglagesGuide()};
+  $('#r-blocs').onchange=e=>{p.autoBlocs=e.target.checked;sauverBientot();rendreReglagesGuide()};
   $$('#g-reglages [data-r]').forEach(x=>x.onclick=e=>{e.stopPropagation();const [k,d]=x.dataset.r.split(':');p[k]=k==='wpm'?clamp(p.wpm+ +d,40,180):clamp(p.taille+ +d,18,52);if(k==='wpm')p.autoTexte=true;document.documentElement.style.setProperty('--taille',p.taille+'px');sauverBientot();rendreReglagesGuide()});
 }
 function quitterGuide(){fermerSalle();fermerMenuTuile();clearInterval(tickH);if(A.joue)sortie(1.5);libererEveil();G=null}
@@ -1444,7 +1458,8 @@ async function fenetreSalle(seanceId,atelierId){
       <div><div class="fs-apercu"><video id="fs-video" autoplay playsinline muted></video><span id="fs-sans" class="cache">Caméra indisponible</span></div>
         <div class="fs-vu" id="fs-vu">${'<i></i>'.repeat(12)}</div>
         <label class="champ">Caméra<select id="fs-cam"></select></label>
-        <label class="champ">Micro<select id="fs-mic"></select></label></div>
+        <label class="champ">Micro<select id="fs-mic"></select></label>
+        <button type="button" class="btn s" id="fs-relister" style="margin-top:4px">Chercher à nouveau</button></div>
       <div>
         <label class="champ">Atelier<select id="fs-atelier"><option value="">Chargement…</option></select></label>
         <div class="fs-info" id="fs-info"></div>
@@ -1459,7 +1474,7 @@ async function fenetreSalle(seanceId,atelierId){
   </div>`;
   document.body.appendChild(v);
   let flux=null,ctxVu=null;
-  const fermer=()=>{v.remove();if(flux)flux.getTracks().forEach(t=>t.stop());try{ctxVu&&ctxVu.close()}catch(e){}};
+  const fermer=()=>{v.remove();if(flux)flux.getTracks().forEach(t=>t.stop());try{ctxVu&&ctxVu.close()}catch(e){}try{navigator.mediaDevices.ondevicechange=null}catch(e){}};
   $('#fs-annuler').onclick=fermer;
   const apercu=async()=>{
     if(flux)flux.getTracks().forEach(t=>t.stop());
@@ -1477,6 +1492,16 @@ async function fenetreSalle(seanceId,atelierId){
     $('#fs-mic').innerHTML=opt('audioinput',mic&&mic.getSettings().deviceId)||'<option value="">Aucun micro</option>';
   }catch(e){}
   $('#fs-cam').onchange=apercu;$('#fs-mic').onchange=apercu;
+  // Un micro branché maintenant doit apparaître sans rouvrir la fenêtre.
+  const relister=async()=>{
+    try{const app=await navigator.mediaDevices.enumerateDevices();
+      const opt=(k,sel)=>app.filter(x=>x.kind===k).map((x,i)=>`<option value="${x.deviceId}" ${x.deviceId===sel?'selected':''}>${esc(x.label||(k==='videoinput'?'Caméra ':'Micro ')+(i+1))}</option>`).join('');
+      $('#fs-cam').innerHTML=opt('videoinput',$('#fs-cam').value)||'<option value="">Aucune caméra</option>';
+      $('#fs-mic').innerHTML=opt('audioinput',$('#fs-mic').value)||'<option value="">Aucun micro</option>';
+    }catch(e){}
+  };
+  $('#fs-relister').onclick=relister;
+  try{navigator.mediaDevices.ondevicechange=relister}catch(e){}
   // Les ateliers en visio, à venir (celui du jour en premier)
   const auj=new Date();const iso=`${auj.getFullYear()}-${String(auj.getMonth()+1).padStart(2,'0')}-${String(auj.getDate()).padStart(2,'0')}`;
   let ateliers=[];
@@ -1485,11 +1510,18 @@ async function fenetreSalle(seanceId,atelierId){
     if(r.ok)ateliers=(await r.json()).map(a=>Object.assign(a,{genre:'atelier',cle:'a'+a.id}));
     if(ateliers.length){const ri=await sb(`inscriptions_ateliers?atelier_id=in.(${ateliers.map(a=>a.id).join(',')})&statut=in.(payee,invitee)&select=atelier_id`,{},jeton);const ins=ri.ok?await ri.json():[];ateliers.forEach(a=>a.nb=ins.filter(x=>x.atelier_id===a.id).length)}
     // Les rendez-vous individuels du jour qui ont lieu en visio (l'agenda fait foi).
-    const rs=await sb('sync?id=eq.1&select=rdvs,clients',{},jeton);
+    const rs=await sb('sync?id=eq.1&select=rdvs,clients,parametres',{},jeton);
     if(rs.ok){const s0=(await rs.json())[0]||{};
-      (s0.rdvs||[]).filter(x=>x.date===iso&&!x.annule&&x.enLigne&&x.enLigne.demandeId&&(x.enLigne.lieu==='visio'||/visio/i.test(x.lieu||''))).forEach(x=>{
+      const duSite=x=>x.enLigne&&x.enLigne.demandeId&&(x.enLigne.lieu==='visio'||/visio/i.test(x.lieu||''));
+      (s0.rdvs||[]).filter(x=>x.date===iso&&!x.annule&&(duSite(x)||x.visio)).forEach(x=>{
         const c=(s0.clients||[]).find(y=>String(y.id)===String(x.clientId));
-        ateliers.push({genre:'rdv',cle:'r'+x.enLigne.demandeId,demandeId:x.enLigne.demandeId,titre:c?`Séance avec ${c.prenom}`:'Séance individuelle',date:x.date,heure_debut:x.heure,heure_fin:'',nb:1});
+        const titre=c?`Séance avec ${c.prenom}`:'Séance individuelle';
+        if(duSite(x))ateliers.push({genre:'rdv',cle:'r'+x.enLigne.demandeId,demandeId:x.enLigne.demandeId,titre,date:x.date,heure_debut:x.heure,heure_fin:'',nb:1});
+        else ateliers.push({genre:'agenda',cle:'g'+x.id,id:x.id,titre,date:x.date,heure_debut:x.heure,heure_fin:'',nb:1});
+      });
+      // Les salles sur mesure : un moment qui n'est pas un rendez-vous.
+      (((s0.parametres||{}).salles)||[]).filter(x=>x.date===iso).forEach(x=>{
+        ateliers.push({genre:'salle',cle:'s'+x.id,id:x.id,titre:x.titre||'Salle sur mesure',date:x.date,heure_debut:x.heure,heure_fin:'',nb:0});
       });
       ateliers.sort((x,y)=>(x.date+x.heure_debut).localeCompare(y.date+y.heure_debut));
     }
@@ -1498,9 +1530,10 @@ async function fenetreSalle(seanceId,atelierId){
   $('#fs-atelier').innerHTML=ateliers.length?ateliers.map(a=>`<option value="${a.cle}" ${String(a.id)===String(atelierId)?'selected':''}>${a.date===iso?'Aujourd’hui':jour(a.date)} · ${a.heure_debut.replace(':',' h ')} · ${esc(a.titre)}${a.genre==='rdv'?' (individuel)':''}</option>`).join(''):'<option value="">Rien en visio pour le moment</option>';
   const majInfo=()=>{const a=ateliers.find(x=>x.cle===$('#fs-atelier').value);
     $('#fs-info').innerHTML=!a?'Créez d’abord un atelier en visio dans votre application (Mes ateliers), ou acceptez une demande de rendez-vous en visio.'
-      :a.genre==='rdv'?'Rendez-vous individuel · la salle ouvre un quart d’heure avant.'
+      :a.genre==='salle'?'Salle sur mesure · chacun entre avec le lien que vous avez envoyé, et écrit son prénom.'
+      :a.genre==='rdv'||a.genre==='agenda'?'Rendez-vous individuel · la salle ouvre un quart d’heure avant.'
       :`<b>${a.nb||0}</b> place${a.nb>1?'s':''} confirmée${a.nb>1?'s':''} · la salle ouvre aux participants 30 min avant.`;
-    if(a&&a.genre==='rdv'){const ind=D.seances.find(s=>s.genre==='individuel');if(ind)$('#fs-seance').value=ind.id}
+    if(a&&(a.genre==='rdv'||a.genre==='agenda')){const ind=D.seances.find(s=>s.genre==='individuel');if(ind)$('#fs-seance').value=ind.id}
     else if(a&&a.seance_id&&D.seances.some(s=>s.id===a.seance_id))$('#fs-seance').value=a.seance_id;
     $('#fs-ok').disabled=!a};
   $('#fs-atelier').onchange=majInfo;majInfo();
@@ -1509,7 +1542,7 @@ async function fenetreSalle(seanceId,atelierId){
     const ok=$('#fs-ok');ok.disabled=true;ok.textContent='Ouverture…';$('#fs-err').classList.add('cache');$('#fs-detail').classList.add('cache');
     SALLE.camId=$('#fs-cam').value;SALLE.micId=$('#fs-mic').value;SALLE.ecoute=$('#fs-ecoute').checked;
     const seance=$('#fs-seance').value;
-    if(a.genre!=='rdv'&&a.seance_id!==seance)sb(`ateliers?id=eq.${a.id}`,{method:'PATCH',body:JSON.stringify({seance_id:seance})},jeton).catch(()=>{});
+    if(a.genre==='atelier'&&a.seance_id!==seance)sb(`ateliers?id=eq.${a.id}`,{method:'PATCH',body:JSON.stringify({seance_id:seance})},jeton).catch(()=>{});
     if(flux)flux.getTracks().forEach(t=>t.stop());flux=null;
     try{await ouvrirSalle(a,seance);fermer()}
     catch(e){ok.disabled=false;ok.innerHTML=`${IC_VISIO} Ouvrir la salle`;const x=$('#fs-err');x.classList.remove('cache');
@@ -1520,7 +1553,10 @@ async function fenetreSalle(seanceId,atelierId){
 
 async function ouvrirSalle(atelier,seanceId){
   const jeton=await jetonValide();if(!jeton)throw new Error('session');
-  const corps=atelier.genre==='rdv'?{hote:true,demandeId:atelier.demandeId}:{hote:true,atelierId:atelier.id};
+  const corps=atelier.genre==='rdv'?{hote:true,demandeId:atelier.demandeId}
+    :atelier.genre==='agenda'?{hote:true,genre:'rdv',id:atelier.id}
+    :atelier.genre==='salle'?{hote:true,genre:'salle',id:atelier.id}
+    :{hote:true,atelierId:atelier.id};
   let r;
   try{r=await fetch(`${RDV_API}/api/salle`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${jeton}`},body:JSON.stringify(corps)})}
   catch(e){throw Object.assign(new Error('reseau'),{detail:'je n’ai pas pu joindre le serveur des rendez-vous ('+(e.message||'')+')'})}
@@ -1694,6 +1730,7 @@ function rendreSalle(){
       <div class="sl-moi-b">
         <button class="btn s ${micOn?'':'off'}" id="sl-mic">${micOn?'Micro ouvert':'Micro coupé'}</button>
         <button class="btn s ${camOn?'':'off'}" id="sl-cam">${camOn?'Caméra':'Caméra coupée'}</button>
+        <button class="btn s" id="sl-appareils" title="Changer de micro ou de caméra">Micro / caméra</button>
         <button class="btn s ${SALLE.instruments?'on':''}" id="sl-son" title="Voix : le navigateur nettoie le son. Instruments : le son brut, fidèle.">Son : ${SALLE.instruments?'instruments':'voix'}</button>
         <label class="bascule petit"><input type="checkbox" id="sl-ecoute" ${SALLE.ecoute?'checked':''}> J’entends la musique</label>
       </div>
@@ -1712,9 +1749,51 @@ function rendreSalle(){
   $$('#g-salle [data-traite]').forEach(b=>b.onclick=()=>traiterAlerte(b.dataset.traite));
   $('#sl-mic').onclick=()=>micHote(!micOn);$('#sl-cam').onclick=()=>camHote(!camOn);
   $('#sl-son').onclick=()=>profilMicro(!SALLE.instruments);
+  $('#sl-appareils').onclick=fenetreAppareils;
   $('#sl-ecoute').onchange=e=>ecouteMusique(e.target.checked);
   $$('#g-salle .sl-tuile').forEach(t=>t.onclick=e=>{e.stopPropagation();ouvrirMenuTuile(t.dataset.p,t)});
 }
+/* Changer de micro ou de caméra, avant comme pendant la séance. Un appareil
+   branché après l'ouverture de la page n'apparaît qu'après « Chercher à
+   nouveau » : c'est le navigateur qui garde son ancienne liste. */
+async function fenetreAppareils(){
+  if($('#voile-appareils'))return;
+  const v=document.createElement('div');v.className='voile';v.id='voile-appareils';
+  v.innerHTML=`<div class="fenetre">
+    <h2>Micro et caméra</h2>
+    <label class="champ">Caméra<select id="ap-cam"></select></label>
+    <label class="champ">Micro<select id="ap-mic"></select></label>
+    <p class="aide">Le changement est immédiat, même en pleine séance : personne ne sort de la salle. Un appareil que vous venez de brancher n'apparaît qu'après « Chercher à nouveau ».</p>
+    <div class="err cache" id="ap-err"></div>
+    <div class="actions"><button type="button" class="btn" id="ap-refresh">Chercher à nouveau</button><button type="button" class="btn p" id="ap-ok">Terminé</button></div>
+  </div>`;
+  document.body.appendChild(v);
+  const lister=async()=>{
+    try{
+      let app=await navigator.mediaDevices.enumerateDevices();
+      // Sans autorisation, les appareils n'ont pas de nom : on la demande une fois.
+      if(app.some(x=>!x.label)){try{const f=await navigator.mediaDevices.getUserMedia({audio:true,video:true});f.getTracks().forEach(t=>t.stop());app=await navigator.mediaDevices.enumerateDevices()}catch(e){}}
+      const opt=(k,sel)=>app.filter(x=>x.kind===k).map((x,i)=>`<option value="${x.deviceId}" ${x.deviceId===sel?'selected':''}>${esc(x.label||((k==='videoinput'?'Caméra ':'Micro ')+(i+1)))}</option>`).join('');
+      $('#ap-cam').innerHTML=opt('videoinput',SALLE.camId)||'<option value="">Aucune caméra trouvée</option>';
+      $('#ap-mic').innerHTML=opt('audioinput',SALLE.micId)||'<option value="">Aucun micro trouvé</option>';
+    }catch(e){}
+  };
+  await lister();
+  const bascule=async(genre,id,quoi)=>{
+    if(!SALLE.room)return;
+    const x=$('#ap-err');
+    try{await SALLE.room.switchActiveDevice(genre,id);x.classList.add('cache')}
+    catch(e){x.classList.remove('cache');x.textContent=`Ce ${quoi} n'a pas pu être utilisé : il est peut-être déjà pris par un autre programme.`}
+  };
+  $('#ap-cam').onchange=e=>{SALLE.camId=e.target.value;bascule('videoinput',e.target.value,'caméra')};
+  $('#ap-mic').onchange=e=>{SALLE.micId=e.target.value;bascule('audioinput',e.target.value,'micro')};
+  $('#ap-refresh').onclick=lister;
+  const fermer=()=>{try{navigator.mediaDevices.ondevicechange=null}catch(e){}v.remove()};
+  $('#ap-ok').onclick=fermer;
+  v.onclick=e=>{if(e.target===v)fermer()};
+  try{navigator.mediaDevices.ondevicechange=lister}catch(e){}
+}
+
 function ouvrirMenuTuile(id,t){
   fermerMenuTuile();const p=SALLE.room&&SALLE.room.remoteParticipants.get(id);if(!p)return;
   const a=p.attributes||{};
