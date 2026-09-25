@@ -15,6 +15,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Mulish:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+.lien-boite{background:var(--canard-light);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--canard-dark);font-weight:600;word-break:break-all;margin:10px 0}
 .fs-detail{margin-top:6px;font-size:12px;color:var(--muted);word-break:break-word}
 :root{
   --fond:#f4f0fb; --carte:rgba(255,255,255,.88); --plein:#fff; --ink:#383650; --muted:#6b6880;
@@ -1731,6 +1732,7 @@ function rendreSalle(){
         <button class="btn s ${micOn?'':'off'}" id="sl-mic">${micOn?'Micro ouvert':'Micro coupé'}</button>
         <button class="btn s ${camOn?'':'off'}" id="sl-cam">${camOn?'Caméra':'Caméra coupée'}</button>
         <button class="btn s" id="sl-appareils" title="Changer de micro ou de caméra">Micro / caméra</button>
+        <button class="btn s" id="sl-lien" title="Le lien pour entrer dans cette salle">Le lien</button>
         <button class="btn s ${SALLE.instruments?'on':''}" id="sl-son" title="Voix : le navigateur nettoie le son. Instruments : le son brut, fidèle.">Son : ${SALLE.instruments?'instruments':'voix'}</button>
         <label class="bascule petit"><input type="checkbox" id="sl-ecoute" ${SALLE.ecoute?'checked':''}> J’entends la musique</label>
       </div>
@@ -1750,12 +1752,42 @@ function rendreSalle(){
   $('#sl-mic').onclick=()=>micHote(!micOn);$('#sl-cam').onclick=()=>camHote(!camOn);
   $('#sl-son').onclick=()=>profilMicro(!SALLE.instruments);
   $('#sl-appareils').onclick=fenetreAppareils;
+  $('#sl-lien').onclick=fenetreLienSalle;
   $('#sl-ecoute').onchange=e=>ecouteMusique(e.target.checked);
   $$('#g-salle .sl-tuile').forEach(t=>t.onclick=e=>{e.stopPropagation();ouvrirMenuTuile(t.dataset.p,t)});
 }
 /* Changer de micro ou de caméra, avant comme pendant la séance. Un appareil
    branché après l'ouverture de la page n'apparaît qu'après « Chercher à
    nouveau » : c'est le navigateur qui garde son ancienne liste. */
+/* Le lien d'entrée de la salle en cours : on le demande au serveur des
+   rendez-vous, qui le signe. Utile quand quelqu'un a perdu le sien. */
+async function fenetreLienSalle(){
+  if($('#voile-lien')||!SALLE.atelier)return;
+  const a=SALLE.atelier;
+  const v=document.createElement('div');v.className='voile';v.id='voile-lien';
+  v.innerHTML=`<div class="fenetre">
+    <h2>Le lien de la salle</h2>
+    <p class="aide">À envoyer à quelqu'un qui n'arrive pas à entrer : la personne écrit son prénom et rejoint la salle. ${a.genre==='atelier'?'Elle entre sans inscription : ne l’envoyez qu’à quelqu’un que vous invitez.':''}</p>
+    <div class="lien-boite" id="lien-txt">un instant…</div>
+    <div class="actions"><button type="button" class="btn" id="lien-copier">Copier</button><button type="button" class="btn p" id="lien-ok">Fermer</button></div>
+  </div>`;
+  document.body.appendChild(v);
+  const fermer=()=>v.remove();
+  $('#lien-ok').onclick=fermer;v.onclick=e=>{if(e.target===v)fermer()};
+  const corps=a.genre==='rdv'?{lien:true,demandeId:a.demandeId}
+    :a.genre==='agenda'?{lien:true,genre:'rdv',id:a.id}
+    :a.genre==='salle'?{lien:true,genre:'salle',id:a.id}
+    :{lien:true,genre:'atelier',id:a.id};
+  try{
+    const jeton=await jetonValide();
+    const r=await fetch(`${RDV_API}/api/salle`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${jeton}`},body:JSON.stringify(corps)});
+    const j=await r.json();
+    if(!j.lien)throw new Error('lien');
+    $('#lien-txt').textContent=j.lien;
+    $('#lien-copier').onclick=()=>{navigator.clipboard.writeText(j.lien).then(()=>toast('Lien copié'),()=>toast('Copie impossible : sélectionnez le lien'))};
+  }catch(e){$('#lien-txt').textContent='Le lien n’a pas pu être préparé (connexion ?).'}
+}
+
 async function fenetreAppareils(){
   if($('#voile-appareils'))return;
   const v=document.createElement('div');v.className='voile';v.id='voile-appareils';
