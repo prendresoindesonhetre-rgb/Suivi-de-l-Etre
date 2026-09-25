@@ -1433,7 +1433,7 @@ function demarrerSync(){
 const RDV_API='https://rendez-vous.prendresoindesonhetre.fr';
 const LK_SRC='https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js';
 const MODES={cercle:{nom:'Cercle',aide:'Tout le monde se voit et peut parler'},ecoute:{nom:'Écoute',aide:'Micros coupés, lumière baissée'},musique:{nom:'Musique',aide:'Lumière baissée, votre micro garde le vrai son'},retour:{nom:'Retour',aide:'« Comment vous sentez-vous ? »'}};
-const SALLE={actif:false,room:null,atelier:null,mode:'cercle',manuel:false,pause:false,aparte:null,ecoute:false,instruments:null,micId:'',camId:'',alertes:[],pubMusique:null,grand:false,etat:''};
+const SALLE={actif:false,room:null,atelier:null,mode:'cercle',manuel:false,pause:false,aparte:null,ecoute:false,instruments:null,micId:'',camId:'',sonId:'',alertes:[],pubMusique:null,grand:false,etat:''};
 const IC_VISIO=I('<rect x="3" y="6" width="12" height="12" rx="2"/><path d="M15 10l6-3v10l-6-3"/>',15);
 const IC_MAIN='✋';
 let lkP=null;
@@ -1763,6 +1763,7 @@ async function fenetreAppareils(){
     <h2>Micro et caméra</h2>
     <label class="champ">Caméra<select id="ap-cam"></select></label>
     <label class="champ">Micro<select id="ap-mic"></select></label>
+    <label class="champ cache" id="ap-son-l">Sortie du son<select id="ap-son"></select></label>
     <p class="aide">Le changement est immédiat, même en pleine séance : personne ne sort de la salle. Un appareil que vous venez de brancher n'apparaît qu'après « Chercher à nouveau ».</p>
     <div class="err cache" id="ap-err"></div>
     <div class="actions"><button type="button" class="btn" id="ap-refresh">Chercher à nouveau</button><button type="button" class="btn p" id="ap-ok">Terminé</button></div>
@@ -1776,6 +1777,10 @@ async function fenetreAppareils(){
       const opt=(k,sel)=>app.filter(x=>x.kind===k).map((x,i)=>`<option value="${x.deviceId}" ${x.deviceId===sel?'selected':''}>${esc(x.label||((k==='videoinput'?'Caméra ':'Micro ')+(i+1)))}</option>`).join('');
       $('#ap-cam').innerHTML=opt('videoinput',SALLE.camId)||'<option value="">Aucune caméra trouvée</option>';
       $('#ap-mic').innerHTML=opt('audioinput',SALLE.micId)||'<option value="">Aucun micro trouvé</option>';
+      // Tous les navigateurs ne savent pas changer de sortie : sinon, on cache.
+      const possible=app.some(x=>x.kind==='audiooutput')&&'setSinkId' in HTMLMediaElement.prototype;
+      $('#ap-son-l').classList.toggle('cache',!possible);
+      if(possible)$('#ap-son').innerHTML=opt('audiooutput',SALLE.sonId);
     }catch(e){}
   };
   await lister();
@@ -1787,6 +1792,8 @@ async function fenetreAppareils(){
   };
   $('#ap-cam').onchange=e=>{SALLE.camId=e.target.value;bascule('videoinput',e.target.value,'caméra')};
   $('#ap-mic').onchange=e=>{SALLE.micId=e.target.value;bascule('audioinput',e.target.value,'micro')};
+  $('#ap-son').onchange=e=>{SALLE.sonId=e.target.value;bascule('audiooutput',e.target.value,'haut-parleur');
+    document.querySelectorAll('#sl-sons audio').forEach(a=>{try{a.setSinkId(e.target.value)}catch(x){}})};
   $('#ap-refresh').onclick=lister;
   const fermer=()=>{try{navigator.mediaDevices.ondevicechange=null}catch(e){}v.remove()};
   $('#ap-ok').onclick=fermer;
