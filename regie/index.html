@@ -15,6 +15,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Mulish:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+.fs-detail{margin-top:6px;font-size:12px;color:var(--muted);word-break:break-word}
 :root{
   --fond:#f4f0fb; --carte:rgba(255,255,255,.88); --plein:#fff; --ink:#383650; --muted:#6b6880;
   --line:#e4dff0; --line-bleu:#bfdaf3; --canard:#2c7a87; --canard-deep:#1a7a7a; --canard-dark:#145f5f; --canard-light:#e8f5f5;
@@ -1451,6 +1452,7 @@ async function fenetreSalle(seanceId,atelierId){
         <label class="bascule"><input type="checkbox" id="fs-ecoute"> J’entends aussi la musique (avec un casque)</label>
         <p class="aide" style="margin:6px 0 0">Sans casque, laissez décoché : la musique part directement chez les participants, sans repasser par votre micro.</p>
         <div class="err cache" id="fs-err"></div>
+        <div class="fs-detail cache" id="fs-detail"></div>
       </div>
     </div>
     <div class="actions"><button type="button" class="btn" id="fs-annuler">Annuler</button><button type="button" class="btn p" id="fs-ok" disabled>${IC_VISIO} Ouvrir la salle</button></div>
@@ -1504,13 +1506,14 @@ async function fenetreSalle(seanceId,atelierId){
   $('#fs-atelier').onchange=majInfo;majInfo();
   $('#fs-ok').onclick=async()=>{
     const a=ateliers.find(x=>x.cle===$('#fs-atelier').value);if(!a)return;
-    const ok=$('#fs-ok');ok.disabled=true;ok.textContent='Ouverture…';$('#fs-err').classList.add('cache');
+    const ok=$('#fs-ok');ok.disabled=true;ok.textContent='Ouverture…';$('#fs-err').classList.add('cache');$('#fs-detail').classList.add('cache');
     SALLE.camId=$('#fs-cam').value;SALLE.micId=$('#fs-mic').value;SALLE.ecoute=$('#fs-ecoute').checked;
     const seance=$('#fs-seance').value;
     if(a.genre!=='rdv'&&a.seance_id!==seance)sb(`ateliers?id=eq.${a.id}`,{method:'PATCH',body:JSON.stringify({seance_id:seance})},jeton).catch(()=>{});
     if(flux)flux.getTracks().forEach(t=>t.stop());flux=null;
     try{await ouvrirSalle(a,seance);fermer()}
     catch(e){ok.disabled=false;ok.innerHTML=`${IC_VISIO} Ouvrir la salle`;const x=$('#fs-err');x.classList.remove('cache');
+      const d=$('#fs-detail');d.textContent='détail : '+(e.detail||e.message||'');d.classList.toggle('cache',!e.detail);
       x.textContent=e.message==='non-configure'?'La salle n’est pas encore branchée : il manque le service vidéo (LiveKit). Vous pouvez quand même guider la séance ici, sans visio.':e.message==='session'?'Votre session a expiré : reconnectez-vous.':'La salle n’a pas pu s’ouvrir (connexion ?). Réessayez dans un instant.';apercu()}
   };
 }
@@ -1518,17 +1521,21 @@ async function fenetreSalle(seanceId,atelierId){
 async function ouvrirSalle(atelier,seanceId){
   const jeton=await jetonValide();if(!jeton)throw new Error('session');
   const corps=atelier.genre==='rdv'?{hote:true,demandeId:atelier.demandeId}:{hote:true,atelierId:atelier.id};
-  const r=await fetch(`${RDV_API}/api/salle`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${jeton}`},body:JSON.stringify(corps)});
+  let r;
+  try{r=await fetch(`${RDV_API}/api/salle`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${jeton}`},body:JSON.stringify(corps)})}
+  catch(e){throw Object.assign(new Error('reseau'),{detail:'je n’ai pas pu joindre le serveur des rendez-vous ('+(e.message||'')+')'})}
   if(r.status===503)throw new Error('non-configure');
   if(r.status===401)throw new Error('session');
-  if(!r.ok)throw new Error('serveur');
+  if(!r.ok){const t=await r.text().catch(()=>'');throw Object.assign(new Error('serveur'),{detail:'le serveur a répondu '+r.status+' '+t.slice(0,120)})}
   const j=await r.json();
-  await chargerLiveKit();
+  try{await chargerLiveKit()}
+  catch(e){throw Object.assign(new Error('chargement'),{detail:'le module vidéo n’a pas pu être téléchargé (bloqueur de publicité ? réseau ?)'})}
   const {Room,RoomEvent,VideoPresets}=LivekitClient;
   const room=new Room({adaptiveStream:true,dynacast:true,videoCaptureDefaults:{resolution:VideoPresets.h540.resolution,deviceId:SALLE.camId||undefined},audioCaptureDefaults:{deviceId:SALLE.micId||undefined,echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
   Object.assign(SALLE,{actif:true,room,atelier,mode:'cercle',manuel:false,pause:false,aparte:null,instruments:null,alertes:[],pubMusique:null,etat:'connexion'});
   brancherSalle(room,RoomEvent);
-  await room.connect(j.url,j.token);
+  try{await room.connect(j.url,j.token)}
+  catch(e){SALLE.actif=false;throw Object.assign(new Error('connexion'),{detail:'le service vidéo a refusé la connexion : '+(e.message||e)+' · adresse '+String(j.url||'').split('//').pop()})}
   SALLE.etat='ok';
   const {Track,AudioPresets}=LivekitClient;
   try{await room.localParticipant.setCameraEnabled(true)}catch(e){}
