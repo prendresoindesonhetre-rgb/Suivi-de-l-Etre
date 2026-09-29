@@ -423,6 +423,10 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .sl-pas-ok{display:inline-flex;gap:5px;align-items:center;background:#fff;border-radius:999px;padding:2px 9px;margin:4px 4px 0 0;color:var(--ink);font-weight:700}
 .sl-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;align-content:start;flex:1 0 auto;min-height:60px}
 .guide.visio.grande .sl-grille{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.sl-ecrans{display:grid;gap:8px;margin-bottom:8px}
+.sl-ecran{position:relative;background:#0d0b14;border-radius:14px;overflow:hidden;min-height:110px}
+.sl-ecran video{width:100%;height:100%;object-fit:contain;display:block;background:#0d0b14}
+.sl-ecran span{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.55);color:#fff;border-radius:99px;padding:2px 9px;font-size:11.5px;font-weight:700}
 .sl-tuile{position:relative;aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:#241f36;cursor:pointer;box-shadow:0 0 0 1px var(--line)}
 .sl-tuile video{width:100%;height:100%;object-fit:cover;display:block}
 .sl-tuile.parle{box-shadow:0 0 0 3px var(--aqua)}
@@ -1434,7 +1438,7 @@ function demarrerSync(){
 const RDV_API='https://rendez-vous.prendresoindesonhetre.fr';
 const LK_SRC='https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js';
 const MODES={cercle:{nom:'Cercle',aide:'Tout le monde se voit et peut parler'},ecoute:{nom:'Écoute',aide:'Micros coupés, lumière baissée'},musique:{nom:'Musique',aide:'Lumière baissée, votre micro garde le vrai son'},retour:{nom:'Retour',aide:'« Comment vous sentez-vous ? »'}};
-const SALLE={actif:false,room:null,atelier:null,mode:'cercle',manuel:false,pause:false,aparte:null,ecoute:false,instruments:null,micId:'',camId:'',sonId:'',alertes:[],pubMusique:null,grand:false,etat:''};
+const SALLE={actif:false,room:null,atelier:null,mode:'cercle',manuel:false,pause:false,aparte:null,ecoute:false,instruments:null,ecran:false,micId:'',camId:'',sonId:'',alertes:[],pubMusique:null,grand:false,etat:''};
 const IC_VISIO=I('<rect x="3" y="6" width="12" height="12" rx="2"/><path d="M15 10l6-3v10l-6-3"/>',15);
 const IC_MAIN='✋';
 let lkP=null;
@@ -1721,6 +1725,8 @@ function rendreSalle(){
     <div class="sl-mode-info">${SALLE.manuel?`Mode choisi à la main · <button class="lien" id="sl-auto">revenir à celui du temps</button>`:`Mode du temps : ${MODES[SALLE.mode].aide.toLowerCase()}`}${SALLE.aparte?`<br><b>Aparté en cours</b> avec ${esc((gens.find(p=>p.identity===SALLE.aparte)||{}).name||'')} · <button class="lien" id="sl-fin-aparte">terminer</button>`:''}</div>
     ${SALLE.alertes.length?`<div class="sl-alertes">${SALLE.alertes.map(alerte).join('')}</div>`:''}
     ${SALLE.mode==='retour'&&gens.length?`<div class="sl-retour"><b>Qui est bien revenu ?</b> <span>${ok} / ${gens.length}</span>${pasOk.length?`<div>${pasOk.map(p=>`<span class="sl-pas-ok">${esc(p.name)}<button class="lien" data-appel="${esc(p.identity)}">appeler</button></span>`).join('')}</div>`:'<div style="color:var(--ok)">Tout le monde a répondu « Tout va bien ».</div>'}</div>`:''}
+    ${(()=>{const e=[...gens].map(p=>({p,pub:Track&&p.getTrackPublication(Track.Source.ScreenShare)})).filter(x=>x.pub&&x.pub.track&&!x.pub.isMuted);
+      return e.length?`<div class="sl-ecrans">${e.map(x=>`<div class="sl-ecran" data-e="${esc(x.p.identity)}"><span>Écran de ${esc(x.p.name||'')}</span></div>`).join('')}</div>`:''})()}
     <div class="sl-grille">${tri.map(p=>{const a=at(p),cam=Track&&p.getTrackPublication(Track.Source.Camera),v=cam&&cam.track&&!cam.isMuted;
       const aide=SALLE.alertes.some(x=>x.id===p.identity&&x.type==='aide');
       return `<div class="sl-tuile ${aide?'aide':''} ${a.main?'main':''} ${SALLE.aparte===p.identity?'aparte':''}" data-p="${esc(p.identity)}">${v?'':`<span class="sl-init">${esc((p.name||'?')[0])}</span>`}
@@ -1733,11 +1739,16 @@ function rendreSalle(){
         <button class="btn s ${camOn?'':'off'}" id="sl-cam">${camOn?'Caméra':'Caméra coupée'}</button>
         <button class="btn s" id="sl-appareils" title="Changer de micro ou de caméra">Micro / caméra</button>
         <button class="btn s" id="sl-lien" title="Le lien pour entrer dans cette salle">Le lien</button>
+        <button class="btn s ${SALLE.ecran ? 'on' : ''}" id="sl-ecran" title="Montrer votre écran à la salle">${SALLE.ecran ? 'Arrêter le partage' : 'Partager l’écran'}</button>
         <button class="btn s ${SALLE.instruments?'on':''}" id="sl-son" title="Voix : le navigateur nettoie le son. Instruments : le son brut, fidèle.">Son : ${SALLE.instruments?'instruments':'voix'}</button>
         <label class="bascule petit"><input type="checkbox" id="sl-ecoute" ${SALLE.ecoute?'checked':''}> J’entends la musique</label>
       </div>
     </div>
 `;
+  // L'écran partagé par quelqu'un
+  [...gens].forEach(p=>{const pub=Track&&p.getTrackPublication(Track.Source.ScreenShare);
+    if(pub&&pub.track&&!pub.isMuted){const c=el.querySelector(`.sl-ecran[data-e="${CSS.escape(p.identity)}"]`);
+      if(c){pub.track.detach();const v=pub.track.attach();v.muted=true;c.prepend(v)}}});
   // Images
   tri.forEach(p=>{const cam=Track&&p.getTrackPublication(Track.Source.Camera);if(cam&&cam.track&&!cam.isMuted){cam.track.detach();const v=cam.track.attach();v.muted=true;el.querySelector(`.sl-tuile[data-p="${CSS.escape(p.identity)}"]`).prepend(v)}});
   if(camOn&&camPub.track){camPub.track.detach();const v=camPub.track.attach();v.muted=true;$('#sl-moi-v').prepend(v)}
@@ -1753,6 +1764,7 @@ function rendreSalle(){
   $('#sl-son').onclick=()=>profilMicro(!SALLE.instruments);
   $('#sl-appareils').onclick=fenetreAppareils;
   $('#sl-lien').onclick=fenetreLienSalle;
+  $('#sl-ecran').onclick=()=>partagerEcran(!SALLE.ecran);
   $('#sl-ecoute').onchange=e=>ecouteMusique(e.target.checked);
   $$('#g-salle .sl-tuile').forEach(t=>t.onclick=e=>{e.stopPropagation();ouvrirMenuTuile(t.dataset.p,t)});
 }
@@ -1761,6 +1773,14 @@ function rendreSalle(){
    nouveau » : c'est le navigateur qui garde son ancienne liste. */
 /* Le lien d'entrée de la salle en cours : on le demande au serveur des
    rendez-vous, qui le signe. Utile quand quelqu'un a perdu le sien. */
+// Montrer son écran : ce que vous partagez passe en grand chez les participants.
+async function partagerEcran(oui){
+  const r=SALLE.room;if(!r)return;
+  try{await r.localParticipant.setScreenShareEnabled(oui,{audio:true,contentHint:'detail'});SALLE.ecran=oui}
+  catch(e){SALLE.ecran=false;if(oui)toast('Le partage n’a pas démarré : refusé par le navigateur, ou fenêtre de choix annulée')}
+  rendreSalle();
+}
+
 async function fenetreLienSalle(){
   if($('#voile-lien')||!SALLE.atelier)return;
   const a=SALLE.atelier;
