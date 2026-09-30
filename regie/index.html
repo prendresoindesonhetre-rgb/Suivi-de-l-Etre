@@ -423,6 +423,16 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .sl-pas-ok{display:inline-flex;gap:5px;align-items:center;background:#fff;border-radius:999px;padding:2px 9px;margin:4px 4px 0 0;color:var(--ink);font-weight:700}
 .sl-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;align-content:start;flex:1 0 auto;min-height:60px}
 .guide.visio.grande .sl-grille{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.sl-chat{border-top:1px solid var(--line);margin-top:8px;padding-top:6px}
+.sl-chat-tete{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;padding:4px 0;cursor:pointer;color:var(--ink)}
+.sl-chat-tete .kicker{flex:1;text-align:left}
+.sl-nonlus{background:var(--alerte);color:#fff;border-radius:99px;min-width:18px;height:18px;display:grid;place-items:center;font-size:11px;font-weight:800;padding:0 5px}
+.sl-chat-fil{max-height:22vh;overflow:auto;display:grid;gap:6px;margin:6px 0;font-size:12.5px;line-height:1.45}
+.sl-chat-l b{color:var(--peri-darker)}
+.sl-chat-l small{color:var(--muted);font-size:10.5px}
+.sl-chat-vide{color:var(--muted)}
+.sl-chat-bas{display:flex;gap:5px}
+.sl-chat-bas input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:7px 9px;font:inherit;font-size:12.5px}
 .sl-ecrans{display:grid;gap:8px;margin-bottom:8px}
 .sl-ecran{position:relative;background:#0d0b14;border-radius:14px;overflow:hidden;min-height:110px}
 .sl-ecran video{width:100%;height:100%;object-fit:contain;display:block;background:#0d0b14}
@@ -1438,7 +1448,7 @@ function demarrerSync(){
 const RDV_API='https://rendez-vous.prendresoindesonhetre.fr';
 const LK_SRC='https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js';
 const MODES={cercle:{nom:'Cercle',aide:'Tout le monde se voit et peut parler'},ecoute:{nom:'Écoute',aide:'Micros coupés, lumière baissée'},musique:{nom:'Musique',aide:'Lumière baissée, votre micro garde le vrai son'},retour:{nom:'Retour',aide:'« Comment vous sentez-vous ? »'}};
-const SALLE={actif:false,room:null,atelier:null,mode:'cercle',manuel:false,pause:false,aparte:null,ecoute:false,instruments:null,ecran:false,micId:'',camId:'',sonId:'',alertes:[],pubMusique:null,grand:false,etat:''};
+const SALLE={actif:false,room:null,atelier:null,mode:'cercle',manuel:false,pause:false,aparte:null,ecoute:false,instruments:null,ecran:false,chat:[],chatOuvert:false,chatNonLus:0,micId:'',camId:'',sonId:'',alertes:[],pubMusique:null,grand:false,etat:''};
 const IC_VISIO=I('<rect x="3" y="6" width="12" height="12" rx="2"/><path d="M15 10l6-3v10l-6-3"/>',15);
 const IC_MAIN='✋';
 let lkP=null;
@@ -1573,7 +1583,7 @@ async function ouvrirSalle(atelier,seanceId){
   catch(e){throw Object.assign(new Error('chargement'),{detail:'le module vidéo n’a pas pu être téléchargé (bloqueur de publicité ? réseau ?)'})}
   const {Room,RoomEvent,VideoPresets}=LivekitClient;
   const room=new Room({adaptiveStream:true,dynacast:true,videoCaptureDefaults:{resolution:VideoPresets.h540.resolution,deviceId:SALLE.camId||undefined},audioCaptureDefaults:{deviceId:SALLE.micId||undefined,echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-  Object.assign(SALLE,{actif:true,room,atelier,mode:'cercle',manuel:false,pause:false,aparte:null,instruments:null,alertes:[],pubMusique:null,etat:'connexion'});
+  Object.assign(SALLE,{actif:true,room,atelier,mode:'cercle',manuel:false,pause:false,aparte:null,instruments:null,alertes:[],chat:[],chatOuvert:false,chatNonLus:0,ecran:false,pubMusique:null,etat:'connexion'});
   brancherSalle(room,RoomEvent);
   try{await room.connect(j.url,j.token)}
   catch(e){SALLE.actif=false;
@@ -1640,6 +1650,7 @@ function recevoirSalle(m,p){
   if(m.t==='aide'){alerteSalle({type:'aide',id:p.identity,nom});return}
   if(m.t==='mot'){alerteSalle({type:'mot',id:p.identity,nom,texte:String(m.texte||'').slice(0,500)});return}
   if(m.t==='moment'){alerteSalle({type:'moment',id:p.identity,nom});return}
+  if(m.t==='chat'){SALLE.chat.push({nom,texte:String(m.texte||'').slice(0,400),h:new Date()});if(!SALLE.chatOuvert)SALLE.chatNonLus++;rendreSalle();toast(nom+' : '+String(m.texte||'').slice(0,60));return}
   rendreSalle();
 }
 function alerteSalle(a){
@@ -1732,6 +1743,11 @@ function rendreSalle(){
       return `<div class="sl-tuile ${aide?'aide':''} ${a.main?'main':''} ${SALLE.aparte===p.identity?'aparte':''}" data-p="${esc(p.identity)}">${v?'':`<span class="sl-init">${esc((p.name||'?')[0])}</span>`}
         <span class="sl-nom">${esc(p.name||'')}${a.main?' '+IC_MAIN:''}</span>
         <span class="sl-badges">${SALLE.mode==='retour'||a.ok?(a.ok?'<i class="ok" title="Tout va bien">✓</i>':'<i class="att" title="Pas encore répondu">…</i>'):''}<i title="${a.vu==='tous'?'Visible par tout le groupe':'Visible par vous seulement'}">${a.vu==='tous'||a.ok?'👥':'🔒'}</i></span></div>`}).join('')||`<div class="sl-vide">${etat?'':'La salle est ouverte. Les participants arrivent avec leur lien personnel.'}</div>`}</div>
+    <div class="sl-chat ${SALLE.chatOuvert?'ouvert':''}">
+      <button class="sl-chat-tete" id="sl-chat-tete"><span class="kicker">✉ Messages</span>${SALLE.chatNonLus?`<span class="sl-nonlus">${SALLE.chatNonLus}</span>`:''}<span class="sl-fleche">${SALLE.chatOuvert?'▾':'▸'}</span></button>
+      ${SALLE.chatOuvert?`<div class="sl-chat-fil" id="sl-chat-fil">${SALLE.chat.length?SALLE.chat.map(c=>`<div class="sl-chat-l"><b>${esc(c.nom)}</b> <small>${c.h.getHours()} h ${String(c.h.getMinutes()).padStart(2,'0')}</small><br>${esc(c.texte)}</div>`).join(''):'<div class="sl-chat-vide">Aucun message pour le moment.</div>'}</div>
+      <div class="sl-chat-bas"><input type="text" id="sl-chat-txt" maxlength="400" placeholder="Écrire à tout le monde…"><button class="btn s" id="sl-chat-env">Envoyer</button></div>`:''}
+    </div>
     <div class="sl-moi">
       <div class="sl-moi-v" id="sl-moi-v">${camOn?'':'<span>Caméra coupée</span>'}</div>
       <div class="sl-moi-b">
@@ -1763,6 +1779,15 @@ function rendreSalle(){
   $('#sl-mic').onclick=()=>micHote(!micOn);$('#sl-cam').onclick=()=>camHote(!camOn);
   $('#sl-son').onclick=()=>profilMicro(!SALLE.instruments);
   $('#sl-appareils').onclick=fenetreAppareils;
+  $('#sl-chat-tete').onclick=()=>{SALLE.chatOuvert=!SALLE.chatOuvert;if(SALLE.chatOuvert)SALLE.chatNonLus=0;rendreSalle()};
+  if($('#sl-chat-env')){
+    const envoyer=()=>{const i=$('#sl-chat-txt'),t=(i.value||'').trim();if(!t)return;
+      envoyerSalle({t:'chat',texte:t.slice(0,400)});
+      SALLE.chat.push({nom:'Vous',texte:t,h:new Date()});i.value='';rendreSalle();};
+    $('#sl-chat-env').onclick=envoyer;
+    $('#sl-chat-txt').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();envoyer()}};
+    const f=$('#sl-chat-fil');if(f)f.scrollTop=f.scrollHeight;
+  }
   $('#sl-lien').onclick=fenetreLienSalle;
   $('#sl-ecran').onclick=()=>partagerEcran(!SALLE.ecran);
   $('#sl-ecoute').onchange=e=>ecouteMusique(e.target.checked);
