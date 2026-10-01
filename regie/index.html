@@ -1654,10 +1654,12 @@ function vueGuider(id){
    droit = étape suivante. La barre du haut, celle du bas et les fenêtres
    gardent leurs clics normaux. */
 let souris=false;
+const vitesseTexte=()=>G&&G.vitesse!=null?G.vitesse:D.prefs.wpm;
+const vitesseTxt=v=>v===0?'⏸ Arrêt':v<0?`◀ Marche arrière · ${-v} mots/min`:`${v} mots/min`;
 function majSouris(){
   const b=$('#g-souris');if(!b)return;
   b.classList.toggle('cache',!souris);
-  b.innerHTML=`${IC.souris}<span>Souris · ${D.prefs.autoTexte?D.prefs.wpm+' mots/min':'défilement arrêté'}</span>`;
+  b.innerHTML=`${IC.souris}<span>Souris · ${D.prefs.autoTexte?vitesseTxt(vitesseTexte()):'défilement arrêté'}</span>`;
   const g=$('#guide');if(g)g.classList.toggle('mode-souris',souris);
 }
 function brancherSouris(){
@@ -1674,10 +1676,15 @@ function brancherSouris(){
   g.addEventListener('wheel',e=>{
     if(!souris||libre(e))return;e.preventDefault();
     const now=performance.now();if(now-dernier<120)return;dernier=now;
-    // Un cran = 10 mots/min (assez pour sentir la différence), affiché à l'écran.
-    const p=D.prefs,avant=p.wpm;p.autoTexte=true;p.wpm=clamp(p.wpm+(e.deltaY<0?10:-10),30,200);G.manuel=0;
+    // Un cran = 10 mots/min. Vers le bas on ralentit jusqu'à l'arrêt ; en insistant, le texte
+    // repart en marche arrière. À l'arrêt, un cran de plus est demandé avant de changer de sens.
+    const p=D.prefs,haut=e.deltaY<0,avant=vitesseTexte();p.autoTexte=true;G.manuel=0;
+    let v=avant;
+    if(v===0&&!G.cranArret)G.cranArret=true;                            // le cran d'arrêt : un cran « à vide »
+    else{G.cranArret=false;v=clamp(Math.round((v+(haut?10:-10))/10)*10,-200,200)}
+    G.vitesse=v;if(v>=30)p.wpm=v;                                      // les réglages gardent la dernière vitesse en avant
     sauverBientot();rendreReglagesGuide();majSouris();
-    toast(p.wpm===avant?(e.deltaY<0?'Vitesse maximale':'Vitesse minimale')+` · ${p.wpm} mots/min`:`${e.deltaY<0?'▲ Plus vite':'▼ Moins vite'} · ${p.wpm} mots/min`);
+    toast(v===0?'⏸ Arrêt · tournez encore pour repartir':v===avant?(haut?'Vitesse maximale':'Marche arrière maximale'):v<0?`◀ Marche arrière · ${-v} mots/min`:`${haut?'▲ Plus vite':'▼ Moins vite'} · ${v} mots/min`);
   },{passive:false});
   // Clic gauche maintenu : on fait glisser le texte comme avec le doigt sur un téléphone.
   let tire=null,aGlisse=false;
@@ -1714,7 +1721,7 @@ function rendreReglagesGuide(){
     <div class="sep"></div>
     <button id="r-son">${IC.casque} Micro et son…</button>
     <div class="sep"></div>
-    <div class="bloc-reglage aide-souris"><b>${IC.souris} Piloter à la souris</b><br>Cliquez sur la <b>roulette</b> pour activer (ou arrêter) le mode souris. Ensuite :<br>· roulette vers le haut : le texte défile <b>plus vite</b> (+10 mots/min par cran)<br>· roulette vers le bas : il défile <b>moins vite</b><br>· clic gauche : <b>étape précédente</b><br>· clic gauche <b>maintenu</b> en bougeant : faire glisser le texte, comme avec le doigt<br>· clic droit : <b>étape suivante</b><br><span style="color:var(--muted)">Les boutons du haut et du bas restent utilisables.</span></div>
+    <div class="bloc-reglage aide-souris"><b>${IC.souris} Piloter à la souris</b><br>Cliquez sur la <b>roulette</b> pour activer (ou arrêter) le mode souris. Ensuite :<br>· roulette vers le haut : le texte défile <b>plus vite</b> (10 mots/min par cran)<br>· roulette vers le bas : il ralentit jusqu’à <b>l’arrêt</b> ; en continuant, il repart en <b>marche arrière</b><br>· clic gauche : <b>étape précédente</b><br>· clic gauche <b>maintenu</b> en bougeant : faire glisser le texte, comme avec le doigt<br>· clic droit : <b>étape suivante</b><br><span style="color:var(--muted)">Les boutons du haut et du bas restent utilisables.</span></div>
     <div class="sep"></div>
     <div class="bloc-reglage" style="color:var(--muted);line-height:1.6;font-size:12.5px">Pédale tourne-page ou clavier :<br>→ temps suivant · ← précédent<br>Espace : démarrer / pause · N : mode nuit<br>↑ ↓ : faire défiler le texte</div>`;
   const rapide=$('#g-rapide');
@@ -1727,12 +1734,12 @@ function rendreReglagesGuide(){
     $('#rr-volet').ontoggle=e=>{if(p.reglagesOuverts!==e.target.open){p.reglagesOuverts=e.target.open;sauverBientot()}};
     $('#rr-auto').onchange=e=>{p.autoTexte=e.target.checked;sauverBientot();rendreReglagesGuide()};
     $('#rr-blocs').onchange=e=>{p.autoBlocs=e.target.checked;sauverBientot();rendreReglagesGuide()};
-    $$('#g-rapide [data-rr]').forEach(x=>x.onclick=()=>{const [k,d]=x.dataset.rr.split(':');p[k]=k==='wpm'?clamp(p.wpm+ +d,40,180):clamp(p.taille+ +d,18,52);if(k==='wpm')p.autoTexte=true;document.documentElement.style.setProperty('--taille',p.taille+'px');sauverBientot();rendreReglagesGuide()});
+    $$('#g-rapide [data-rr]').forEach(x=>x.onclick=()=>{if(G)G.vitesse=null;const [k,d]=x.dataset.rr.split(':');p[k]=k==='wpm'?clamp(p.wpm+ +d,40,180):clamp(p.taille+ +d,18,52);if(k==='wpm')p.autoTexte=true;document.documentElement.style.setProperty('--taille',p.taille+'px');sauverBientot();rendreReglagesGuide()});
   }
   $('#r-son').onclick=fenetreSon;
   $('#r-auto').onchange=e=>{p.autoTexte=e.target.checked;sauverBientot();rendreReglagesGuide()};
   $('#r-blocs').onchange=e=>{p.autoBlocs=e.target.checked;sauverBientot();rendreReglagesGuide()};
-  $$('#g-reglages [data-r]').forEach(x=>x.onclick=e=>{e.stopPropagation();const [k,d]=x.dataset.r.split(':');p[k]=k==='wpm'?clamp(p.wpm+ +d,40,180):clamp(p.taille+ +d,18,52);if(k==='wpm')p.autoTexte=true;document.documentElement.style.setProperty('--taille',p.taille+'px');sauverBientot();rendreReglagesGuide()});
+  $$('#g-reglages [data-r]').forEach(x=>x.onclick=e=>{if(G)G.vitesse=null;e.stopPropagation();const [k,d]=x.dataset.r.split(':');p[k]=k==='wpm'?clamp(p.wpm+ +d,40,180):clamp(p.taille+ +d,18,52);if(k==='wpm')p.autoTexte=true;document.documentElement.style.setProperty('--taille',p.taille+'px');sauverBientot();rendreReglagesGuide()});
 }
 function quitterGuide(){arreterEnrSeance();fermerSalle();fermerMenuTuile();clearInterval(tickH);if(A.joue)sortie(1.5);libererEveil();G=null}
 async function garderEveil(){try{if('wakeLock' in navigator&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null})}}catch(e){}}
@@ -1888,7 +1895,10 @@ function tick(){
       if(G.i<G.blocs.length-1&&D.prefs.autoBlocs)allerTemps(G.i+1);
       else if(G.i===G.blocs.length-1&&!G.termine){G.termine=true;finDeSeance()}
     }
-    if(D.prefs.autoTexte&&now>G.manuel){const t=$('#g-texte');if(t.scrollHeight>t.clientHeight)t.scrollTop+=(D.prefs.wpm/90)*26*(D.prefs.taille/30)*dt/1000}
+    if(D.prefs.autoTexte&&now>G.manuel){const t=$('#g-texte');if(t.scrollHeight>t.clientHeight){
+      // Vitesse de la séance (réglée à la roulette, négative = marche arrière), sinon celle des réglages.
+      G.reste=(G.reste||0)+(vitesseTexte()/90)*26*(D.prefs.taille/30)*dt/1000;
+      const pas=Math.trunc(G.reste);if(pas){t.scrollTop+=pas;G.reste-=pas}}}
   }
   const reste=dur-G.bloc,txt=b.libre?mmss(G.bloc):reste>=0?mmss(reste):'+'+mmss(-reste);
   // Un temps libre n'affiche aucun minuteur.
