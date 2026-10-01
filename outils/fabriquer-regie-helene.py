@@ -59,6 +59,32 @@ rep("if(visioDirect)setTimeout(", "if(false)setTimeout(")
 i = s.index("function contenuDepart(){"); j = s.index("const PREFS=")
 s = s[:i] + "function contenuDepart(){\n  return {schema:1,maj:Date.now(),seances:[],mesBlocs:[],musiques:[],bilans:[],prefs:{}};\n}\n" + s[j:]
 s = s.replace("D.seances.forEach(s=>{if(s.titre==='Méditer ensemble')s.titre='Atelier du jeudi'});", "")
+# Ses couleurs : un soleil doux, tirées de son logo (crème, miel, pêche, prune et halos arc-en-ciel pastel).
+# Le mode nuit garde la palette d'origine.
+DOUX = """
+/* ===== Palette d'Hélène : soleil doux ===== */
+:root{
+  --fond:#fffaf2; --carte:rgba(255,255,255,.9); --plein:#fffdf9; --ink:#4a3f3c; --muted:#8b7d76;
+  --line:#f2e7d8; --line-bleu:#efdcc4; --canard:#b8735a; --canard-deep:#a8654d; --canard-dark:#94573f; --canard-light:#fdf0e6;
+  --aqua-pale:#fff2d6; --aqua:#ffe3a3; --violet-soft:#f7ecf3; --violet:#d9b8d6; --peri-deep:#9a7aa8; --peri-darker:#76588a;
+  --info-pale:#fff2d6;
+  --t-parole:#f3eaf7; --t-parole-f:#86669a; --t-instrument:#e6f2f6; --t-instrument-f:#4f8a9a; --t-musique:#fbe7ee; --t-musique-f:#a65f7b;
+  --t-silence:#f3efea; --t-silence-f:#857a72; --t-transition:#e8f4e6; --t-transition-f:#5d8a5a; --t-partage:#fdebdc; --t-partage-f:#b0704a;
+  --ombre:0 18px 46px -30px rgba(150,110,80,.35); --sable:#f5e6cf;
+}
+body:not(.nuit)::before{background-image:
+  radial-gradient(48% 34% at 88% 0%,rgba(255,226,150,.55),transparent 68%),
+  radial-gradient(42% 30% at 4% 10%,rgba(250,214,226,.5),transparent 70%),
+  radial-gradient(46% 30% at 96% 55%,rgba(214,236,226,.45),transparent 70%),
+  radial-gradient(44% 30% at 8% 92%,rgba(220,214,244,.45),transparent 70%)}
+body:not(.nuit) .haut{background:rgba(255,250,242,.86)}
+.btn.p{box-shadow:0 14px 28px -16px rgba(154,122,168,.85)}
+.marque img{height:38px}
+.marque span{color:var(--peri-darker)}
+"""
+i = s.index('</style>'); s = s[:i] + DOUX + s[i:]
+s = s.replace('<meta name="theme-color" content="#f4f0fb">', '<meta name="theme-color" content="#fffaf2">')
+s = s.replace("document.querySelector('meta[name=theme-color]').content=on?'#13111b':'#f4f0fb'", "document.querySelector('meta[name=theme-color]').content=on?'#13111b':'#fffaf2'")
 assert 'issedanlnadbhidlymnc' not in s and 'rendez-vous.prendresoindesonhetre' not in s
 (dst / 'index.html').write_text(s)
 
