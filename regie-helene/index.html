@@ -46,6 +46,9 @@ body:not(.nuit)::before{content:"";position:fixed;inset:0;z-index:-1;pointer-eve
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 .cache{display:none!important}
+/* Le logo en filigrane, très léger, sur la page d'accueil */
+.filigrane{position:fixed;inset:var(--haut) 0 0 0;z-index:-1;pointer-events:none;background:url(logo.png) center 58%/min(78vw,620px) no-repeat;opacity:.07}
+body.nuit .filigrane{opacity:.05}
 svg{display:block;flex:none}
 
 /* ——— Barre du haut ——— */
@@ -749,7 +752,7 @@ $$('#onglets button').forEach(b=>b.onclick=()=>aller(b.dataset.v));
 
 /* =============================== MES SÉANCES =============================== */
 function vueSeances(){
-  $('#vue').innerHTML=`<div class="page">
+  $('#vue').innerHTML=`<div class="filigrane" aria-hidden="true"></div><div class="page">
     <div class="tete-page"><div><h1 class="titre">Mes séances</h1><p class="sous">Préparez une séance une fois, guidez-la et enregistrez-la.</p></div>
       <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap"><button class="btn s" id="b-son">${IC.casque} Micro et son</button>
       <div class="menu"><button class="btn s">${IC.points} Sauvegarde</button><div class="menu-liste">
