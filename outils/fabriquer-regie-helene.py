@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fabrique la régie d'Hélène Laudijois (/regie-helene/) à partir de la régie de l'Être (/regie/).
 
-Copie autonome : son nom et son logo, régie vierge, ni synchronisation ni visio,
+Copie à elle : son nom, son logo et ses couleurs, régie vierge, son propre compte chiffré, pas de visio,
 stockage sous d'autres noms (aucun mélange avec la régie de l'Être).
 Les images (logo.png, icone-*.png) et manifest.json de regie-helene/ ne sont pas touchés.
 
@@ -42,14 +42,10 @@ rep("indexedDB.open('regie-etre',1)", "indexedDB.open('regie-helene',1)")
 rep("const CLE_ENR='regieEtre.enr'", "const CLE_ENR='regieHelene.enr'")
 rep("const CLE_BASE='regieEtre.base';", "const CLE_BASE='regieHelene.base';")
 
-# Aucun compte : ni synchronisation, ni visio
-s, n = re.subn(r"const SB_URL='[^']*';", "const SB_URL='';   // régie autonome : aucun compte, aucune synchronisation", s); assert n == 1
-s, n = re.subn(r"const SB_KEY='[^']*';", "const SB_KEY='';", s); assert n == 1
+# Son compte : une ligne chiffrée dans la table regie_comptes (illisible pour la propriétaire de la base).
+# Pas de visio.
+rep("const COMPTE=null;", "const COMPTE={table:'regie_comptes'};")
 s, n = re.subn(r"const RDV_API='[^']*';", "const RDV_API='';   // pas de visio dans cette régie", s); assert n == 1
-rep("function planifierSync(){", "function planifierSync(){return;")
-rep("async function synchroniser(){", "async function synchroniser(){return;")
-rep("function demarrerSync(){", "function demarrerSync(){return;")
-rep('<button class="sync" id="etat-sync" type="button"></button>', '')
 s, n = re.subn(r'\n *<button class="btn" data-visio="\$\{s\.id\}"[^\n]*</button>', '', s); assert n == 1
 s, n = re.subn(r'<button id="b-import">[^<]*</button>', '', s); assert n == 1
 rep("$('#b-import').onclick=fenetreImport;", "")
@@ -62,30 +58,37 @@ s = s.replace("D.seances.forEach(s=>{if(s.titre==='Méditer ensemble')s.titre='A
 # Ses couleurs : un soleil doux, tirées de son logo (crème, miel, pêche, prune et halos arc-en-ciel pastel).
 # Le mode nuit garde la palette d'origine.
 DOUX = """
-/* ===== Palette d'Hélène : soleil doux ===== */
+/* ===== Palette d'Hélène : soleil très doux =====
+   Les couleurs de son logo, en voiles : le soleil (miel pâle) et le cercle
+   arc-en-ciel (pêche, rose, menthe, ciel, lavande), sur un fond crème. */
 :root{
-  --fond:#fffaf2; --carte:rgba(255,255,255,.9); --plein:#fffdf9; --ink:#4a3f3c; --muted:#8b7d76;
-  --line:#f2e7d8; --line-bleu:#efdcc4; --canard:#b8735a; --canard-deep:#a8654d; --canard-dark:#94573f; --canard-light:#fdf0e6;
-  --aqua-pale:#fff2d6; --aqua:#ffe3a3; --violet-soft:#f7ecf3; --violet:#d9b8d6; --peri-deep:#9a7aa8; --peri-darker:#76588a;
-  --info-pale:#fff2d6;
-  --t-parole:#f3eaf7; --t-parole-f:#86669a; --t-instrument:#e6f2f6; --t-instrument-f:#4f8a9a; --t-musique:#fbe7ee; --t-musique-f:#a65f7b;
-  --t-silence:#f3efea; --t-silence-f:#857a72; --t-transition:#e8f4e6; --t-transition-f:#5d8a5a; --t-partage:#fdebdc; --t-partage-f:#b0704a;
-  --ombre:0 18px 46px -30px rgba(150,110,80,.35); --sable:#f5e6cf;
+  --fond:#fffcf6; --carte:rgba(255,255,255,.82); --plein:#fffefb; --ink:#5b504c; --muted:#9a8e87;
+  --line:#f5ede2; --line-bleu:#f1e3d0; --canard:#c9937a; --canard-deep:#bd8870; --canard-dark:#a87862; --canard-light:#fdf4ec;
+  --aqua-pale:#fff6e0; --aqua:#ffeab8; --violet-soft:#f8f1f7; --violet:#e2cde0; --peri-deep:#b39bc0; --peri-darker:#8e7499;
+  --info-pale:#fff6e0; --attente-pale:#fff3e3;
+  --t-parole:#f6f0f9; --t-parole-f:#9a82aa; --t-instrument:#eef6f8; --t-instrument-f:#6e9fab; --t-musique:#fcf0f3; --t-musique-f:#b9849a;
+  --t-silence:#f6f3ef; --t-silence-f:#9a8f87; --t-transition:#f0f7ee; --t-transition-f:#7fa47b; --t-partage:#fdf2e8; --t-partage-f:#c28e6d;
+  --ombre:0 20px 50px -34px rgba(190,150,110,.32); --sable:#f8eedd;
 }
 body:not(.nuit)::before{background-image:
-  radial-gradient(48% 34% at 88% 0%,rgba(255,226,150,.55),transparent 68%),
-  radial-gradient(42% 30% at 4% 10%,rgba(250,214,226,.5),transparent 70%),
-  radial-gradient(46% 30% at 96% 55%,rgba(214,236,226,.45),transparent 70%),
-  radial-gradient(44% 30% at 8% 92%,rgba(220,214,244,.45),transparent 70%)}
-body:not(.nuit) .haut{background:rgba(255,250,242,.86)}
-.btn.p{box-shadow:0 14px 28px -16px rgba(154,122,168,.85)}
+  radial-gradient(46% 36% at 90% -2%,rgba(255,232,165,.5),transparent 70%),
+  radial-gradient(40% 30% at 2% 8%,rgba(252,222,226,.42),transparent 72%),
+  radial-gradient(44% 30% at 98% 52%,rgba(222,240,226,.4),transparent 72%),
+  radial-gradient(40% 30% at 30% 100%,rgba(220,234,246,.38),transparent 72%),
+  radial-gradient(40% 30% at 0% 70%,rgba(234,224,246,.38),transparent 72%)}
+body:not(.nuit) .haut{background:rgba(255,252,246,.84)}
+.btn.p{box-shadow:0 14px 30px -18px rgba(179,155,192,.75)}
+.btn{border-color:var(--line-bleu)}
 .marque img{height:38px}
 .marque span{color:var(--peri-darker)}
+.marque-nom small{color:#d4a64a}
+.g-texte{color:#5b504c}
+.voile{background:rgba(150,125,110,.22);backdrop-filter:blur(3px)}
 """
 i = s.index('</style>'); s = s[:i] + DOUX + s[i:]
 s = s.replace('<meta name="theme-color" content="#f4f0fb">', '<meta name="theme-color" content="#fffaf2">')
 s = s.replace("document.querySelector('meta[name=theme-color]').content=on?'#13111b':'#f4f0fb'", "document.querySelector('meta[name=theme-color]').content=on?'#13111b':'#fffaf2'")
-assert 'issedanlnadbhidlymnc' not in s and 'rendez-vous.prendresoindesonhetre' not in s
+assert 'rendez-vous.prendresoindesonhetre' not in s and "const COMPTE={table:'regie_comptes'}" in s
 (dst / 'index.html').write_text(s)
 
 # Service hors ligne : même version que la régie de l'Être, propre au dossier
