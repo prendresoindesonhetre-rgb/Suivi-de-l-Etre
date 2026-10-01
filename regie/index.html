@@ -449,6 +449,9 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .son-niv{height:6px;border-radius:3px;background:var(--violet-soft);overflow:hidden;margin:-2px 0 12px}
 .son-niv b{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--canard),var(--ok));transition:width .08s}
 .son-niv.muet{background:var(--attente-pale)}
+.son-auto-v{font-weight:600;color:var(--muted);font-size:11.5px;margin-left:4px}
+.son-gain b{color:var(--canard-dark);margin-left:4px}
+.son-gain input{width:100%;accent-color:var(--canard);margin:6px 0 2px}
 .son-pied{display:flex;gap:6px;flex-wrap:wrap}
 .son-sans{display:block;margin:6px 0 4px}
 .enr-texte{max-height:38vh;overflow:auto;white-space:pre-wrap;font-family:var(--serif);font-size:20px;line-height:1.6;color:var(--ink);background:var(--carte);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin:4px 0 12px}
@@ -1173,6 +1176,39 @@ function appliquerSortie(){
   A.ctx.setSinkId(D.prefs.sortieId||'').catch(()=>{A.ctx.setSinkId('').catch(()=>{})});
 }
 // La contrainte micro à demander : celui choisi, sinon celui par défaut.
+// L'amplification manuelle du micro (1 = telle quelle, jusqu'à 8 pour un micro faible).
+const gainMicro=()=>clamp(+D.prefs.micGain||1,1,8);
+const micAuto=()=>D.prefs.micAuto!==false;
+const antiBruit=()=>D.prefs.antiBruit!==false;
+/* La voix avant l'enregistrement : coupe des graves inutiles (grondements),
+   niveau réglé tout seul (on vise une voix bien présente : il monte doucement
+   quand on parle bas, redescend vite quand on parle fort, ne bouge pas dans
+   les silences), compression douce pour une voix régulière, puis limiteur. */
+function chaineVoix(ctx){
+  const hp=ctx.createBiquadFilter(),amp=ctx.createGain(),comp=ctx.createDynamicsCompressor(),porte=ctx.createGain(),lim=ctx.createDynamicsCompressor(),mes=ctx.createAnalyser();
+  hp.type='highpass';hp.frequency.value=80;hp.Q.value=.7;
+  comp.threshold.value=-24;comp.knee.value=12;comp.ratio.value=3;comp.attack.value=.01;comp.release.value=.3;
+  lim.threshold.value=-3;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=.002;lim.release.value=.2;
+  mes.fftSize=2048;hp.connect(mes);hp.connect(amp);amp.connect(comp);comp.connect(porte);porte.connect(lim);
+  const auto=micAuto(),nettoie=antiBruit();let g=auto?clamp(+D.prefs.micAutoGain||2,1,16):gainMicro(),bruit=null,calme=0,ouverte=true;amp.gain.value=g;
+  const d=new Float32Array(mes.fftSize);
+  const t=setInterval(()=>{
+    mes.getFloatTimeDomainData(d);let q=0;for(let i=0;i<d.length;i++)q+=d[i]*d[i];const rms=Math.sqrt(q/d.length)+1e-6;
+    // Le bruit de fond de la pièce : le niveau le plus bas entendu, qui remonte très lentement.
+    bruit=bruit==null?rms:Math.min(rms,bruit*1.01);
+    const parle=rms>Math.max(.003,bruit*3);              // la voix dépasse le bruit d'environ 10 dB
+    // Porte douce : entre deux phrases, le bruit ambiant est fortement baissé.
+    if(nettoie){calme=parle?0:calme+1;const ouvrir=parle||calme<4;
+      if(ouvrir!==ouverte){ouverte=ouvrir;porte.gain.setTargetAtTime(ouvrir?1:.12,ctx.currentTime,ouvrir?.01:.15)}}
+    if(!auto||!parle)return;                             // le niveau ne bouge que sur la voix
+    const voulu=clamp(.13/rms,1,16);                      // voix visée ≈ −18 dB
+    g=voulu<g?Math.max(voulu,g*.8):Math.min(voulu,g*1.025);
+    amp.gain.setTargetAtTime(g,ctx.currentTime,.08);D.prefs.micAutoGain=g;
+  },100);
+  return {entree:hp,sortie:lim,gain:()=>g,
+    regler(v){g=v;amp.gain.setTargetAtTime(v,ctx.currentTime,.05)},
+    stop(){clearInterval(t);[hp,amp,comp,porte,lim,mes].forEach(n=>{try{n.disconnect()}catch(e){}});if(auto)sauverBientot()}};
+}
 const contrainteMicro=(o={})=>Object.assign(D.prefs.micId?{deviceId:{exact:D.prefs.micId}}:{},o);
 async function ouvrirMicro(o={}){
   try{return await navigator.mediaDevices.getUserMedia({audio:contrainteMicro(o)})}
@@ -1195,24 +1231,31 @@ function panneauSon(){
   return `<div class="son-choix">
     <label class="champ">${IC.micro} Micro<select data-son="micro"><option value="">Recherche des micros…</option></select></label>
     <div class="son-niv" title="Parlez : la barre doit bouger"><b></b></div>
+    <label class="bascule son-auto"><input type="checkbox" data-son="auto">Volume du micro réglé automatiquement <span class="son-auto-v" data-son="auto-v"></span></label>
+    <span class="aide" style="display:block;margin:2px 0 10px">Recommandé : la voix est enregistrée bien audible et agréable, sans que vous ayez à régler quoi que ce soit.</span>
+    <label class="bascule son-auto"><input type="checkbox" data-son="bruit">Retirer les bruits de fond</label>
+    <span class="aide" style="display:block;margin:2px 0 10px">Souffle, ventilateur, bruits entre les phrases. À décocher pour enregistrer surtout des instruments très doux.</span>
+    <label class="champ son-gain cache">Volume du micro <b data-son="gain-v"></b><input type="range" data-son="gain" min="1" max="8" step="0.5"><span class="aide">Montez ce curseur en parlant : la barre doit atteindre environ les deux tiers.</span></label>
     <label class="champ son-sortie">${IC.casque} Sortie (écouteurs, casque, enceintes)<select data-son="sortie"><option value="">Par défaut</option></select></label>
     <div class="son-pied"><button type="button" class="btn s" data-son="test">${IC.play} Tester le son</button><button type="button" class="btn s nu" data-son="relister" title="Un appareil vient d’être branché">${IC.recaler} Actualiser</button></div>
     <span class="aide son-sans cache">Sur cet appareil, la sortie se choisit dans les réglages du téléphone ou de l’ordinateur (sur iPhone et iPad, le casque branché est pris tout seul).</span>
   </div>`;
 }
 function brancherSon(el){
-  let flux=null,ana=null,src=null,raf=null,fini=false;
+  let flux=null,ana=null,src=null,gn=null,raf=null,fini=false;
   const selM=el.querySelector('[data-son=micro]'),selS=el.querySelector('[data-son=sortie]'),barre=el.querySelector('.son-niv b');
   const ecouter=async()=>{
     if(flux)flux.getTracks().forEach(t=>t.stop());try{src&&src.disconnect()}catch(e){}
-    try{flux=await ouvrirMicro()}catch(e){flux=null;barre.parentElement.classList.add('muet');return}
+    try{flux=await ouvrirMicro({noiseSuppression:antiBruit(),autoGainControl:!micAuto()})}catch(e){flux=null;barre.parentElement.classList.add('muet');return}
     if(fini){flux.getTracks().forEach(t=>t.stop());return}
     barre.parentElement.classList.remove('muet');
     if(!audioInit())return;A.ctx.resume().catch(()=>{});
-    ana=ana||A.ctx.createAnalyser();ana.fftSize=512;src=A.ctx.createMediaStreamSource(flux);src.connect(ana);
+    ana=ana||A.ctx.createAnalyser();ana.fftSize=512;if(gn)gn.stop();gn=chaineVoix(A.ctx);gn.sortie.connect(ana);
+    src=A.ctx.createMediaStreamSource(flux);src.connect(gn.entree);
   };
   const boucle=()=>{
     if(fini)return;if(!el.isConnected){arreter();return}
+    if(gn&&micAuto())valA.textContent='· × '+gn.gain().toFixed(1).replace('.',',');else valA.textContent='';
     if(ana){const d=new Uint8Array(ana.fftSize);ana.getByteTimeDomainData(d);let m=0;for(let i=0;i<d.length;i++){const v=Math.abs(d[i]-128);if(v>m)m=v}barre.style.width=Math.min(100,m)+'%'}
     raf=requestAnimationFrame(boucle);
   };
@@ -1227,11 +1270,20 @@ function brancherSon(el){
     if(peut){selS.innerHTML=(l.some(x=>x.kind==='audiooutput'&&x.deviceId==='default')?'':'<option value="">Sortie par défaut</option>')+opts('audiooutput',D.prefs.sortieId||'');selS.value=D.prefs.sortieId||'';if(selS.value!==(D.prefs.sortieId||''))selS.value=''}
   };
   selM.onchange=()=>{D.prefs.micId=selM.value;sauverBientot();ecouter()};
+  const curG=el.querySelector('[data-son=gain]'),valG=el.querySelector('[data-son=gain-v]');
+  const majG=()=>{valG.textContent=gainMicro()===1?'normal':'× '+String(gainMicro()).replace('.',',')};
+  curG.value=gainMicro();majG();
+  curG.oninput=()=>{D.prefs.micGain=+curG.value;majG();if(gn&&!micAuto())gn.regler(gainMicro());sauverBientot()};
+  const caseA=el.querySelector('[data-son=auto]'),valA=el.querySelector('[data-son=auto-v]');
+  const majA=()=>{caseA.checked=micAuto();el.querySelector('.son-gain').classList.toggle('cache',micAuto())};majA();
+  caseA.onchange=()=>{D.prefs.micAuto=caseA.checked;sauverBientot();majA();ecouter()};
+  const caseB=el.querySelector('[data-son=bruit]');caseB.checked=antiBruit();
+  caseB.onchange=()=>{D.prefs.antiBruit=caseB.checked;sauverBientot();ecouter()};
   selS.onchange=()=>{D.prefs.sortieId=selS.value;sauverBientot();appliquerSortie();sonEssai()};
   el.querySelector('[data-son=test]').onclick=sonEssai;
   el.querySelector('[data-son=relister]').onclick=async()=>{await remplir();ecouter()};
   try{navigator.mediaDevices.addEventListener('devicechange',remplir)}catch(e){}
-  const arreter=()=>{if(fini)return;fini=true;cancelAnimationFrame(raf);if(flux)flux.getTracks().forEach(t=>t.stop());try{src&&src.disconnect()}catch(e){}try{navigator.mediaDevices.removeEventListener('devicechange',remplir)}catch(e){}};
+  const arreter=()=>{if(fini)return;fini=true;cancelAnimationFrame(raf);if(flux)flux.getTracks().forEach(t=>t.stop());try{src&&src.disconnect()}catch(e){}try{gn&&gn.stop()}catch(e){}try{navigator.mediaDevices.removeEventListener('devicechange',remplir)}catch(e){}};
   remplir().then(ecouter);boucle();
   return arreter;
 }
@@ -1306,11 +1358,12 @@ async function creerEnregistreur(o={}){
   if(!audioInit())throw new Error('Le son n’est pas disponible sur cet appareil.');
   await A.ctx.resume();
   let flux;
-  try{flux=await ouvrirMicro({echoCancellation:!!o.musique,noiseSuppression:false,autoGainControl:true})}
+  try{flux=await ouvrirMicro({echoCancellation:!!o.musique,noiseSuppression:antiBruit(),autoGainControl:!micAuto()})}
   catch(e){throw new Error('Le micro n’est pas accessible. Autorisez-le dans le navigateur (icône à gauche de l’adresse), puis réessayez.')}
   const ctx=A.ctx,mic=ctx.createMediaStreamSource(flux),mix=ctx.createGain(),ana=ctx.createAnalyser(),proc=ctx.createScriptProcessor(4096,2,2),muet=ctx.createGain();
   muet.gain.value=0;ana.fftSize=1024;
-  mic.connect(mix);if(o.musique&&A.gain)A.gain.connect(mix);
+  const voix=chaineVoix(ctx);
+  mic.connect(voix.entree);voix.sortie.connect(mix);if(o.musique&&A.gain)A.gain.connect(mix);
   mix.connect(ana);mix.connect(proc);proc.connect(muet);muet.connect(ctx.destination);
   const enc=new lamejs.Mp3Encoder(2,ctx.sampleRate,96),blocs=[];let parts=[],ms=0,etat='pret',pic=0;
   const pcm=f=>{const r=new Int16Array(f.length);for(let i=0;i<f.length;i++){const v=f[i]<-1?-1:f[i]>1?1:f[i];r[i]=v<0?v*32768:v*32767}return r};
@@ -1325,7 +1378,7 @@ async function creerEnregistreur(o={}){
   const tout=()=>{if(parts.length){blocs.push(new Blob(parts));parts=[]}return new Blob(blocs,{type:'audio/mpeg'})};
   const deCote=()=>{idbPut(ID_ENR,tout());try{localStorage.setItem(CLE_ENR,JSON.stringify({nom:o.nom||'Enregistrement',ms}))}catch(e){}};
   const tg=setInterval(()=>{if(etat==='enr')deCote()},20000);
-  const fermer=()=>{clearInterval(tg);proc.onaudioprocess=null;flux.getTracks().forEach(t=>t.stop());[mic,mix,proc,muet].forEach(n=>{try{n.disconnect()}catch(e){}});if(o.musique&&A.gain){try{A.gain.disconnect(mix)}catch(e){}}};
+  const fermer=()=>{clearInterval(tg);proc.onaudioprocess=null;flux.getTracks().forEach(t=>t.stop());voix.stop();[mic,mix,proc,muet].forEach(n=>{try{n.disconnect()}catch(e){}});if(o.musique&&A.gain){try{A.gain.disconnect(mix)}catch(e){}}};
   return {
     nom:o.nom,get etat(){return etat},duree:()=>ms,
     demarrer(){etat='enr'},pause(){if(etat==='enr')etat='pause'},reprendre(){if(etat==='pause')etat='enr'},
