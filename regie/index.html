@@ -1316,8 +1316,9 @@ async function creerEnregistreur(o={}){
   const pcm=f=>{const r=new Int16Array(f.length);for(let i=0;i<f.length;i++){const v=f[i]<-1?-1:f[i]>1?1:f[i];r[i]=v<0?v*32768:v*32767}return r};
   proc.onaudioprocess=e=>{
     if(etat!=='enr')return;
-    const ib=e.inputBuffer,b=enc.encodeBuffer(pcm(ib.getChannelData(0)),pcm(ib.getChannelData(ib.numberOfChannels>1?1:0)));
-    if(b.length)parts.push(new Uint8Array(b));
+    // L'encodeur abîme le son si on lui donne plus de 1152 échantillons à la fois : on découpe.
+    const ib=e.inputBuffer,g=pcm(ib.getChannelData(0)),d=pcm(ib.getChannelData(ib.numberOfChannels>1?1:0));
+    for(let i=0;i<g.length;i+=1152){const b=enc.encodeBuffer(g.subarray(i,i+1152),d.subarray(i,i+1152));if(b.length)parts.push(new Uint8Array(b))}
     ms+=ib.duration*1000;
     const c0=ib.getChannelData(0);for(let i=0;i<c0.length;i+=8){const a=Math.abs(c0[i]);if(a>pic)pic=a}
   };
