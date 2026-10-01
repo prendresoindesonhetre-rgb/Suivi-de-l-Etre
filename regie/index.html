@@ -1214,30 +1214,41 @@ const antiBruit=()=>D.prefs.antiBruit!==false;
    niveau réglé tout seul (on vise une voix bien présente : il monte doucement
    quand on parle bas, redescend vite quand on parle fort, ne bouge pas dans
    les silences), compression douce pour une voix régulière, puis limiteur. */
+// Les chaînes de voix ouvertes (enregistrement, essai du micro) : un clic les fait taire un éclair.
+const CHAINES=new Set();
+function etoufferClic(){
+  CHAINES.forEach(c=>{const g=c.etouffe.gain,t=c.ctx.currentTime;g.cancelScheduledValues(t);g.setTargetAtTime(.03,t,.003);g.setTargetAtTime(1,t+.15,.03)});
+}
+['mousedown','mouseup','wheel','keydown'].forEach(ev=>addEventListener(ev,()=>{if(CHAINES.size)etoufferClic()},{capture:true,passive:true}));
 function chaineVoix(ctx){
-  const hp=ctx.createBiquadFilter(),amp=ctx.createGain(),comp=ctx.createDynamicsCompressor(),porte=ctx.createGain(),lim=ctx.createDynamicsCompressor(),mes=ctx.createAnalyser();
+  const hp=ctx.createBiquadFilter(),amp=ctx.createGain(),comp=ctx.createDynamicsCompressor(),porte=ctx.createGain(),etouffe=ctx.createGain(),lim=ctx.createDynamicsCompressor(),mes=ctx.createAnalyser();
   hp.type='highpass';hp.frequency.value=80;hp.Q.value=.7;
-  comp.threshold.value=-24;comp.knee.value=12;comp.ratio.value=3;comp.attack.value=.01;comp.release.value=.3;
+  comp.threshold.value=-26;comp.knee.value=14;comp.ratio.value=2.5;comp.attack.value=.015;comp.release.value=.4;
   lim.threshold.value=-3;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=.002;lim.release.value=.2;
-  mes.fftSize=2048;hp.connect(mes);hp.connect(amp);amp.connect(comp);comp.connect(porte);porte.connect(lim);
-  const auto=micAuto(),nettoie=antiBruit();let g=auto?clamp(+D.prefs.micAutoGain||2,1,16):gainMicro(),bruit=null,calme=0,ouverte=true;amp.gain.value=g;
+  mes.fftSize=2048;hp.connect(mes);hp.connect(amp);amp.connect(comp);comp.connect(porte);porte.connect(etouffe);etouffe.connect(lim);
+  const auto=micAuto(),nettoie=antiBruit();let g=auto?clamp(+D.prefs.micAutoGain||2,1,16):gainMicro(),bruit=null,calme=0,ouverte=true,niveau=null,parole=0;amp.gain.value=g;
   const d=new Float32Array(mes.fftSize);
   const t=setInterval(()=>{
     mes.getFloatTimeDomainData(d);let q=0;for(let i=0;i<d.length;i++)q+=d[i]*d[i];const rms=Math.sqrt(q/d.length)+1e-6;
     // Le bruit de fond de la pièce : le niveau le plus bas entendu, qui remonte très lentement.
     bruit=bruit==null?rms:Math.min(rms,bruit*1.01);
     const parle=rms>Math.max(.003,bruit*3);              // la voix dépasse le bruit d'environ 10 dB
-    // Porte douce : entre deux phrases, le bruit ambiant est fortement baissé.
-    if(nettoie){calme=parle?0:calme+1;const ouvrir=parle||calme<4;
-      if(ouvrir!==ouverte){ouverte=ouvrir;porte.gain.setTargetAtTime(ouvrir?1:.12,ctx.currentTime,ouvrir?.01:.15)}}
+    // Porte douce : entre deux phrases, le bruit ambiant baisse un peu (jamais de trou).
+    if(nettoie){calme=parle?0:calme+1;const ouvrir=parle||calme<8;
+      if(ouvrir!==ouverte){ouverte=ouvrir;porte.gain.setTargetAtTime(ouvrir?1:.35,ctx.currentTime,ouvrir?.02:.35)}}
     if(!auto||!parle)return;                             // le niveau ne bouge que sur la voix
-    const voulu=clamp(.13/rms,1,16);                      // voix visée ≈ −18 dB
-    g=voulu<g?Math.max(voulu,g*.8):Math.min(voulu,g*1.025);
-    amp.gain.setTargetAtTime(g,ctx.currentTime,.08);D.prefs.micAutoGain=g;
+    // Niveau de la voix lissé sur environ une seconde : on suit la voix, pas chaque syllabe.
+    niveau=niveau==null?rms:niveau*.88+rms*.12;parole++;
+    const voulu=clamp(.13/niveau,1,16);                   // voix visée ≈ −18 dB
+    const vite=parole<40;                                 // les 4 premières secondes de voix : on se cale
+    if(rms*g>.6)g=Math.max(voulu,g*.9);                   // trop fort d'un coup : on baisse sans attendre
+    else g=voulu<g?Math.max(voulu,g*(vite?.95:.985)):Math.min(voulu,g*(vite?1.03:1.006));
+    amp.gain.setTargetAtTime(g,ctx.currentTime,.3);D.prefs.micAutoGain=g;
   },100);
-  return {entree:hp,sortie:lim,gain:()=>g,
+  const ch={entree:hp,sortie:lim,etouffe,ctx,gain:()=>g,
     regler(v){g=v;amp.gain.setTargetAtTime(v,ctx.currentTime,.05)},
-    stop(){clearInterval(t);[hp,amp,comp,porte,lim,mes].forEach(n=>{try{n.disconnect()}catch(e){}});if(auto)sauverBientot()}};
+    stop(){clearInterval(t);CHAINES.delete(ch);[hp,amp,comp,porte,etouffe,lim,mes].forEach(n=>{try{n.disconnect()}catch(e){}});if(auto)sauverBientot()}};
+  CHAINES.add(ch);return ch;
 }
 const contrainteMicro=(o={})=>Object.assign(D.prefs.micId?{deviceId:{exact:D.prefs.micId}}:{},o);
 async function ouvrirMicro(o={}){
