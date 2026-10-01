@@ -1733,31 +1733,66 @@ function arreterEnrSeance(){
    bout à bout, chacune raccourcie au début ou à la fin si besoin, reliées par un
    fondu doux, avec une musique de fond facultative sous l'ensemble. Le montage
    en cours est gardé sur cet appareil. L'assemblage produit un MP3. */
-const montageVide=()=>({parties:[],fond:{ref:null,vol:25},fondu:.3});
-const decodes=new Map();
+const montageVide=()=>({parties:[],fond:{ref:null,vol:25},fondu:.4,egaliser:true});
+/* Chaque audio est analysé une fois : les blancs techniques du début et de la fin (ajoutés
+   par l'encodeur MP3, < −60 dB) sont retirés, et son niveau de voix est mesuré pour égaliser
+   les enregistrements entre eux. */
+const decodes=new Map(),infos=new Map();
 async function decoder(id){
   if(decodes.has(id))return decodes.get(id);
   const b=await idbGet(id);if(!b)throw Object.assign(new Error('absent'),{absent:id});
-  audioInit();const buf=await A.ctx.decodeAudioData(await b.arrayBuffer());decodes.set(id,buf);return buf;
+  audioInit();const buf=await A.ctx.decodeAudioData(await b.arrayBuffer());decodes.set(id,buf);infos.set(id,analyser(buf));return buf;
+}
+function analyser(buf){
+  const d=buf.getChannelData(0),sr=buf.sampleRate,seuil=.001,max=Math.floor(sr*.4);
+  let i=0;while(i<Math.min(max,d.length)&&Math.abs(d[i])<seuil)i++;
+  let j=d.length-1;while(j>d.length-1-max&&j>i&&Math.abs(d[j])<seuil)j--;
+  // niveau de la voix : moyenne des tranches de 50 ms qui ne sont pas du silence
+  const w=Math.floor(sr*.05);let q=0,n=0;
+  for(let k=i;k+w<=j;k+=w){let e=0;for(let x=k;x<k+w;x++)e+=d[x]*d[x];e=Math.sqrt(e/w);if(e>.006){q+=e*e;n++}}
+  return {lead:i/sr,tail:(d.length-1-j)/sr,rms:n?Math.sqrt(q/n):0};
 }
 const morceau=id=>D.musiques.find(m=>m.id===id);
+// Bornes réelles d'une partie audio (blancs techniques retirés).
+function bornes(p){
+  const tot=p.total||(morceau(p.ref)||{}).duree||0,inf=infos.get(p.ref)||{lead:0,tail:0};
+  const deb=Math.max(p.debut||0,inf.lead),fin=Math.min(p.fin??tot,tot-inf.tail);
+  return {deb,fin:Math.max(deb,fin),tot};
+}
 function dureePartie(p){
   if(p.type==='silence')return Math.max(0,+p.duree||0);
-  const tot=p.total||(morceau(p.ref)||{}).duree||0;
-  return Math.max(0,Math.min(p.fin??tot,tot)-(p.debut||0));
+  const b=bornes(p);return Math.max(0,b.fin-b.deb);
 }
-function planMontage(M){let t=0;const l=M.parties.map(p=>{const d=dureePartie(p),x={p,t,d};t+=d;return x});return {l,total:t}}
+// Volume d'une partie : les enregistrements sont ramenés au même niveau de voix (≈ −20 dB).
+function gainPartie(M,p){
+  if(M.egaliser===false||p.type!=='audio')return 1;
+  const m=morceau(p.ref),inf=infos.get(p.ref);if(!m||!m.enr||!inf||!inf.rms)return 1;
+  return clamp(.1/inf.rms,.35,4);
+}
+// Deux audios qui se suivent se chevauchent : la suivante monte pendant que la précédente s'efface.
+function planMontage(M){
+  let t=0,prec=null;const f=M.fondu||0;
+  const l=M.parties.map(p=>{const d=dureePartie(p);let ov=0;
+    if(f>0&&prec&&prec.p.type==='audio'&&p.type==='audio')ov=Math.min(f,prec.d/2,d/2);
+    t-=ov;const x={p,t,d,ov,g:gainPartie(M,p)};if(prec)prec.ovFin=ov;t+=d;prec=x;return x});
+  l.forEach((x,i)=>{x.fi=x.ov>0?x.ov:(f>0&&x.p.type==='audio'?Math.min(.02,x.d/2):0);x.fo=x.ovFin>0?x.ovFin:(f>0&&x.p.type==='audio'?Math.min(.02,x.d/2):0)});
+  return {l,total:Math.max(0,t)};
+}
+// Courbe « à puissance égale » : pendant le fondu enchaîné, le volume ne creuse pas.
+const courbe=(n,monte)=>{const c=new Float32Array(n);for(let i=0;i<n;i++){const u=i/(n-1);c[i]=monte?Math.sin(u*Math.PI/2):Math.cos(u*Math.PI/2)}return c};
 let PREV=null;
 function arreterEcoute(){if(!PREV)return;PREV.sources.forEach(s=>{try{s.stop()}catch(e){}});clearInterval(PREV.t);PREV=null;const b=$('#mt-ecouter');if(b)b.innerHTML=`${IC.play} Écouter le montage`;const z=$('#mt-ou');if(z)z.textContent=''}
 async function jouerPlan(items,fond,total,surFin){
   arreterEcoute();audioInit();await A.ctx.resume();
-  const c=A.ctx,T=c.currentTime+.15,sources=[],f=Math.max(.01,(D.montage||{}).fondu||0);
+  const c=A.ctx,T=c.currentTime+.15,sources=[];
   for(const it of items){
     if(it.p.type!=='audio'||it.d<=0)continue;
     let buf;try{buf=await decoder(it.p.ref)}catch(e){continue}
-    const s=c.createBufferSource(),g=c.createGain();s.buffer=buf;const a=T+it.t,ff=Math.min(f,it.d/2);
-    g.gain.setValueAtTime(0,a);g.gain.linearRampToValueAtTime(1,a+ff);g.gain.setValueAtTime(1,a+it.d-ff);g.gain.linearRampToValueAtTime(0,a+it.d);
-    s.connect(g).connect(c.destination);s.start(a,it.p.debut||0,it.d);sources.push(s);
+    const s=c.createBufferSource(),g=c.createGain(),a=T+it.t,G=it.g||1,b=bornes(it.p);s.buffer=buf;
+    g.gain.setValueAtTime(it.fi?0:G,a);
+    if(it.fi)g.gain.setValueCurveAtTime(courbe(64,true).map(x=>x*G),a,it.fi);
+    if(it.fo)g.gain.setValueCurveAtTime(courbe(64,false).map(x=>x*G),a+it.d-it.fo,it.fo);
+    s.connect(g).connect(c.destination);s.start(a,b.deb,it.d);sources.push(s);
   }
   if(fond&&fond.ref){try{const buf=await decoder(fond.ref),s=c.createBufferSource(),g=c.createGain(),v=(fond.vol||0)/100;
     s.buffer=buf;s.loop=true;g.gain.setValueAtTime(0,T);g.gain.linearRampToValueAtTime(v,T+Math.min(3,total/2));g.gain.setValueAtTime(v,T+Math.max(0,total-4));g.gain.linearRampToValueAtTime(0,T+total);
@@ -1765,7 +1800,7 @@ async function jouerPlan(items,fond,total,surFin){
   PREV={sources,T,total,t:setInterval(()=>{const x=c.currentTime-T;if(x>=total){arreterEcoute();surFin&&surFin();return}const z=$('#mt-ou');if(z)z.textContent=`${mmss(Math.max(0,x)*1000)} / ${mmss(total*1000)}`},250)};
 }
 function vueMontage(){
-  const M=D.montage||(D.montage=montageVide());
+  const M=D.montage||(D.montage=montageVide());if(M.fondu===.3)M.fondu=.4;
   const {l,total}=planMontage(M);
   const opts=sel=>D.musiques.map(m=>`<option value="${m.id}" ${sel===m.id?'selected':''}>${m.dossier?esc(m.dossier)+' · ':''}${esc(m.nom)} (${mmss(m.duree*1000)})</option>`).join('');
   const sec=v=>(Math.round((v||0)*10)/10).toString().replace('.',',');
@@ -1788,7 +1823,9 @@ function vueMontage(){
     <div class="carte mt-reglages">
       <label class="champ">Musique de fond <span style="font-weight:500;color:var(--muted)">(facultatif, sous tout le montage, en boucle)</span><select id="mt-fond"><option value="">— Sans musique de fond —</option>${opts(M.fond.ref)}</select></label>
       <label class="champ ${M.fond.ref?'':'cache'}" id="mt-vol-l">Volume de la musique de fond <b id="mt-vol-v">${M.fond.vol} %</b><input type="range" id="mt-vol" min="0" max="100" value="${M.fond.vol}"></label>
-      <label class="champ" style="margin-bottom:0">Entre les parties<select id="mt-fondu"><option value="0" ${!M.fondu?'selected':''}>Coupe nette</option><option value="0.3" ${M.fondu==.3?'selected':''}>Fondu doux (0,3 s)</option><option value="1" ${M.fondu==1?'selected':''}>Fondu long (1 s)</option></select></label>
+      <label class="champ">Entre les parties<select id="mt-fondu"><option value="0" ${!M.fondu?'selected':''}>Coupe nette</option><option value="0.4" ${M.fondu>0&&M.fondu<.8?'selected':''}>Fondu enchaîné doux (0,4 s) — conseillé</option><option value="1.2" ${M.fondu>=.8?'selected':''}>Fondu enchaîné long (1,2 s)</option></select><span class="aide">La partie suivante commence pendant que la précédente s’efface : pas de trou, pas de cassure.</span></label>
+      <label class="bascule" style="margin:0"><input type="checkbox" id="mt-egal" ${M.egaliser!==false?'checked':''}>Égaliser le volume des enregistrements</label>
+      <span class="aide" style="display:block;margin-top:2px">Vos enregistrements sont ramenés au même niveau de voix, pour qu’on ne sente pas le passage de l’un à l’autre.</span>
     </div>
     <div class="mt-bas"><span class="mt-total">Durée totale : <b>${mmss(total*1000)}</b> <span id="mt-ou"></span></span>
       <button class="btn nu danger" id="mt-vider">${IC.poubelle} Tout effacer</button>
@@ -1804,7 +1841,7 @@ function vueMontage(){
       if(p.type==='audio'&&p.fin!=null&&p.fin<=(p.debut||0)+.5)p.fin=null;
       redessiner()});
     el.querySelectorAll('[data-ma]').forEach(b=>b.onclick=async()=>{const a=b.dataset.ma,t=M.parties;
-      if(a==='ecouter'){const d=dureePartie(p);await jouerPlan([{p,t:0,d}],null,d);return}
+      if(a==='ecouter'){try{await decoder(p.ref)}catch(e){}const d=dureePartie(p);await jouerPlan([{p,t:0,d,fi:.02,fo:.02,g:gainPartie(M,p)}],null,d);return}
       if(a==='haut'&&i>0){t.splice(i,1);t.splice(i-1,0,p)}
       if(a==='bas'&&i<t.length-1){t.splice(i,1);t.splice(i+1,0,p)}
       if(a==='dup')t.splice(i+1,0,{...clone(p),id:uid()});
@@ -1820,7 +1857,10 @@ function vueMontage(){
     utiliser:{label:'Ajouter au montage',fn:m=>{if(vue==='montage')ajouterAudio(m.id);else{M.parties.push({id:uid(),type:'audio',ref:m.id,debut:0,fin:null,total:m.duree});sauverBientot()}}}});
   $('#mt-fond').onchange=e=>{M.fond.ref=e.target.value||null;redessiner()};
   $('#mt-vol').oninput=e=>{M.fond.vol=+e.target.value;$('#mt-vol-v').textContent=M.fond.vol+' %';sauverBientot()};
-  $('#mt-fondu').onchange=e=>{M.fondu=+e.target.value;sauverBientot()};
+  $('#mt-fondu').onchange=e=>{M.fondu=+e.target.value;redessiner()};
+  $('#mt-egal').onchange=e=>{M.egaliser=e.target.checked;sauverBientot()};
+  // Analyse des audios du montage (blancs techniques, niveau), puis durées à jour.
+  {const manque=M.parties.filter(p=>p.type==='audio'&&!infos.has(p.ref));if(manque.length)Promise.all(manque.map(p=>decoder(p.ref).catch(()=>{}))).then(()=>{if(vue==='montage')vueMontage()})}
   $('#mt-vider').onclick=()=>{if(!confirm('Effacer tout le montage ? Vos enregistrements et morceaux, eux, restent dans Musiques.'))return;arreterEcoute();D.montage=montageVide();redessiner()};
   $('#mt-ecouter').onclick=async()=>{if(PREV){arreterEcoute();return}
     const {l,total}=planMontage(M);$('#mt-ecouter').innerHTML=`${IC.stop} Arrêter l’écoute`;await jouerPlan(l,M.fond,total)};
@@ -1839,7 +1879,8 @@ async function assemblerMontage(M){
     for(const it of l)if(it.p.type==='audio'&&!bufs.has(it.p.ref)){try{bufs.set(it.p.ref,await decoder(it.p.ref))}catch(e){manque.push((morceau(it.p.ref)||{}).nom||'?')}}
     let fondBuf=null;if(M.fond.ref){try{fondBuf=await decoder(M.fond.ref)}catch(e){manque.push((morceau(M.fond.ref)||{}).nom||'musique de fond')}}
     if(manque.length&&!confirm(`Ces audios ne sont pas sur cet appareil et seront remplacés par du silence : ${manque.join(', ')}. Continuer ?`)){v.remove();return}
-    const sr=A.ctx.sampleRate,N=Math.ceil(total*sr),f=M.fondu||0,vol=(M.fond.vol||0)/100,enc=new lamejs.Mp3Encoder(2,sr,128),parts=[];
+    const {l:l2,total:t2}=planMontage(M);l.splice(0,l.length,...l2);   // durées recalculées après analyse
+    const sr=A.ctx.sampleRate,N=Math.ceil(t2*sr),vol=(M.fond.vol||0)/100,enc=new lamejs.Mp3Encoder(2,sr,128),parts=[];
     const pcm=x=>{const r=new Int16Array(x.length);for(let i=0;i<x.length;i++){const u=x[i]>1?1:x[i]<-1?-1:x[i];r[i]=u<0?u*32768:u*32767}return r};
     const BLOC=sr*10;
     for(let s0=0;s0<N;s0+=BLOC){
@@ -1847,11 +1888,13 @@ async function assemblerMontage(M){
       for(const it of l){
         if(it.p.type!=='audio')continue;const buf=bufs.get(it.p.ref);if(!buf)continue;
         const a=Math.round(it.t*sr),b=a+Math.round(it.d*sr);if(b<=s0||a>=s0+n)continue;
-        const c0=buf.getChannelData(0),c1=buf.getChannelData(buf.numberOfChannels>1?1:0),off=Math.round((it.p.debut||0)*sr),ff=Math.min(f,it.d/2)*sr;
+        const c0=buf.getChannelData(0),c1=buf.getChannelData(buf.numberOfChannels>1?1:0),off=Math.round(bornes(it.p).deb*sr),fi=it.fi*sr,fo=it.fo*sr,G=it.g||1;
         for(let k=Math.max(a,s0);k<Math.min(b,s0+n);k++){const u=k-a,j=off+u;if(j>=c0.length)break;
-          const g=ff>0?Math.min(1,u/ff,(b-k)/ff):1;L[k-s0]+=c0[j]*g;R[k-s0]+=c1[j]*g}
+          // fondus « à puissance égale » : pendant l'enchaînement, le volume ne creuse pas
+          let g=G;if(fi>0&&u<fi)g*=Math.sin(u/fi*Math.PI/2);if(fo>0&&b-k<fo)g*=Math.sin((b-k)/fo*Math.PI/2);
+          L[k-s0]+=c0[j]*g;R[k-s0]+=c1[j]*g}
       }
-      if(fondBuf&&vol>0){const c0=fondBuf.getChannelData(0),c1=fondBuf.getChannelData(fondBuf.numberOfChannels>1?1:0),len=c0.length,fi=Math.min(3,total/2)*sr,fo=Math.min(4,total/2)*sr;
+      if(fondBuf&&vol>0){const c0=fondBuf.getChannelData(0),c1=fondBuf.getChannelData(fondBuf.numberOfChannels>1?1:0),len=c0.length,fi=Math.min(3,t2/2)*sr,fo=Math.min(4,t2/2)*sr;
         for(let k=s0;k<s0+n;k++){const g=vol*Math.min(1,k/fi,(N-k)/fo),j=k%len;L[k-s0]+=c0[j]*g;R[k-s0]+=c1[j]*g}}
       const gL=pcm(L),gR=pcm(R);
       for(let i=0;i<n;i+=1152){const b=enc.encodeBuffer(gL.subarray(i,i+1152),gR.subarray(i,i+1152));if(b.length)parts.push(new Uint8Array(b))}
@@ -1860,7 +1903,7 @@ async function assemblerMontage(M){
     }
     const fin=enc.flush();if(fin.length)parts.push(new Uint8Array(fin));
     v.remove();
-    fenetreResultat(new Blob(parts,{type:'audio/mpeg'}),total*1000,`Montage – ${new Date().toLocaleDateString('fr-FR')}`);
+    fenetreResultat(new Blob(parts,{type:'audio/mpeg'}),t2*1000,`Montage – ${new Date().toLocaleDateString('fr-FR')}`);
   }catch(e){v.remove();toast('L’assemblage n’a pas pu aboutir : '+(e.message||e))}
 }
 
