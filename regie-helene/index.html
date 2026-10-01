@@ -447,6 +447,7 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .g-souris{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;color:var(--canard-dark);background:var(--aqua-pale);border-radius:999px;padding:5px 10px;white-space:nowrap}
 .g-souris.cache{display:none}
 .guide.mode-souris .g-main{cursor:pointer}
+.guide .g-texte{cursor:grab}.guide.glisse,.guide.glisse *{cursor:grabbing!important;user-select:none}
 .aide-souris{line-height:1.55;font-size:12.5px}
 .aide-souris svg{display:inline-block;vertical-align:-3px}
 @media(max-width:560px){.g-souris span{display:none}.g-souris{padding:5px 7px}}
@@ -1668,10 +1669,28 @@ function brancherSouris(){
   g.addEventListener('wheel',e=>{
     if(!souris||libre(e))return;e.preventDefault();
     const now=performance.now();if(now-dernier<120)return;dernier=now;
-    const p=D.prefs;p.autoTexte=true;p.wpm=clamp(p.wpm+(e.deltaY<0?5:-5),40,180);
+    // Un cran = 10 mots/min (assez pour sentir la différence), affiché à l'écran.
+    const p=D.prefs,avant=p.wpm;p.autoTexte=true;p.wpm=clamp(p.wpm+(e.deltaY<0?10:-10),30,200);G.manuel=0;
     sauverBientot();rendreReglagesGuide();majSouris();
+    toast(p.wpm===avant?(e.deltaY<0?'Vitesse maximale':'Vitesse minimale')+` · ${p.wpm} mots/min`:`${e.deltaY<0?'▲ Plus vite':'▼ Moins vite'} · ${p.wpm} mots/min`);
   },{passive:false});
+  // Clic gauche maintenu : on fait glisser le texte comme avec le doigt sur un téléphone.
+  let tire=null,aGlisse=false;
+  g.addEventListener('mousedown',e=>{
+    if(e.button!==0||libre(e))return;
+    const tx=$('#g-texte');if(!tx)return;
+    tire={y:e.clientY,haut:tx.scrollTop,tx};aGlisse=false;
+  });
+  addEventListener('mousemove',e=>{
+    if(!tire)return;if(!(e.buttons&1)){tire=null;return}
+    const dy=e.clientY-tire.y;
+    if(!aGlisse&&Math.abs(dy)<6)return;
+    if(!aGlisse){aGlisse=true;g.classList.add('glisse');try{getSelection().removeAllRanges()}catch(_){}}
+    e.preventDefault();tire.tx.scrollTop=tire.haut-dy;G.manuel=performance.now()+1500;
+  });
+  addEventListener('mouseup',()=>{if(!tire)return;tire=null;g.classList.remove('glisse');if(aGlisse)G.manuel=performance.now()+1200});
   g.addEventListener('click',e=>{
+    if(aGlisse){aGlisse=false;e.preventDefault();e.stopPropagation();return}   // c'était un glissement, pas un clic
     if(!souris||e.button!==0||libre(e))return;e.preventDefault();e.stopPropagation();
     allerTemps(G.i-1);
   },true);
@@ -1690,7 +1709,7 @@ function rendreReglagesGuide(){
     <div class="sep"></div>
     <button id="r-son">${IC.casque} Micro et son…</button>
     <div class="sep"></div>
-    <div class="bloc-reglage aide-souris"><b>${IC.souris} Piloter à la souris</b><br>Cliquez sur la <b>roulette</b> pour activer (ou arrêter) le mode souris. Ensuite :<br>· roulette vers le haut : le texte défile <b>plus vite</b><br>· roulette vers le bas : il défile <b>moins vite</b><br>· clic gauche : <b>étape précédente</b><br>· clic droit : <b>étape suivante</b><br><span style="color:var(--muted)">Les boutons du haut et du bas restent utilisables.</span></div>
+    <div class="bloc-reglage aide-souris"><b>${IC.souris} Piloter à la souris</b><br>Cliquez sur la <b>roulette</b> pour activer (ou arrêter) le mode souris. Ensuite :<br>· roulette vers le haut : le texte défile <b>plus vite</b> (+10 mots/min par cran)<br>· roulette vers le bas : il défile <b>moins vite</b><br>· clic gauche : <b>étape précédente</b><br>· clic gauche <b>maintenu</b> en bougeant : faire glisser le texte, comme avec le doigt<br>· clic droit : <b>étape suivante</b><br><span style="color:var(--muted)">Les boutons du haut et du bas restent utilisables.</span></div>
     <div class="sep"></div>
     <div class="bloc-reglage" style="color:var(--muted);line-height:1.6;font-size:12.5px">Pédale tourne-page ou clavier :<br>→ temps suivant · ← précédent<br>Espace : démarrer / pause · N : mode nuit<br>↑ ↓ : faire défiler le texte</div>`;
   const rapide=$('#g-rapide');
