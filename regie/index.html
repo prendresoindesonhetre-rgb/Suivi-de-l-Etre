@@ -466,6 +466,7 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 @media(max-width:560px){.nouvelles{grid-template-columns:1fr}}
 .ecouter-sur{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin:0 0 12px;flex-wrap:wrap}
 .ecouter-sur select{width:auto;flex:1;min-width:0;padding:4px 8px;font-size:12px;border-radius:10px}
+.enr-diag{font-size:12px;color:var(--muted);margin:-6px 0 12px}
 .alerte-bloc{background:var(--attente-pale);color:#8a5a14}
 .enr-actions{display:flex;flex-wrap:wrap;gap:8px}
 .voile{position:fixed;inset:0;z-index:80;background:rgba(56,54,80,.38);display:flex;align-items:center;justify-content:center;padding:18px}
@@ -1328,6 +1329,7 @@ async function creerEnregistreur(o={}){
     nom:o.nom,get etat(){return etat},duree:()=>ms,
     demarrer(){etat='enr'},pause(){if(etat==='enr')etat='pause'},reprendre(){if(etat==='pause')etat='enr'},
     niveau(){const d=new Uint8Array(ana.fftSize);ana.getByteTimeDomainData(d);let m=0;for(let i=0;i<d.length;i++){const v=Math.abs(d[i]-128);if(v>m)m=v}return Math.min(1,m/100)},
+    micro:(flux.getAudioTracks()[0]||{}).label||'',
     arreter(){etat='fini';fermer();const f=enc.flush();if(f.length)parts.push(new Uint8Array(f));const blob=tout();deCote();return {blob,ms,pic}},
     annuler(){etat='fini';fermer();oublierEnr()}
   };
@@ -1348,9 +1350,10 @@ function fenetreResultat(blob,ms,nom,o={}){
   v.innerHTML=`<div class="fenetre enr-fen">
     <h2>${IC.micro} ${o.recupere?'Enregistrement retrouvé':'Votre enregistrement'}</h2>
     <p class="sous" style="margin:0 0 12px">${o.recupere?'Cet enregistrement n’avait pas été terminé. Le voici, tel qu’il a été gardé. ':''}Durée <b>${mmss(ms)}</b> · ${(blob.size/1048576).toFixed(1)} Mo · MP3</p>
+    ${o.micro!=null?`<p class="enr-diag">Micro utilisé : <b>${esc(o.micro||'inconnu')}</b> · niveau le plus fort capté : <b>${Math.min(100,Math.round((o.pic||0)*100))} %</b></p>`:''}
     ${o.pic!=null&&o.pic<.02?`<div class="info-bloc alerte-bloc">${IC.info}<span><b>Le micro n’a presque rien capté.</b> Vérifiez qu’il n’est pas coupé, rapprochez-vous, ou montez son volume d’entrée dans les réglages de Windows (Son → Entrée).</span></div>`:''}
     <audio class="enr-ecoute" controls src="${u}" style="width:100%;margin-bottom:4px"></audio>
-    <label class="ecouter-sur cache">Écouter sur <select id="er-sortie"><option value="">la sortie par défaut de l’ordinateur</option></select></label>
+    <label class="ecouter-sur cache">Écouter sur <select id="er-sortie"><option value="">la sortie par défaut</option></select></label>
     <label class="champ">Nom du fichier<input type="text" id="er-nom" value="${esc(nom||'Enregistrement')}"></label>
     <div class="enr-actions">
       ${o.utiliser?`<button class="btn p" id="er-utiliser">${IC.check} ${esc(o.utiliser.label)}</button>`:''}
@@ -1362,11 +1365,13 @@ function fenetreResultat(blob,ms,nom,o={}){
     <div class="actions" style="margin-top:12px"><button class="btn nu danger" id="er-jeter">${IC.poubelle} Supprimer</button><span style="flex:1"></span><button class="btn" id="er-fermer">Fermer</button></div>
   </div>`;
   document.body.appendChild(v);
-  // La réécoute part sur la sortie par défaut de l'ordinateur ; on peut choisir une autre sortie.
+  // La réécoute part sur la sortie choisie dans « Micro et son » ; on peut en changer ici.
   {const au=v.querySelector('audio'),sel=$('#er-sortie');
+    if(D.prefs.sortieId&&au.setSinkId)au.setSinkId(D.prefs.sortieId).catch(()=>{});
     if(au.setSinkId&&navigator.mediaDevices&&navigator.mediaDevices.enumerateDevices)navigator.mediaDevices.enumerateDevices().then(l=>{
       const so=l.filter(x=>x.kind==='audiooutput'&&x.deviceId&&x.deviceId!=='default'&&x.deviceId!=='communications');if(!so.length)return;
       sel.innerHTML+=so.map((x,i)=>`<option value="${esc(x.deviceId)}">${esc(nomAppareil(x,i,'audiooutput'))}</option>`).join('');
+      sel.value=so.some(x=>x.deviceId===D.prefs.sortieId)?D.prefs.sortieId:'';
       v.querySelector('.ecouter-sur').classList.remove('cache');
       sel.onchange=()=>au.setSinkId(sel.value).catch(()=>{toast('Cette sortie n’a pas pu être utilisée');sel.value='';au.setSinkId('').catch(()=>{})});
     }).catch(()=>{})}
@@ -1435,7 +1440,7 @@ function fenetreEnregistreur(o={}){
   const terminer=()=>{
     clearInterval(tH);const E=ENRL;ENRL=null;const res=E.arreter();if(fond)sortie(1.5);v.remove();
     if(res.ms<1000){oublierEnr();toast('Enregistrement vide : rien n’a été gardé');return}
-    fenetreResultat(res.blob,res.ms,o.nom,{utiliser:o.utiliser,pic:res.pic});
+    fenetreResultat(res.blob,res.ms,o.nom,{utiliser:o.utiliser,pic:res.pic,micro:E.micro});
   };
   boutons();
 }
@@ -1485,7 +1490,7 @@ function arreterEnrSeance(){
   if(!ENR)return;const E=ENR;ENR=null;
   const r=E.arreter();rendreBoutonEnr();
   if(r.ms<1000){oublierEnr();toast('Enregistrement vide : rien n’a été gardé');return}
-  fenetreResultat(r.blob,r.ms,E.nom,{pic:r.pic});
+  fenetreResultat(r.blob,r.ms,E.nom,{pic:r.pic,micro:E.micro});
 }
 
 /* =============================== GUIDER =============================== */
