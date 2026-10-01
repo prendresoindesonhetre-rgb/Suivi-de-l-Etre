@@ -2,7 +2,7 @@
 // Réseau d'abord (on a toujours la dernière version quand internet est là),
 // la copie gardée sinon. Ne touche qu'aux fichiers de /regie/ ; la
 // synchronisation (Supabase) passe directement, sans cache.
-const CACHE = 'regie-etre-v20';
+const CACHE = 'regie-etre-v24';
 const FICHIERS = ['./', './index.html', './manifest.json', './logo.png', './icone-192.png', './icone-512.png', './lame.min.js'];
 
 self.addEventListener('install', e => e.waitUntil(

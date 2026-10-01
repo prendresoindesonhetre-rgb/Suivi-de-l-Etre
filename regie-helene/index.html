@@ -46,6 +46,9 @@ body:not(.nuit)::before{content:"";position:fixed;inset:0;z-index:-1;pointer-eve
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 .cache{display:none!important}
+/* Le logo en filigrane, très léger, sur la page d'accueil */
+.filigrane{position:fixed;inset:var(--haut) 0 0 0;z-index:-1;pointer-events:none;background:url(logo.png) center 58%/min(78vw,620px) no-repeat;opacity:.07}
+body.nuit .filigrane{opacity:.05}
 svg{display:block;flex:none}
 
 /* ——— Barre du haut ——— */
@@ -444,6 +447,7 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .g-souris{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;color:var(--canard-dark);background:var(--aqua-pale);border-radius:999px;padding:5px 10px;white-space:nowrap}
 .g-souris.cache{display:none}
 .guide.mode-souris .g-main{cursor:pointer}
+.guide .g-texte{cursor:grab}.guide.glisse,.guide.glisse *{cursor:grabbing!important;user-select:none}
 .aide-souris{line-height:1.55;font-size:12.5px}
 .aide-souris svg{display:inline-block;vertical-align:-3px}
 @media(max-width:560px){.g-souris span{display:none}.g-souris{padding:5px 7px}}
@@ -588,25 +592,32 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 @media(max-width:1100px){.guide.visio .g-main{grid-template-columns:300px minmax(0,1fr) 280px}}
 @media(max-width:820px){.guide.visio .g-main{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto}.col-salle{border-right:0;border-bottom:1px solid var(--line);max-height:38vh;overflow:auto}}
 
-/* ===== Palette d'Hélène : soleil doux ===== */
+/* ===== Palette d'Hélène : soleil très doux =====
+   Les couleurs de son logo, en voiles : le soleil (miel pâle) et le cercle
+   arc-en-ciel (pêche, rose, menthe, ciel, lavande), sur un fond crème. */
 :root{
-  --fond:#fffaf2; --carte:rgba(255,255,255,.9); --plein:#fffdf9; --ink:#4a3f3c; --muted:#8b7d76;
-  --line:#f2e7d8; --line-bleu:#efdcc4; --canard:#b8735a; --canard-deep:#a8654d; --canard-dark:#94573f; --canard-light:#fdf0e6;
-  --aqua-pale:#fff2d6; --aqua:#ffe3a3; --violet-soft:#f7ecf3; --violet:#d9b8d6; --peri-deep:#9a7aa8; --peri-darker:#76588a;
-  --info-pale:#fff2d6;
-  --t-parole:#f3eaf7; --t-parole-f:#86669a; --t-instrument:#e6f2f6; --t-instrument-f:#4f8a9a; --t-musique:#fbe7ee; --t-musique-f:#a65f7b;
-  --t-silence:#f3efea; --t-silence-f:#857a72; --t-transition:#e8f4e6; --t-transition-f:#5d8a5a; --t-partage:#fdebdc; --t-partage-f:#b0704a;
-  --ombre:0 18px 46px -30px rgba(150,110,80,.35); --sable:#f5e6cf;
+  --fond:#fffcf6; --carte:rgba(255,255,255,.82); --plein:#fffefb; --ink:#5b504c; --muted:#9a8e87;
+  --line:#f5ede2; --line-bleu:#f1e3d0; --canard:#c9937a; --canard-deep:#bd8870; --canard-dark:#a87862; --canard-light:#fdf4ec;
+  --aqua-pale:#fff6e0; --aqua:#ffeab8; --violet-soft:#f8f1f7; --violet:#e2cde0; --peri-deep:#b39bc0; --peri-darker:#8e7499;
+  --info-pale:#fff6e0; --attente-pale:#fff3e3;
+  --t-parole:#f6f0f9; --t-parole-f:#9a82aa; --t-instrument:#eef6f8; --t-instrument-f:#6e9fab; --t-musique:#fcf0f3; --t-musique-f:#b9849a;
+  --t-silence:#f6f3ef; --t-silence-f:#9a8f87; --t-transition:#f0f7ee; --t-transition-f:#7fa47b; --t-partage:#fdf2e8; --t-partage-f:#c28e6d;
+  --ombre:0 20px 50px -34px rgba(190,150,110,.32); --sable:#f8eedd;
 }
 body:not(.nuit)::before{background-image:
-  radial-gradient(48% 34% at 88% 0%,rgba(255,226,150,.55),transparent 68%),
-  radial-gradient(42% 30% at 4% 10%,rgba(250,214,226,.5),transparent 70%),
-  radial-gradient(46% 30% at 96% 55%,rgba(214,236,226,.45),transparent 70%),
-  radial-gradient(44% 30% at 8% 92%,rgba(220,214,244,.45),transparent 70%)}
-body:not(.nuit) .haut{background:rgba(255,250,242,.86)}
-.btn.p{box-shadow:0 14px 28px -16px rgba(154,122,168,.85)}
+  radial-gradient(46% 36% at 90% -2%,rgba(255,232,165,.5),transparent 70%),
+  radial-gradient(40% 30% at 2% 8%,rgba(252,222,226,.42),transparent 72%),
+  radial-gradient(44% 30% at 98% 52%,rgba(222,240,226,.4),transparent 72%),
+  radial-gradient(40% 30% at 30% 100%,rgba(220,234,246,.38),transparent 72%),
+  radial-gradient(40% 30% at 0% 70%,rgba(234,224,246,.38),transparent 72%)}
+body:not(.nuit) .haut{background:rgba(255,252,246,.84)}
+.btn.p{box-shadow:0 14px 30px -18px rgba(179,155,192,.75)}
+.btn{border-color:var(--line-bleu)}
 .marque img{height:38px}
 .marque span{color:var(--peri-darker)}
+.marque-nom small{color:#d4a64a}
+.g-texte{color:#5b504c}
+.voile{background:rgba(150,125,110,.22);backdrop-filter:blur(3px)}
 </style>
 </head>
 <body>
@@ -616,7 +627,7 @@ body:not(.nuit) .haut{background:rgba(255,250,242,.86)}
   <nav class="onglets" id="onglets">
     <button data-v="seances">Séances</button><button data-v="blocs">Mes blocs</button><button data-v="musiques">Musiques</button><button data-v="bilans">Bilans</button>
   </nav>
-  <div class="droite"><span class="etat-save" id="etat-save"></span></div>
+  <div class="droite"><span class="etat-save" id="etat-save"></span><button class="sync" id="etat-sync" type="button"></button></div>
 </div></header>
 <div id="bandeau"></div>
 <div id="vue"></div>
@@ -742,7 +753,7 @@ $$('#onglets button').forEach(b=>b.onclick=()=>aller(b.dataset.v));
 
 /* =============================== MES SÉANCES =============================== */
 function vueSeances(){
-  $('#vue').innerHTML=`<div class="page">
+  $('#vue').innerHTML=`<div class="filigrane" aria-hidden="true"></div><div class="page">
     <div class="tete-page"><div><h1 class="titre">Mes séances</h1><p class="sous">Préparez une séance une fois, guidez-la et enregistrez-la.</p></div>
       <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap"><button class="btn s" id="b-son">${IC.casque} Micro et son</button>
       <div class="menu"><button class="btn s">${IC.points} Sauvegarde</button><div class="menu-liste">
@@ -1209,30 +1220,41 @@ const antiBruit=()=>D.prefs.antiBruit!==false;
    niveau réglé tout seul (on vise une voix bien présente : il monte doucement
    quand on parle bas, redescend vite quand on parle fort, ne bouge pas dans
    les silences), compression douce pour une voix régulière, puis limiteur. */
+// Les chaînes de voix ouvertes (enregistrement, essai du micro) : un clic les fait taire un éclair.
+const CHAINES=new Set();
+function etoufferClic(){
+  CHAINES.forEach(c=>{const g=c.etouffe.gain,t=c.ctx.currentTime;g.cancelScheduledValues(t);g.setTargetAtTime(.03,t,.003);g.setTargetAtTime(1,t+.15,.03)});
+}
+['mousedown','mouseup','wheel','keydown'].forEach(ev=>addEventListener(ev,()=>{if(CHAINES.size)etoufferClic()},{capture:true,passive:true}));
 function chaineVoix(ctx){
-  const hp=ctx.createBiquadFilter(),amp=ctx.createGain(),comp=ctx.createDynamicsCompressor(),porte=ctx.createGain(),lim=ctx.createDynamicsCompressor(),mes=ctx.createAnalyser();
+  const hp=ctx.createBiquadFilter(),amp=ctx.createGain(),comp=ctx.createDynamicsCompressor(),porte=ctx.createGain(),etouffe=ctx.createGain(),lim=ctx.createDynamicsCompressor(),mes=ctx.createAnalyser();
   hp.type='highpass';hp.frequency.value=80;hp.Q.value=.7;
-  comp.threshold.value=-24;comp.knee.value=12;comp.ratio.value=3;comp.attack.value=.01;comp.release.value=.3;
+  comp.threshold.value=-26;comp.knee.value=14;comp.ratio.value=2.5;comp.attack.value=.015;comp.release.value=.4;
   lim.threshold.value=-3;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=.002;lim.release.value=.2;
-  mes.fftSize=2048;hp.connect(mes);hp.connect(amp);amp.connect(comp);comp.connect(porte);porte.connect(lim);
-  const auto=micAuto(),nettoie=antiBruit();let g=auto?clamp(+D.prefs.micAutoGain||2,1,16):gainMicro(),bruit=null,calme=0,ouverte=true;amp.gain.value=g;
+  mes.fftSize=2048;hp.connect(mes);hp.connect(amp);amp.connect(comp);comp.connect(porte);porte.connect(etouffe);etouffe.connect(lim);
+  const auto=micAuto(),nettoie=antiBruit();let g=auto?clamp(+D.prefs.micAutoGain||2,1,16):gainMicro(),bruit=null,calme=0,ouverte=true,niveau=null,parole=0;amp.gain.value=g;
   const d=new Float32Array(mes.fftSize);
   const t=setInterval(()=>{
     mes.getFloatTimeDomainData(d);let q=0;for(let i=0;i<d.length;i++)q+=d[i]*d[i];const rms=Math.sqrt(q/d.length)+1e-6;
     // Le bruit de fond de la pièce : le niveau le plus bas entendu, qui remonte très lentement.
     bruit=bruit==null?rms:Math.min(rms,bruit*1.01);
     const parle=rms>Math.max(.003,bruit*3);              // la voix dépasse le bruit d'environ 10 dB
-    // Porte douce : entre deux phrases, le bruit ambiant est fortement baissé.
-    if(nettoie){calme=parle?0:calme+1;const ouvrir=parle||calme<4;
-      if(ouvrir!==ouverte){ouverte=ouvrir;porte.gain.setTargetAtTime(ouvrir?1:.12,ctx.currentTime,ouvrir?.01:.15)}}
+    // Porte douce : entre deux phrases, le bruit ambiant baisse un peu (jamais de trou).
+    if(nettoie){calme=parle?0:calme+1;const ouvrir=parle||calme<8;
+      if(ouvrir!==ouverte){ouverte=ouvrir;porte.gain.setTargetAtTime(ouvrir?1:.35,ctx.currentTime,ouvrir?.02:.35)}}
     if(!auto||!parle)return;                             // le niveau ne bouge que sur la voix
-    const voulu=clamp(.13/rms,1,16);                      // voix visée ≈ −18 dB
-    g=voulu<g?Math.max(voulu,g*.8):Math.min(voulu,g*1.025);
-    amp.gain.setTargetAtTime(g,ctx.currentTime,.08);D.prefs.micAutoGain=g;
+    // Niveau de la voix lissé sur environ une seconde : on suit la voix, pas chaque syllabe.
+    niveau=niveau==null?rms:niveau*.88+rms*.12;parole++;
+    const voulu=clamp(.13/niveau,1,16);                   // voix visée ≈ −18 dB
+    const vite=parole<40;                                 // les 4 premières secondes de voix : on se cale
+    if(rms*g>.6)g=Math.max(voulu,g*.9);                   // trop fort d'un coup : on baisse sans attendre
+    else g=voulu<g?Math.max(voulu,g*(vite?.95:.985)):Math.min(voulu,g*(vite?1.03:1.006));
+    amp.gain.setTargetAtTime(g,ctx.currentTime,.3);D.prefs.micAutoGain=g;
   },100);
-  return {entree:hp,sortie:lim,gain:()=>g,
+  const ch={entree:hp,sortie:lim,etouffe,ctx,gain:()=>g,
     regler(v){g=v;amp.gain.setTargetAtTime(v,ctx.currentTime,.05)},
-    stop(){clearInterval(t);[hp,amp,comp,porte,lim,mes].forEach(n=>{try{n.disconnect()}catch(e){}});if(auto)sauverBientot()}};
+    stop(){clearInterval(t);CHAINES.delete(ch);[hp,amp,comp,porte,etouffe,lim,mes].forEach(n=>{try{n.disconnect()}catch(e){}});if(auto)sauverBientot()}};
+  CHAINES.add(ch);return ch;
 }
 const contrainteMicro=(o={})=>Object.assign(D.prefs.micId?{deviceId:{exact:D.prefs.micId}}:{},o);
 async function ouvrirMicro(o={}){
@@ -1658,10 +1680,28 @@ function brancherSouris(){
   g.addEventListener('wheel',e=>{
     if(!souris||libre(e))return;e.preventDefault();
     const now=performance.now();if(now-dernier<120)return;dernier=now;
-    const p=D.prefs;p.autoTexte=true;p.wpm=clamp(p.wpm+(e.deltaY<0?5:-5),40,180);
+    // Un cran = 10 mots/min (assez pour sentir la différence), affiché à l'écran.
+    const p=D.prefs,avant=p.wpm;p.autoTexte=true;p.wpm=clamp(p.wpm+(e.deltaY<0?10:-10),30,200);G.manuel=0;
     sauverBientot();rendreReglagesGuide();majSouris();
+    toast(p.wpm===avant?(e.deltaY<0?'Vitesse maximale':'Vitesse minimale')+` · ${p.wpm} mots/min`:`${e.deltaY<0?'▲ Plus vite':'▼ Moins vite'} · ${p.wpm} mots/min`);
   },{passive:false});
+  // Clic gauche maintenu : on fait glisser le texte comme avec le doigt sur un téléphone.
+  let tire=null,aGlisse=false;
+  g.addEventListener('mousedown',e=>{
+    if(e.button!==0||libre(e))return;
+    const tx=$('#g-texte');if(!tx)return;
+    tire={y:e.clientY,haut:tx.scrollTop,tx};aGlisse=false;
+  });
+  addEventListener('mousemove',e=>{
+    if(!tire)return;if(!(e.buttons&1)){tire=null;return}
+    const dy=e.clientY-tire.y;
+    if(!aGlisse&&Math.abs(dy)<6)return;
+    if(!aGlisse){aGlisse=true;g.classList.add('glisse');try{getSelection().removeAllRanges()}catch(_){}}
+    e.preventDefault();tire.tx.scrollTop=tire.haut-dy;G.manuel=performance.now()+1500;
+  });
+  addEventListener('mouseup',()=>{if(!tire)return;tire=null;g.classList.remove('glisse');if(aGlisse)G.manuel=performance.now()+1200});
   g.addEventListener('click',e=>{
+    if(aGlisse){aGlisse=false;e.preventDefault();e.stopPropagation();return}   // c'était un glissement, pas un clic
     if(!souris||e.button!==0||libre(e))return;e.preventDefault();e.stopPropagation();
     allerTemps(G.i-1);
   },true);
@@ -1680,7 +1720,7 @@ function rendreReglagesGuide(){
     <div class="sep"></div>
     <button id="r-son">${IC.casque} Micro et son…</button>
     <div class="sep"></div>
-    <div class="bloc-reglage aide-souris"><b>${IC.souris} Piloter à la souris</b><br>Cliquez sur la <b>roulette</b> pour activer (ou arrêter) le mode souris. Ensuite :<br>· roulette vers le haut : le texte défile <b>plus vite</b><br>· roulette vers le bas : il défile <b>moins vite</b><br>· clic gauche : <b>étape précédente</b><br>· clic droit : <b>étape suivante</b><br><span style="color:var(--muted)">Les boutons du haut et du bas restent utilisables.</span></div>
+    <div class="bloc-reglage aide-souris"><b>${IC.souris} Piloter à la souris</b><br>Cliquez sur la <b>roulette</b> pour activer (ou arrêter) le mode souris. Ensuite :<br>· roulette vers le haut : le texte défile <b>plus vite</b> (+10 mots/min par cran)<br>· roulette vers le bas : il défile <b>moins vite</b><br>· clic gauche : <b>étape précédente</b><br>· clic gauche <b>maintenu</b> en bougeant : faire glisser le texte, comme avec le doigt<br>· clic droit : <b>étape suivante</b><br><span style="color:var(--muted)">Les boutons du haut et du bas restent utilisables.</span></div>
     <div class="sep"></div>
     <div class="bloc-reglage" style="color:var(--muted);line-height:1.6;font-size:12.5px">Pédale tourne-page ou clavier :<br>→ temps suivant · ← précédent<br>Espace : démarrer / pause · N : mode nuit<br>↑ ↓ : faire défiler le texte</div>`;
   const rapide=$('#g-rapide');
@@ -2014,12 +2054,44 @@ $('#f-restaure').onchange=async e=>{
    au retour du réseau. Les fichiers audio restent sur chaque appareil.
    Pendant qu'une séance est guidée ou préparée, rien ne vient la modifier :
    ce qui arrive d'ailleurs attend la sortie de l'écran. */
-const SB_URL='';   // régie autonome : aucun compte, aucune synchronisation
-const SB_KEY='';
+const SB_URL='https://issedanlnadbhidlymnc.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const COLL=['seances','mesBlocs','bilans','musiques','boutons'];
 const CLE_BASE='regieHelene.base';
 const SYN={etat:'',enCours:false,encore:false,differe:false,t:null,derniere:null};
 const occupe=()=>vue==='guider'||vue==='editer';
+
+/* ——— Compte chiffré (régie offerte) ———
+   COMPTE=null : la régie de l'Être (table « regie », réservée à la propriétaire).
+   COMPTE={table} : une régie offerte. Chaque compte a sa ligne dans cette
+   table et n'y voit qu'elle. Les données y sont chiffrées sur l'appareil avec
+   une clé tirée du mot de passe (que seule la personne connaît) : la
+   propriétaire de la base ne voit qu'une suite de caractères illisible.
+   À la première connexion, le mot de passe provisoire doit être remplacé. */
+const COMPTE={table:'regie_comptes'};
+const K_ACC=COMPTE?CLE+'.sb_access':'sb_access_token',K_REF=COMPTE?CLE+'.sb_refresh':'sb_refresh_token',K_EXP=COMPTE?CLE+'.sb_expires':'sb_expires_at';
+const K_CLE=CLE+'.cle',K_REMPLACE=CLE+'.remplace';
+async function deriverCle(mdp,sel){
+  const m=await crypto.subtle.importKey('raw',new TextEncoder().encode(mdp),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:sel,iterations:310000},m,{name:'AES-GCM',length:256},true,['encrypt','decrypt']);
+}
+async function garderCle(k,sel){const raw=new Uint8Array(await crypto.subtle.exportKey('raw',k));localStorage.setItem(K_CLE,JSON.stringify({sel:versB64u(sel),k:versB64u(raw)}))}
+async function cleLocale(){
+  let j=null;try{j=JSON.parse(localStorage.getItem(K_CLE)||'null')}catch(e){}
+  if(!j)return null;
+  return {sel:j.sel,k:await crypto.subtle.importKey('raw',depuisB64u(j.k),'AES-GCM',false,['encrypt','decrypt'])};
+}
+async function chiffrer(doc){
+  const c=await cleLocale();if(!c)throw Object.assign(new Error('cle'),{cle:true});
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},c.k,new TextEncoder().encode(JSON.stringify(doc))));
+  return {v:1,sel:c.sel,iv:versB64u(iv),ct:versB64u(ct)};
+}
+async function dechiffrer(co){
+  const c=await cleLocale();if(!c||!co||c.sel!==co.sel)throw Object.assign(new Error('cle'),{cle:true});
+  try{return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:depuisB64u(co.iv)},c.k,depuisB64u(co.ct))))}
+  catch(e){throw Object.assign(new Error('cle'),{cle:true})}
+}
 
 // Empreinte d'un élément : sert à savoir ce qui a changé ici, là-bas, ou des deux côtés.
 function hache(o){const s=JSON.stringify(o);let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)+'.'+s.length.toString(36)}
@@ -2053,28 +2125,29 @@ function fusion(local,distant,base){
 
 // ——— Compte (le même que l'app Suivi de l'Être, sur la même adresse) ———
 async function jetonValide(){
-  const t=localStorage.getItem('sb_access_token'),exp=parseInt(localStorage.getItem('sb_expires_at')||'0',10);
+  const t=localStorage.getItem(K_ACC),exp=parseInt(localStorage.getItem(K_EXP)||'0',10);
   if(t&&Date.now()<exp-60000)return t;
-  const r=localStorage.getItem('sb_refresh_token');if(!r)return null;
+  const r=localStorage.getItem(K_REF);if(!r)return null;
   try{
     const res=await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`,{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:r})});
     if(!res.ok)return null;
     const d=await res.json();garderSession(d);return d.access_token;
   }catch(e){return null}
 }
-function garderSession(d){localStorage.setItem('sb_access_token',d.access_token);localStorage.setItem('sb_refresh_token',d.refresh_token);localStorage.setItem('sb_expires_at',String(Date.now()+d.expires_in*1000))}
+function garderSession(d){localStorage.setItem(K_ACC,d.access_token);localStorage.setItem(K_REF,d.refresh_token);localStorage.setItem(K_EXP,String(Date.now()+d.expires_in*1000))}
+function oublierSession(){[K_ACC,K_REF,K_EXP,K_CLE,K_REMPLACE].forEach(k=>localStorage.removeItem(k));try{localStorage.removeItem(CLE_BASE)}catch(e){}}
 const sb=(chemin,o,jeton)=>fetch(`${SB_URL}/rest/v1/${chemin}`,Object.assign({},o,{headers:Object.assign({apikey:SB_KEY,Authorization:`Bearer ${jeton}`,'Content-Type':'application/json'},(o&&o.headers)||{})}));
 
 function etatSync(e,detail){
   SYN.etat=e;const b=$('#etat-sync');if(!b)return;
-  const txt={compte:'Synchroniser mes appareils',encours:'Synchronisation…',ok:'Synchronisé',horsligne:'Hors ligne · gardé ici',attente:'Mise à jour après la séance',erreur:'Synchro en pause',refuse:'Compte sans accès'}[e]||'';
+  const txt={compte:COMPTE?'Me connecter':'Synchroniser mes appareils',cle:'Mot de passe à saisir',encours:'Synchronisation…',ok:'Synchronisé',horsligne:'Hors ligne · gardé ici',attente:'Mise à jour après la séance',erreur:'Synchro en pause',refuse:'Compte sans accès'}[e]||'';
   b.className='sync '+e;b.innerHTML=`<i></i><span>${txt}</span>`;
   b.title=detail||(e==='ok'&&SYN.derniere?`Dernière synchronisation à ${heureTxt(SYN.derniere)}`:txt);
 }
 
-function planifierSync(){return;clearTimeout(SYN.t);SYN.t=setTimeout(synchroniser,3000)}
+function planifierSync(){clearTimeout(SYN.t);SYN.t=setTimeout(synchroniser,3000)}
 
-async function synchroniser(){return;
+async function synchroniser(){
   if(!stockOK)return;
   if(SYN.enCours){SYN.encore=true;return}
   const jeton=await jetonValide();
@@ -2083,12 +2156,20 @@ async function synchroniser(){return;
   SYN.enCours=true;if(SYN.etat!=='ok')etatSync('encours');
   try{
     for(let essai=0;essai<4;essai++){
-      const r=await sb('regie?id=eq.1&select=donnees,version',{},jeton);
-      if(r.status===401){localStorage.removeItem('sb_expires_at');etatSync('compte','Session terminée : reconnectez-vous');return}
-      if(r.status===404){etatSync('erreur','Synchronisation pas encore activée (table « regie » à créer)');return}
+      const r=await sb(COMPTE?`${COMPTE.table}?select=coffre,version`:'regie?id=eq.1&select=donnees,version',{},jeton);
+      if(r.status===401){localStorage.removeItem(K_EXP);etatSync('compte','Session terminée : reconnectez-vous');return}
+      if(r.status===404){etatSync('erreur',`Synchronisation pas encore activée (table « ${COMPTE?COMPTE.table:'regie'} » à créer)`);return}
       if(r.status===403){etatSync('refuse');return}
       if(!r.ok)throw new Error('lecture '+r.status);
-      const distant=(await r.json())[0]||null;
+      let distant=(await r.json())[0]||null;
+      if(COMPTE&&distant){
+        // Les données en ligne sont chiffrées : on les ouvre avec la clé gardée sur cet appareil.
+        try{distant={donnees:await dechiffrer(distant.coffre),version:distant.version}}
+        catch(e){
+          if(localStorage.getItem(K_REMPLACE)==='1')distant={donnees:{},version:distant.version};   // nouveau mot de passe : on remplace
+          else{etatSync('cle','Saisissez votre mot de passe pour ouvrir vos séances en ligne');return}
+        }
+      }
       const base=lireBase();
       const ici=empreintes(D);
       const vierge=!base&&D.depart&&hache(contenu(D))===D.depart;   // exemples jamais touchés sur cet appareil
@@ -2108,21 +2189,26 @@ async function synchroniser(){return;
       const envoi=contenu(D),h=empreintes(envoi);
       if(distant&&memes(h,empreintes(distant.donnees||{}))){ecrireBase({version:distant.version,h});SYN.derniere=new Date();etatSync('ok');return}
       const appareil=(navigator.userAgentData&&navigator.userAgentData.platform)||(/iPhone|iPad|Android/i.exec(navigator.userAgent)||['ordinateur'])[0];
-      const w=distant
-        ?await sb(`regie?id=eq.1&version=eq.${distant.version}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({donnees:envoi,version:distant.version+1,maj_le:new Date().toISOString(),appareil})},jeton)
-        :await sb('regie',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({id:1,donnees:envoi,version:1,appareil})},jeton);
+      const corps=COMPTE?{coffre:await chiffrer(envoi)}:{donnees:envoi};
+      const w=COMPTE
+        ?(distant
+          ?await sb(`${COMPTE.table}?version=eq.${distant.version}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({...corps,version:distant.version+1,maj_le:new Date().toISOString(),appareil})},jeton)
+          :await sb(COMPTE.table,{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({...corps,version:1,appareil})},jeton))
+        :(distant
+          ?await sb(`regie?id=eq.1&version=eq.${distant.version}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({...corps,version:distant.version+1,maj_le:new Date().toISOString(),appareil})},jeton)
+          :await sb('regie',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({id:1,...corps,version:1,appareil})},jeton));
       if(w.status===409)continue;
       if(w.status===403){etatSync('refuse');return}                  // créée entre-temps ailleurs : on recommence
       if(!w.ok)throw new Error('écriture '+w.status);
       const ligne=(await w.json())[0];
       if(!ligne)continue;                          // modifiée entre-temps ailleurs : on recommence
-      ecrireBase({version:ligne.version,h});
+      ecrireBase({version:ligne.version,h});localStorage.removeItem(K_REMPLACE);
       SYN.derniere=new Date();etatSync('ok');
       if(doubles)toast(`${doubles>1?doubles+' éléments modifiés':'Un élément modifié'} ici et sur un autre appareil : les deux versions sont gardées`);
       return;
     }
     throw new Error('trop d’essais');
-  }catch(e){etatSync(navigator.onLine===false?'horsligne':'erreur',navigator.onLine===false?'':'La synchronisation reprendra toute seule')}
+  }catch(e){if(e&&e.cle){etatSync('cle','Saisissez votre mot de passe pour ouvrir vos séances en ligne');return}etatSync(navigator.onLine===false?'horsligne':'erreur',navigator.onLine===false?'':'La synchronisation reprendra toute seule')}
   finally{SYN.enCours=false;if(SYN.encore){SYN.encore=false;setTimeout(synchroniser,400)}}
 }
 
@@ -2138,8 +2224,8 @@ function fenetreConnexion(){
   if($('#voile-cx'))return;
   const v=document.createElement('div');v.className='voile';v.id='voile-cx';
   v.innerHTML=`<form class="fenetre" id="f-cx" autocomplete="on">
-    <h2>Synchroniser mes appareils</h2>
-    <p class="sous" style="margin:0 0 14px">Connectez-vous avec le compte de votre application <b>Suivi de l’Être</b>  : vos séances se retrouveront sur votre ordinateur, votre tablette et votre téléphone.</p>
+    <h2>${COMPTE?'Me connecter':'Synchroniser mes appareils'}</h2>
+    <p class="sous" style="margin:0 0 14px">${COMPTE?'Connectez-vous à votre compte : vos séances se retrouveront sur votre ordinateur, votre tablette et votre téléphone. Elles sont chiffrées avec votre mot de passe : vous seule pouvez les lire.':'Connectez-vous avec le compte de votre application <b>Suivi de l’Être</b>  : vos séances se retrouveront sur votre ordinateur, votre tablette et votre téléphone.'}</p>
     <label class="champ">E-mail<input type="email" id="cx-mail" required autocomplete="username"></label>
     <label class="champ">Mot de passe<input type="password" id="cx-mdp" required autocomplete="current-password"></label>
     <div class="err cache" id="cx-err"></div>
@@ -2154,15 +2240,75 @@ function fenetreConnexion(){
     try{
       const r=await fetch(`${SB_URL}/auth/v1/token?grant_type=password`,{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:$('#cx-mail').value.trim(),password:$('#cx-mdp').value})});
       if(!r.ok)throw new Error(r.status===400?'E-mail ou mot de passe incorrect.':'Connexion impossible pour le moment.');
-      garderSession(await r.json());fermer();toast('Connexion réussie : synchronisation en cours');synchroniser();
+      const sess=await r.json();garderSession(sess);
+      if(COMPTE){
+        const mdp=$('#cx-mdp').value;fermer();
+        // Mot de passe provisoire : elle choisit le sien avant tout envoi.
+        if(!(sess.user&&sess.user.user_metadata&&sess.user.user_metadata.mdp_perso))return fenetreMotDePasse(true);
+        await ouvrirCoffre(mdp);toast('Connexion réussie : synchronisation en cours');synchroniser();return;
+      }
+      fermer();toast('Connexion réussie : synchronisation en cours');synchroniser();
     }catch(err){const x=$('#cx-err');x.textContent=navigator.onLine===false?'Pas de connexion internet.':err.message;x.classList.remove('cache');ok.disabled=false;ok.textContent='Se connecter'}
   };
   setTimeout(()=>$('#cx-mail').focus(),50);
 }
 
-function demarrerSync(){return;
+// La clé du coffre en ligne, tirée du mot de passe et du « sel » du coffre (ou d'un sel neuf).
+async function ouvrirCoffre(mdp){
+  const jeton=await jetonValide();let sel=null;
+  try{const r=await sb(`${COMPTE.table}?select=coffre`,{},jeton);const l=r.ok?(await r.json())[0]:null;if(l&&l.coffre&&l.coffre.sel)sel=depuisB64u(l.coffre.sel)}catch(e){}
+  if(!sel){sel=crypto.getRandomValues(new Uint8Array(16))}
+  await garderCle(await deriverCle(mdp,sel),sel);
+}
+// Choisir (première fois) ou changer son mot de passe : les données sont rechiffrées avec le nouveau.
+function fenetreMotDePasse(premiere){
+  if($('#voile-mdp'))return;
+  const v=document.createElement('div');v.className='voile';v.id='voile-mdp';
+  v.innerHTML=`<form class="fenetre" id="f-mdp" autocomplete="on">
+    <h2>${premiere?'Choisissez votre mot de passe':'Changer mon mot de passe'}</h2>
+    <p class="sous" style="margin:0 0 14px">${premiere?'Bienvenue ! Le mot de passe que l’on vous a donné était provisoire. Choisissez le vôtre : il chiffre vos séances, et personne d’autre ne le connaît.':'Vos séances en ligne seront chiffrées avec ce nouveau mot de passe.'}</p>
+    <label class="champ">Nouveau mot de passe<input type="password" id="mdp-1" required minlength="8" autocomplete="new-password"></label>
+    <label class="champ">Le même, une seconde fois<input type="password" id="mdp-2" required minlength="8" autocomplete="new-password"></label>
+    <p class="aide">Au moins 8 caractères. <b>Gardez-le précieusement</b> : s’il est perdu, vos séances en ligne ne peuvent plus être ouvertes (celles de cet appareil restent intactes et repartiront avec le nouveau).</p>
+    <div class="err cache" id="mdp-err"></div>
+    <div class="actions">${premiere?'':'<button type="button" class="btn" id="mdp-annuler">Annuler</button>'}<button type="submit" class="btn p" id="mdp-ok">Enregistrer</button></div>
+  </form>`;
+  document.body.appendChild(v);
+  const an=$('#mdp-annuler');if(an)an.onclick=()=>v.remove();
+  $('#f-mdp').onsubmit=async e=>{
+    e.preventDefault();const a=$('#mdp-1').value,b=$('#mdp-2').value,x=$('#mdp-err'),ok=$('#mdp-ok');
+    const err=t=>{x.textContent=t;x.classList.remove('cache');ok.disabled=false;ok.textContent='Enregistrer'};
+    if(a.length<8)return err('Au moins 8 caractères.');
+    if(a!==b)return err('Les deux mots de passe ne sont pas identiques.');
+    ok.disabled=true;ok.textContent='Un instant…';x.classList.add('cache');
+    try{
+      const jeton=await jetonValide();if(!jeton)throw new Error('Session terminée : reconnectez-vous.');
+      const r=await fetch(`${SB_URL}/auth/v1/user`,{method:'PUT',headers:{apikey:SB_KEY,Authorization:`Bearer ${jeton}`,'Content-Type':'application/json'},body:JSON.stringify({password:a,data:{mdp_perso:true}})});
+      if(!r.ok){let m='';try{m=(await r.json()).msg||''}catch(_){}throw new Error(/same|different/i.test(m)?'Choisissez un mot de passe différent du provisoire.':/weak|short|least/i.test(m)?'Mot de passe trop simple : allongez-le.':'Le mot de passe n’a pas pu être changé ('+r.status+').')}
+      const sel=crypto.getRandomValues(new Uint8Array(16));
+      await garderCle(await deriverCle(a,sel),sel);
+      localStorage.setItem(K_REMPLACE,'1');try{localStorage.removeItem(CLE_BASE)}catch(_){}
+      v.remove();toast(premiere?'C’est fait : vos séances sont maintenant à l’abri':'Mot de passe changé');synchroniser();
+    }catch(e2){err(e2.message)}
+  };
+  setTimeout(()=>$('#mdp-1').focus(),50);
+}
+function menuCompte(){
+  if($('#voile-compte'))return;
+  const v=document.createElement('div');v.className='voile';v.id='voile-compte';
+  v.innerHTML=`<div class="fenetre"><h2>Mon compte</h2>
+    <p class="sous" style="margin:0 0 14px">${SYN.etat==='ok'?'Vos séances sont synchronisées et chiffrées.':'Synchronisation : '+esc(($('#etat-sync')||{}).title||'')}</p>
+    <div class="actions" style="flex-wrap:wrap;justify-content:flex-start"><button class="btn" id="cp-sync">${IC.recaler} Synchroniser maintenant</button><button class="btn" id="cp-mdp">Changer mon mot de passe</button><button class="btn nu danger" id="cp-sortir">Me déconnecter</button></div>
+    <div class="actions" style="margin-top:14px"><button class="btn p" id="cp-ok">Fermer</button></div></div>`;
+  document.body.appendChild(v);const f=()=>v.remove();
+  $('#cp-ok').onclick=f;v.onclick=e=>{if(e.target===v)f()};
+  $('#cp-sync').onclick=()=>{f();synchroniser()};
+  $('#cp-mdp').onclick=()=>{f();fenetreMotDePasse(false)};
+  $('#cp-sortir').onclick=()=>{if(!confirm('Vous déconnecter ? Vos séances restent sur cet appareil.'))return;oublierSession();f();etatSync('compte');toast('Déconnectée : vos séances restent sur cet appareil')};
+}
+function demarrerSync(){
   const b=$('#etat-sync');
-  if(b)b.onclick=()=>{if(SYN.etat==='compte'||SYN.etat==='refuse')fenetreConnexion();else synchroniser()};
+  if(b)b.onclick=()=>{if(SYN.etat==='compte'||SYN.etat==='refuse'||SYN.etat==='cle')fenetreConnexion();else if(COMPTE)menuCompte();else synchroniser()};
   addEventListener('online',()=>synchroniser());
   addEventListener('offline',()=>etatSync('horsligne'));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!occupe())synchroniser()});
