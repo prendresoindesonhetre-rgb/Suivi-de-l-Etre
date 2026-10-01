@@ -862,7 +862,7 @@ function majJauge(){
 function rendreListe(){
   const n=S.blocs.length;
   $('#e-liste').innerHTML=S.blocs.map((b,i)=>`<div class="ti ${b.id===selId?'sel':''}" data-i="${i}" draggable="true">
-    <span class="b f-${b.type}"></span><span class="n"><b title="Double-clic pour renommer">${esc(b.nom)}</b><small>${sousTitre(b)}</small></span><span class="d">${dureeTxt(b.min)}${b.souple?'<span class="souple">souple</span>':''}</span>
+    <span class="b f-${b.type}"></span><span class="n"><b title="Double-clic pour renommer">${esc(b.nom)}</b><small>${sousTitre(b)}</small></span><span class="d">${b.libre?'~':''}${dureeTxt(b.min)}${b.libre?'<span class="souple">libre</span>':b.souple?'<span class="souple">souple</span>':''}</span>
     <span class="ti-act">
       <button data-t="nom" title="Renommer">${IC.edit}</button>
       <button data-t="haut" title="Monter" ${i===0?'disabled':''}>${IC.haut}</button>
@@ -985,9 +985,11 @@ function rendreTemps(){
     <div class="note">Ce que vous écrivez ici s’affiche tel quel pendant la séance, en grand.</div>
   </div>`;
   o.innerHTML=`<h3 class="panneau-titre">Réglages du temps</h3>
-    <div class="champ">Durée<div class="pas"><button class="btn" data-dur="-1">−</button><b id="e-min">${b.min} min</b><button class="btn" data-dur="1">+</button></div></div>
-    <label class="bascule" style="margin:-4px 0 4px"><input type="checkbox" data-k="souple" ${b.souple?'checked':''}>Temps souple</label>
-    <span class="aide" style="margin:0 0 14px">Si vous prenez du retard, la régie vous proposera de le raccourcir.</span>
+    <div class="champ">${b.libre?'Durée estimée':'Durée'}<div class="pas"><button class="btn" data-dur="-1">−</button><b id="e-min">${b.min} min</b><button class="btn" data-dur="1">+</button></div></div>
+    <label class="bascule" style="margin:-4px 0 4px"><input type="checkbox" data-k="libre" ${b.libre?'checked':''}>Durée libre</label>
+    <span class="aide" style="margin:0 0 10px">Pas de minuteur : le temps dure ce qu’il faut, vous passez au suivant quand vous voulez. La durée ne sert que d’estimation.</span>
+    ${b.libre?'':`<label class="bascule" style="margin:0 0 4px"><input type="checkbox" data-k="souple" ${b.souple?'checked':''}>Temps souple</label>
+    <span class="aide" style="margin:0 0 14px">Si vous prenez du retard, la régie vous proposera de le raccourcir.</span>`}
     <label class="champ">Type<select data-k="type">${Object.entries(TYPES).map(([k,t])=>`<option value="${k}" ${b.type===k?'selected':''}>${t.nom}</option>`).join('')}</select></label>
     ${b.type==='instrument'?`<div class="sect"><label class="champ">Instrument<select data-k="instrument">${Object.entries(INSTR).map(([k,v])=>`<option value="${k}" ${b.instrument===k?'selected':''}>${v}</option>`).join('')}</select></label>
       ${reglagesRythme(b)}</div>`:''}
@@ -1017,7 +1019,8 @@ function rendreTemps(){
       b[k]=v;
       if(k==='type'){if(v==='instrument'&&!b.instrument){b.instrument='pluie';b.rythme=5;b.expire=5}if(v==='silence'&&!b.fin)b.fin='carillon';rendreTemps()}
       if(k==='instrument'){b.rythme={pluie:5,ocean:8,tambour:60}[v]||null;b.expire=v==='pluie'?5:null;rendreTemps()}
-      if(['nom','souple','position','type','instrument'].includes(k))majL();
+      if(k==='libre')rendreTemps();
+      if(['nom','souple','libre','position','type','instrument'].includes(k))majL();
       sauverBientot();
     };
   }));
@@ -1066,7 +1069,7 @@ function vueBlocs(p){
           ${b.type==='silence'?`<label class="champ">Pour clore le silence<select data-k="fin">${opts(FINS,b.fin||'')}</select></label>`:''}
           <label class="champ">En visio<select data-k="visio">${Object.entries(VISIO).map(([k,v])=>`<option value="${k}" ${b.visio===k?'selected':''}>${k==='auto'?`Automatique (${VISIO[TYPES[b.type].visio]})`:v}</option>`).join('')}</select></label>
         </div>
-        <label class="bascule" style="margin:0 0 12px"><input type="checkbox" data-k="souple" ${b.souple?'checked':''}>Temps souple</label>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;margin:0 0 12px"><label class="bascule"><input type="checkbox" data-k="libre" ${b.libre?'checked':''}>Durée libre</label><label class="bascule"><input type="checkbox" data-k="souple" ${b.souple?'checked':''}>Temps souple</label></div>
         <label class="champ">Texte affiché pendant la séance<textarea data-k="texte" rows="6">${esc(b.texte)}</textarea></label>
         <label class="champ">Repère de conduite <span style="font-weight:500;color:var(--muted)">(pour vous)</span><textarea data-k="repere" rows="2">${esc(b.repere)}</textarea></label>
       </div></details>`).join('')||'<div class="vide">Aucun bloc pour l’instant. Créez-en un avec « Nouveau bloc ».</div>'}</div></div>`;
@@ -1328,7 +1331,7 @@ function vueGuider(id){
         <div class="g-zone"><div class="g-texte" id="g-texte"></div><div class="g-ici"></div></div>
       </section>
       <aside class="col col-outils" id="g-outils">
-        <div class="o-chrono"><small>Reste</small><div class="o-ligne"><div class="reste" id="g-reste">00:00</div><div><small style="text-align:right">Séance</small><div class="seance" id="g-glob">00:00</div></div></div>
+        <div class="o-chrono"><small id="g-reste-lbl">Reste</small><div class="o-ligne"><div class="reste" id="g-reste">00:00</div><div><small style="text-align:right">Séance</small><div class="seance" id="g-glob">00:00</div></div></div>
           <div class="o-barre"><i id="g-barre"></i></div><div class="o-infos" id="g-infos"></div></div>
         <div id="g-aide"></div>
         <div id="g-musique"></div>
@@ -1418,7 +1421,7 @@ function allerTemps(n){
 }
 function rendreListeGuide(){
   $('#g-liste').innerHTML=G.blocs.map((b,j)=>`<div class="ti ${j<G.i?'fait':''} ${j===G.i?'courant':''}" data-j="${j}">
-    <span class="b f-${b.type}"></span><span class="n"><b>${esc(b.nom)}</b><small>${sousTitre(b)}</small></span><span class="d" ${j===G.i?'id="g-liste-reste"':''}>${j<G.i?'✓':dureeTxt(b.min)}</span></div>`).join('');
+    <span class="b f-${b.type}"></span><span class="n"><b>${esc(b.nom)}</b><small>${sousTitre(b)}</small></span><span class="d" ${j===G.i?'id="g-liste-reste"':''}>${j<G.i?'✓':b.libre?'libre':dureeTxt(b.min)}</span></div>`).join('');
   $$('#g-liste .ti').forEach(el=>el.onclick=()=>{const j=+el.dataset.j;if(j!==G.i&&confirm(`Aller au temps « ${G.blocs[j].nom} » ?`))allerTemps(j)});
   $('#g-liste .courant')?.scrollIntoView({block:'nearest'});
 }
@@ -1427,11 +1430,11 @@ function afficherTemps(){
   $('#g-nom').textContent=b.nom;$('#gm-nom').textContent=b.nom;
   $('#g-type').className='chip t-'+b.type;$('#g-type').innerHTML=IC[b.type]+' '+TYPES[b.type].nom+` · ${G.i+1}/${G.blocs.length}`;
   const visio=b.visio==='auto'?TYPES[b.type].visio:b.visio;
-  $('#g-infos').innerHTML=[b.position?`<span class="chip">${POS[b.position]}</span>`:'',b.souple?'<span class="chip">souple</span>':'',`<span class="chip" title="Mode de la salle de visio">Visio : ${VISIO[visio]}</span>`].join('');
+  $('#g-infos').innerHTML=[b.position?`<span class="chip">${POS[b.position]}</span>`:'',b.libre?'<span class="chip">durée libre</span>':b.souple?'<span class="chip">souple</span>':'',`<span class="chip" title="Mode de la salle de visio">Visio : ${VISIO[visio]}</span>`].join('');
   const t=$('#g-texte');t.textContent=b.texte||(b.type==='musique'?'Pas de parole pendant ce temps.\nLaisse la musique faire.':b.type==='silence'?'Silence.':'');t.classList.toggle('vide',!b.texte);t.scrollTop=0;
   $('#g-repere').innerHTML=b.repere?`<div class="o-carte"><span class="kicker">Repère</span><div class="o-repere">${esc(b.repere)}</div></div>`:'';
   const nx=G.blocs[G.i+1];
-  $('#g-suivant').innerHTML=nx?`<span class="p f-${nx.type}"></span><span>Ensuite : <b>${esc(nx.nom)}</b> · ${dureeTxt(nx.min)}${nx.position&&nx.position!==b.position?` · ${POS[nx.position].toLowerCase()}`:''}</span>`:'<span>C’est le dernier temps de la séance.</span>';
+  $('#g-suivant').innerHTML=nx?`<span class="p f-${nx.type}"></span><span>Ensuite : <b>${esc(nx.nom)}</b> · ${nx.libre?'durée libre':dureeTxt(nx.min)}${nx.position&&nx.position!==b.position?` · ${POS[nx.position].toLowerCase()}`:''}</span>`:'<span>C’est le dernier temps de la séance.</span>';
   rendreAide(b);majMusique();rendreListeGuide();
   $('#g-prog').innerHTML=frise(G.blocs,{i:G.i});
   const z=$('#g-suggest');z.dataset.v='';z.innerHTML='';
@@ -1518,20 +1521,22 @@ function tick(){
   const b=G.blocs[G.i],dur=dureeMs(G.i);
   if(G.run){
     G.glob+=dt;G.bloc+=dt;G.reel[G.i]+=dt;
-    if(!G.sig[G.i]&&dur-G.bloc<=30000&&dur>45000){G.sig[G.i]=true;signal()}
-    if(b.type==='musique'&&A.joue&&!G.sortie[G.i]&&dur-G.bloc<=b.sortie*1000){G.sortie[G.i]=true;sortie(Math.max(1,b.sortie))}
-    if(G.bloc>=dur){
+    // Un temps à durée libre n'a ni rappel, ni fin automatique : on passe au suivant quand on veut.
+    if(!b.libre&&!G.sig[G.i]&&dur-G.bloc<=30000&&dur>45000){G.sig[G.i]=true;signal()}
+    if(!b.libre&&b.type==='musique'&&A.joue&&!G.sortie[G.i]&&dur-G.bloc<=b.sortie*1000){G.sortie[G.i]=true;sortie(Math.max(1,b.sortie))}
+    if(!b.libre&&G.bloc>=dur){
       if(G.i<G.blocs.length-1&&D.prefs.autoBlocs)allerTemps(G.i+1);
       else if(G.i===G.blocs.length-1&&!G.termine){G.termine=true;finDeSeance()}
     }
     if(D.prefs.autoTexte&&now>G.manuel){const t=$('#g-texte');if(t.scrollHeight>t.clientHeight)t.scrollTop+=(D.prefs.wpm/90)*26*(D.prefs.taille/30)*dt/1000}
   }
-  const reste=dur-G.bloc,txt=reste>=0?mmss(reste):'+'+mmss(-reste);
-  $('#g-reste').textContent=txt;$('#g-reste').classList.toggle('depasse',reste<0);$('#gm-reste').textContent=txt;
+  const reste=dur-G.bloc,txt=b.libre?mmss(G.bloc):reste>=0?mmss(reste):'+'+mmss(-reste);
+  $('#g-reste').textContent=txt;$('#g-reste').classList.toggle('depasse',!b.libre&&reste<0);$('#gm-reste').textContent=b.libre?'↑ '+txt:txt;
+  const rl=$('#g-reste-lbl');if(rl)rl.textContent=b.libre?'Écoulé · durée libre':'Reste';
   $('#g-glob').textContent=mmss(G.glob);
-  const pc=clamp(G.bloc/dur*100,0,100)+'%';$('#g-barre').style.width=pc;const r=$('#rempli');if(r)r.style.width=pc;
+  const pc=(b.libre?0:clamp(G.bloc/dur*100,0,100))+'%';$('#g-barre').style.width=pc;const r=$('#rempli');if(r)r.style.width=pc;
   const lr=$('#g-liste-reste');if(lr)lr.textContent=txt;
-  const af=$('#a-fin');if(af)af.classList.toggle('imminent',reste<=30000);
+  const af=$('#a-fin');if(af)af.classList.toggle('imminent',!b.libre&&reste<=30000);
   majLecteur();majHoraire();majEnr();
 }
 function signal(){try{navigator.vibrate&&navigator.vibrate([90,60,90])}catch(e){}const g=$('#guide');if(!g)return;g.classList.remove('signal');void g.offsetWidth;g.classList.add('signal')}
