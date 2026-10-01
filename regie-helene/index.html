@@ -473,6 +473,12 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .son-auto-v{font-weight:600;color:var(--muted);font-size:11.5px;margin-left:4px}
 .son-gain b{color:var(--canard-dark);margin-left:4px}
 .son-gain input{width:100%;accent-color:var(--canard);margin:6px 0 2px}
+.son-niv{height:10px}.son-niv-aide{display:block;margin:-8px 0 12px}
+.son-avance{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
+.son-avance summary{list-style:none;cursor:pointer;font-size:12.5px;font-weight:700;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
+.son-avance summary::-webkit-details-marker{display:none}
+.son-avance .fleche{font-style:normal;transition:transform .2s}.son-avance[open] .fleche{transform:rotate(90deg)}
+.son-avance .bascule{margin-bottom:8px}
 .son-pied{display:flex;gap:6px;flex-wrap:wrap}
 .son-sans{display:block;margin:6px 0 4px}
 .enr-texte{max-height:38vh;overflow:auto;white-space:pre-wrap;font-family:var(--serif);font-size:20px;line-height:1.6;color:var(--ink);background:var(--carte);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin:4px 0 12px}
@@ -1249,7 +1255,10 @@ function appliquerSortie(){
 const gainMicro=()=>clamp(+D.prefs.micGain||1,1,8);
 const sonBrut=()=>D.prefs.sonBrut===true;
 const micAuto=()=>!sonBrut()&&D.prefs.micAuto!==false;
-const antiBruit=()=>D.prefs.antiBruit!==false;
+// Réglages conseillés : volume automatique, pas de porte anti-bruit, traitement doux.
+function reglagesConseilles(){delete D.prefs.micAuto;D.prefs.antiBruit=false;D.prefs.sonBrut=false;D.prefs.micGain=1;D.prefs.sonV=2;sauverBientot()}
+if(D.prefs.sonV!==2)reglagesConseilles();
+const antiBruit=()=>D.prefs.antiBruit===true;   // désactivé par défaut : jamais de risque de rogner un mot
 /* La voix avant l'enregistrement : coupe des graves inutiles (grondements),
    niveau réglé tout seul (on vise une voix bien présente : il monte doucement
    quand on parle bas, redescend vite quand on parle fort, ne bouge pas dans
@@ -1257,14 +1266,10 @@ const antiBruit=()=>D.prefs.antiBruit!==false;
 // Les chaînes de voix ouvertes (enregistrement, essai du micro) : un clic les fait taire un éclair.
 const CHAINES=new Set();
 function etoufferClic(){
-  CHAINES.forEach(c=>{const g=c.etouffe.gain,t=c.ctx.currentTime;g.cancelScheduledValues(t);g.setTargetAtTime(.03,t,.003);g.setTargetAtTime(1,t+.15,.03)});
+  CHAINES.forEach(c=>{const g=c.etouffe.gain,t=c.ctx.currentTime;g.cancelScheduledValues(t);g.setTargetAtTime(.08,t,.003);g.setTargetAtTime(1,t+.07,.015)});
 }
-// Un éclair par geste : une roulette « fluide » envoie des dizaines de signaux par cran.
-let dernierEtouffe=0;
-['mousedown','mouseup','wheel','keydown'].forEach(ev=>addEventListener(ev,e=>{
-  if(!CHAINES.size)return;const t=performance.now();
-  if(ev==='wheel'&&t-dernierEtouffe<400)return;dernierEtouffe=t;etoufferClic();
-},{capture:true,passive:true}));
+// Seulement les vrais clics de bouton (pas la roulette ni le clavier, qui ne doivent jamais couper la voix).
+['mousedown','mouseup'].forEach(ev=>addEventListener(ev,()=>{if(CHAINES.size)etoufferClic()},{capture:true,passive:true}));
 function chaineVoix(ctx){
   // Son brut : la voix passe telle quelle (aucun filtre, aucun réglage, aucun effacement de clic).
   if(sonBrut()){const n=ctx.createGain();n.gain.value=gainMicro();return {entree:n,sortie:n,etouffe:ctx.createGain(),ctx,gain:()=>n.gain.value,regler(v){n.gain.value=v},stop(){try{n.disconnect()}catch(e){}}}}
@@ -1278,7 +1283,9 @@ function chaineVoix(ctx){
   const t=setInterval(()=>{
     mes.getFloatTimeDomainData(d);let q=0;for(let i=0;i<d.length;i++)q+=d[i]*d[i];const rms=Math.sqrt(q/d.length)+1e-6;
     // Le bruit de fond de la pièce : le niveau le plus bas entendu, qui remonte très lentement.
-    bruit=bruit==null?rms:Math.min(rms,bruit*1.01);
+    // (il ne remonte que très lentement, et jamais au-delà d'un niveau de pièce calme : une voix
+    //  continue ne peut pas finir par être prise pour du bruit)
+    bruit=bruit==null?Math.min(rms,.01):Math.min(rms,bruit*1.002,.01);
     const parle=rms>Math.max(.003,bruit*3);              // la voix dépasse le bruit d'environ 10 dB
     // Porte douce : entre deux phrases, le bruit ambiant baisse un peu (jamais de trou).
     if(nettoie){calme=parle?0:calme+1;const ouvrir=parle||calme<8;
@@ -1319,16 +1326,18 @@ function panneauSon(){
   return `<div class="son-choix">
     <label class="champ">${IC.micro} Micro<select data-son="micro"><option value="">Recherche des micros…</option></select></label>
     <div class="son-niv" title="Parlez : la barre doit bouger"><b></b></div>
-    <label class="bascule son-auto"><input type="checkbox" data-son="auto">Volume du micro réglé automatiquement <span class="son-auto-v" data-son="auto-v"></span></label>
-    <span class="aide" style="display:block;margin:2px 0 10px">Recommandé : la voix est enregistrée bien audible et agréable, sans que vous ayez à régler quoi que ce soit.</span>
-    <label class="bascule son-auto"><input type="checkbox" data-son="brut">Son brut (aucun traitement)</label>
-    <span class="aide" style="display:block;margin:2px 0 10px">La voix est enregistrée exactement comme le micro l’entend. À essayer si quelque chose vous semble coupé ou modifié.</span>
-    <label class="bascule son-auto son-trait"><input type="checkbox" data-son="bruit">Retirer les bruits de fond</label>
-    <span class="aide" style="display:block;margin:2px 0 10px">Le bruit de la pièce est adouci entre les phrases, sans jamais couper la voix. À décocher pour des instruments très doux.</span>
-    <label class="champ son-gain cache">Volume du micro <b data-son="gain-v"></b><input type="range" data-son="gain" min="1" max="8" step="0.5"><span class="aide">Montez ce curseur en parlant : la barre doit atteindre environ les deux tiers.</span></label>
+    <span class="aide son-niv-aide">Parlez : la barre doit bouger.</span>
     <label class="champ son-sortie">${IC.casque} Sortie (écouteurs, casque, enceintes)<select data-son="sortie"><option value="">Par défaut</option></select></label>
     <div class="son-pied"><button type="button" class="btn s" data-son="test">${IC.play} Tester le son</button><button type="button" class="btn s nu" data-son="relister" title="Un appareil vient d’être branché">${IC.recaler} Actualiser</button></div>
     <span class="aide son-sans cache">Sur cet appareil, la sortie se choisit dans les réglages du téléphone ou de l’ordinateur (sur iPhone et iPad, le casque branché est pris tout seul).</span>
+    <details class="son-avance"><summary>Réglages avancés <i class="fleche">›</i></summary>
+      <p class="aide" style="margin:6px 0 10px">Les réglages conseillés sont déjà en place : vous n’avez normalement rien à changer ici.</p>
+      <label class="bascule son-auto"><input type="checkbox" data-son="auto">Volume du micro réglé automatiquement <span class="son-auto-v" data-son="auto-v"></span></label>
+      <label class="champ son-gain cache">Volume du micro <b data-son="gain-v"></b><input type="range" data-son="gain" min="1" max="8" step="0.5"></label>
+      <label class="bascule son-auto son-trait"><input type="checkbox" data-son="bruit">Adoucir le bruit de la pièce entre les phrases</label>
+      <label class="bascule son-auto"><input type="checkbox" data-son="brut">Son brut (aucun traitement)</label>
+      <button type="button" class="btn s nu" data-son="conseil" style="margin-top:6px">Remettre les réglages conseillés</button>
+    </details>
   </div>`;
 }
 function brancherSon(el){
@@ -1367,6 +1376,7 @@ function brancherSon(el){
   const caseA=el.querySelector('[data-son=auto]'),valA=el.querySelector('[data-son=auto-v]');
   const majA=()=>{caseA.checked=micAuto();el.querySelector('.son-gain').classList.toggle('cache',micAuto())};majA();
   caseA.onchange=()=>{D.prefs.micAuto=caseA.checked;sauverBientot();majA();ecouter()};
+  el.querySelector('[data-son=conseil]').onclick=()=>{reglagesConseilles();caseA.checked=true;caseB.checked=false;caseBr.checked=false;majBr();curG.value=gainMicro();majG();ecouter();toast('Réglages conseillés remis')};
   const caseBr=el.querySelector('[data-son=brut]');caseBr.checked=sonBrut();
   const majBr=()=>{el.querySelectorAll('.son-auto:not(:has([data-son=brut])),.son-trait').forEach(x=>x.classList.toggle('cache',sonBrut()));if(sonBrut())el.querySelector('.son-gain').classList.remove('cache');else majA()};
   caseBr.onchange=()=>{D.prefs.sonBrut=caseBr.checked;sauverBientot();majBr();ecouter()};majBr();
@@ -1574,7 +1584,7 @@ function fenetreResultat(blob,ms,nom,o={}){
   v.innerHTML=`<div class="fenetre enr-fen">
     <h2>${IC.micro} ${o.recupere?'Enregistrement retrouvé':'Votre enregistrement'}</h2>
     <p class="sous" style="margin:0 0 12px">${o.recupere?'Cet enregistrement n’avait pas été terminé. Le voici, tel qu’il a été gardé. ':''}Durée <b>${mmss(ms)}</b> · ${(blob.size/1048576).toFixed(1)} Mo · MP3</p>
-    ${o.micro!=null?`<p class="enr-diag">Micro utilisé : <b>${esc(o.micro||'inconnu')}</b> · niveau le plus fort capté : <b>${Math.min(100,Math.round((o.pic||0)*100))} %</b></p>`:''}
+    ${o.micro!=null?`<p class="enr-diag">Micro utilisé : <b>${esc(o.micro||'inconnu')}</b> · niveau le plus fort capté : <b>${Math.min(100,Math.round((o.pic||0)*100))} %</b> · ${sonBrut()?'son brut':'traitement doux'} · <span class="enr-version"></span></p>`:''}
     ${o.pic!=null&&o.pic<.02?`<div class="info-bloc alerte-bloc">${IC.info}<span><b>Le micro n’a presque rien capté.</b> Vérifiez qu’il n’est pas coupé, rapprochez-vous, ou montez son volume d’entrée dans les réglages de Windows (Son → Entrée).</span></div>`:''}
     <audio class="enr-ecoute" controls src="${u}" style="width:100%;margin-bottom:4px"></audio>
     <label class="ecouter-sur cache">Écouter sur <select id="er-sortie"><option value="">la sortie par défaut</option></select></label>
@@ -1589,6 +1599,7 @@ function fenetreResultat(blob,ms,nom,o={}){
     <div class="actions" style="margin-top:12px"><button class="btn nu danger" id="er-jeter">${IC.poubelle} Supprimer</button><span style="flex:1"></span><button class="btn" id="er-fermer">Fermer</button></div>
   </div>`;
   document.body.appendChild(v);
+  fetch('sw.js',{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/CACHE = '[a-z-]*-(v\d+)'/),z=v.querySelector('.enr-version');if(m&&z)z.textContent='version '+m[1]}).catch(()=>{});
   // La réécoute part sur la sortie choisie dans « Micro et son » ; on peut en changer ici.
   {const au=v.querySelector('audio'),sel=$('#er-sortie');
     if(D.prefs.sortieId&&au.setSinkId)au.setSinkId(D.prefs.sortieId).catch(()=>{});
