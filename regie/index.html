@@ -443,6 +443,14 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 @media(max-width:820px){.g-enr .lbl,.g-enr .niv{display:none}}
 @media(max-width:560px){.g-haut .g-horaire>span:first-child{display:none}.g-haut .g-enr{padding:6px 8px}.g-haut .btn.rond{width:34px;height:34px}}
 .enr-fen{max-width:470px;max-height:calc(100dvh - 36px);overflow:auto}
+.son-choix{background:var(--carte);border:1px solid var(--line);border-radius:16px;padding:12px 14px 10px;margin:4px 0 12px}
+.son-choix .champ{margin-bottom:8px}
+.son-choix .champ svg{display:inline-block;vertical-align:-3px;margin-right:3px}
+.son-niv{height:6px;border-radius:3px;background:var(--violet-soft);overflow:hidden;margin:-2px 0 12px}
+.son-niv b{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--canard),var(--ok));transition:width .08s}
+.son-niv.muet{background:var(--attente-pale)}
+.son-pied{display:flex;gap:6px;flex-wrap:wrap}
+.son-sans{display:block;margin:6px 0 4px}
 .enr-texte{max-height:38vh;overflow:auto;white-space:pre-wrap;font-family:var(--serif);font-size:20px;line-height:1.6;color:var(--ink);background:var(--carte);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin:4px 0 12px}
 .enr-fond{background:var(--carte);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin:4px 0 12px}
 .enr-fond input[type=range]{width:100%;accent-color:var(--canard);margin-top:6px}
@@ -606,6 +614,7 @@ const IC={
   sauve:I('<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',15),restaure:I('<path d="M12 20V9M7 14l5-5 5 5M5 4h14"/>',15),
   info:I('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',17),cloche:I('<path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 004 0"/>',16),
   stop:I('<rect x="6" y="6" width="12" height="12" rx="2"/>',15),
+  casque:I('<path d="M4 15v-3a8 8 0 0116 0v3"/><rect x="3" y="14" width="4" height="7" rx="1.5"/><rect x="17" y="14" width="4" height="7" rx="1.5"/>',16),
   micro:I('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>',17),
   check:I('<path d="M5 12l5 5 9-10"/>',15),partager:I('<path d="M12 15V4M7 9l5-5 5 5M5 14v5h14v-5"/>',15),
   pause:I('<path d="M8 5v14M16 5v14"/>',15,2.4),recaler:I('<path d="M4 12a8 8 0 0114-5.3L20 9"/><path d="M20 4v5h-5"/>',15)
@@ -712,9 +721,10 @@ $$('#onglets button').forEach(b=>b.onclick=()=>aller(b.dataset.v));
 function vueSeances(){
   $('#vue').innerHTML=`<div class="page">
     <div class="tete-page"><div><h1 class="titre">Mes séances</h1><p class="sous">Préparez une séance une fois, guidez-la en présentiel comme en visio.</p></div>
+      <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap"><button class="btn s" id="b-son">${IC.casque} Micro et son</button>
       <div class="menu"><button class="btn s">${IC.points} Sauvegarde</button><div class="menu-liste">
         <button id="b-sauve">${IC.sauve} Télécharger une sauvegarde</button><button id="b-restaure">${IC.restaure} Restaurer une sauvegarde</button>
-        <button id="b-import">${IC.restaure} Reprendre l’ancienne régie</button></div></div></div>
+        <button id="b-import">${IC.restaure} Reprendre l’ancienne régie</button></div></div></div></div>
     <div class="liste-seances">
       ${D.seances.map(s=>`<div class="ls">
         <div><h3 data-editer="${s.id}">${esc(s.titre)}</h3>
@@ -738,6 +748,7 @@ function vueSeances(){
   $$('[data-dupliquer]').forEach(b=>b.onclick=()=>{const s=clone(trouverSeance(b.dataset.dupliquer));s.id=uid();s.titre+=' (copie)';s.blocs.forEach(x=>x.id=uid());D.seances.push(s);sauver();vueSeances();toast('Séance dupliquée')});
   $$('[data-supprimer]').forEach(b=>b.onclick=()=>{const s=trouverSeance(b.dataset.supprimer);if(confirm(`Supprimer « ${s.titre} » ?`)){D.seances=D.seances.filter(x=>x!==s);sauver();vueSeances();toast('Séance supprimée')}});
   $('#b-nouvelle').onclick=()=>{const s={id:uid(),titre:'Nouvelle séance',genre:'atelier',debut:'',finH:'',blocs:[nb('parole','Accueil',5)]};D.seances.push(s);sauver();aller('editer',s.id);setTimeout(()=>{const t=$('#e-titre');t.focus();t.select()},60)};
+  $('#b-son').onclick=fenetreSon;
   $('#b-sauve').onclick=exporter;$('#b-restaure').onclick=()=>$('#f-restaure').click();$('#b-import').onclick=fenetreImport;
 }
 
@@ -1137,7 +1148,7 @@ function audioInit(){
   if(A.ctx)return true;
   try{A.ctx=new (window.AudioContext||window.webkitAudioContext)();A.el=new Audio();A.el.preload='auto';
     const src=A.ctx.createMediaElementSource(A.el);A.gain=A.ctx.createGain();A.gain.gain.value=0;src.connect(A.gain).connect(A.ctx.destination);
-    A.el.onended=()=>{A.joue=false;majMusique()};return true}catch(e){return false}
+    A.el.onended=()=>{A.joue=false;majMusique()};appliquerSortie();return true}catch(e){return false}
 }
 async function charger(id){if(A.id===id&&A.el.src)return true;const blob=await idbGet(id);if(!blob)return false;if(A.url)URL.revokeObjectURL(A.url);A.url=URL.createObjectURL(blob);A.el.src=A.url;A.id=id;return true}
 function fondu(v,s){if(!A.ctx)return;const g=A.gain.gain,t=A.ctx.currentTime;g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(Math.max(0,v),t+Math.max(.05,s))}
@@ -1148,6 +1159,90 @@ async function jouer(id,vol,entree,depuisDebut=true){
   if(depuisDebut)A.el.currentTime=0;
   try{await A.el.play()}catch(e){return toast('Touche « Démarrer » pour autoriser le son')}
   A.joue=true;fondu(vol,entree);majMusique();
+}
+/* ——— Son : quel micro, quelle sortie (écouteurs, enceintes) ———
+   Le choix est retenu sur cet appareil (les préférences ne voyagent pas).
+   Changer de sortie n'existe que dans Chrome et Edge (pas sur iPhone / iPad). */
+const sortiePossible=()=>!!(window.AudioContext&&'setSinkId' in AudioContext.prototype);
+function appliquerSortie(){
+  if(!A.ctx||!sortiePossible())return;
+  A.ctx.setSinkId(D.prefs.sortieId||'').catch(()=>{A.ctx.setSinkId('').catch(()=>{})});
+}
+// La contrainte micro à demander : celui choisi, sinon celui par défaut.
+const contrainteMicro=(o={})=>Object.assign(D.prefs.micId?{deviceId:{exact:D.prefs.micId}}:{},o);
+async function ouvrirMicro(o={}){
+  try{return await navigator.mediaDevices.getUserMedia({audio:contrainteMicro(o)})}
+  catch(e){
+    if(!D.prefs.micId||(e.name!=='OverconstrainedError'&&e.name!=='NotFoundError'))throw e;
+    toast('Le micro choisi n’est pas branché : le micro par défaut est utilisé');
+    return navigator.mediaDevices.getUserMedia({audio:o});
+  }
+}
+async function listerAppareils(){
+  let l=[];try{l=await navigator.mediaDevices.enumerateDevices()}catch(e){return []}
+  // Sans autorisation, les appareils n'ont pas de nom : on la demande une fois.
+  if(l.some(x=>x.kind==='audioinput'&&!x.label)){try{const f=await navigator.mediaDevices.getUserMedia({audio:true});f.getTracks().forEach(t=>t.stop());l=await navigator.mediaDevices.enumerateDevices()}catch(e){}}
+  return l;
+}
+const nomAppareil=(x,i,k)=>(x.label||(k==='audioinput'?'Micro ':'Sortie ')+(i+1)).replace(/\s*\([0-9a-f]{4}:[0-9a-f]{4}\)\s*$/i,'');
+// Le petit panneau de choix, à glisser dans une fenêtre ; brancherSon() le fait vivre
+// (liste, niveau du micro, essai du son) et rend une fonction pour tout arrêter.
+function panneauSon(){
+  return `<div class="son-choix">
+    <label class="champ">${IC.micro} Micro<select data-son="micro"><option value="">Recherche des micros…</option></select></label>
+    <div class="son-niv" title="Parlez : la barre doit bouger"><b></b></div>
+    <label class="champ son-sortie">${IC.casque} Sortie (écouteurs, casque, enceintes)<select data-son="sortie"><option value="">Par défaut</option></select></label>
+    <div class="son-pied"><button type="button" class="btn s" data-son="test">${IC.play} Tester le son</button><button type="button" class="btn s nu" data-son="relister" title="Un appareil vient d’être branché">${IC.recaler} Actualiser</button></div>
+    <span class="aide son-sans cache">Sur cet appareil, la sortie se choisit dans les réglages du téléphone ou de l’ordinateur (sur iPhone et iPad, le casque branché est pris tout seul).</span>
+  </div>`;
+}
+function brancherSon(el){
+  let flux=null,ana=null,src=null,raf=null,fini=false;
+  const selM=el.querySelector('[data-son=micro]'),selS=el.querySelector('[data-son=sortie]'),barre=el.querySelector('.son-niv b');
+  const ecouter=async()=>{
+    if(flux)flux.getTracks().forEach(t=>t.stop());try{src&&src.disconnect()}catch(e){}
+    try{flux=await ouvrirMicro()}catch(e){flux=null;barre.parentElement.classList.add('muet');return}
+    if(fini){flux.getTracks().forEach(t=>t.stop());return}
+    barre.parentElement.classList.remove('muet');
+    if(!audioInit())return;A.ctx.resume().catch(()=>{});
+    ana=ana||A.ctx.createAnalyser();ana.fftSize=512;src=A.ctx.createMediaStreamSource(flux);src.connect(ana);
+  };
+  const boucle=()=>{
+    if(fini)return;if(!el.isConnected){arreter();return}
+    if(ana){const d=new Uint8Array(ana.fftSize);ana.getByteTimeDomainData(d);let m=0;for(let i=0;i<d.length;i++){const v=Math.abs(d[i]-128);if(v>m)m=v}barre.style.width=Math.min(100,m)+'%'}
+    raf=requestAnimationFrame(boucle);
+  };
+  const remplir=async()=>{
+    const l=await listerAppareils();if(fini)return;
+    const opts=(k,sel)=>l.filter(x=>x.kind===k&&x.deviceId!=='communications').map((x,i)=>`<option value="${x.deviceId==='default'?'':esc(x.deviceId)}" ${(x.deviceId==='default'?'':x.deviceId)===sel?'selected':''}>${esc(nomAppareil(x,i,k))}</option>`).join('');
+    const m=opts('audioinput',D.prefs.micId||'');
+    selM.innerHTML=(l.some(x=>x.kind==='audioinput'&&x.deviceId==='default')?'':'<option value="">Micro par défaut</option>')+m||'<option value="">Aucun micro trouvé</option>';
+    selM.value=D.prefs.micId||'';if(selM.value!==(D.prefs.micId||''))selM.value='';
+    const peut=sortiePossible()&&l.some(x=>x.kind==='audiooutput');
+    el.querySelector('.son-sortie').classList.toggle('cache',!peut);el.querySelector('.son-sans').classList.toggle('cache',peut);
+    if(peut){selS.innerHTML=(l.some(x=>x.kind==='audiooutput'&&x.deviceId==='default')?'':'<option value="">Sortie par défaut</option>')+opts('audiooutput',D.prefs.sortieId||'');selS.value=D.prefs.sortieId||'';if(selS.value!==(D.prefs.sortieId||''))selS.value=''}
+  };
+  selM.onchange=()=>{D.prefs.micId=selM.value;sauverBientot();ecouter()};
+  selS.onchange=()=>{D.prefs.sortieId=selS.value;sauverBientot();appliquerSortie();$$('audio.enr-ecoute').forEach(a=>{try{a.setSinkId(selS.value)}catch(e){}});sonEssai()};
+  el.querySelector('[data-son=test]').onclick=sonEssai;
+  el.querySelector('[data-son=relister]').onclick=async()=>{await remplir();ecouter()};
+  try{navigator.mediaDevices.addEventListener('devicechange',remplir)}catch(e){}
+  const arreter=()=>{if(fini)return;fini=true;cancelAnimationFrame(raf);if(flux)flux.getTracks().forEach(t=>t.stop());try{src&&src.disconnect()}catch(e){}try{navigator.mediaDevices.removeEventListener('devicechange',remplir)}catch(e){}};
+  remplir().then(ecouter);boucle();
+  return arreter;
+}
+// Un petit carillon doux, joué dans la sortie choisie.
+function sonEssai(){
+  if(!audioInit())return;A.ctx.resume();const t=A.ctx.currentTime;
+  [[659.3,0],[880,.18],[1318.5,.36]].forEach(([f,d])=>{const o=A.ctx.createOscillator(),g=A.ctx.createGain();o.type='sine';o.frequency.value=f;
+    g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.25,t+d+.02);g.gain.exponentialRampToValueAtTime(.001,t+d+1.2);o.connect(g).connect(A.ctx.destination);o.start(t+d);o.stop(t+d+1.3)});
+}
+function fenetreSon(){
+  const v=document.createElement('div');v.className='voile';
+  v.innerHTML=`<div class="fenetre"><h2>${IC.casque} Micro et son</h2><p class="sous" style="margin:0 0 12px">Choisissez le micro qui enregistre votre voix, et où jouer les musiques. Ce choix est retenu sur cet appareil.</p>
+    ${panneauSon()}<div class="actions" style="margin-top:12px"><button class="btn p" id="fs-son-ok">Terminé</button></div></div>`;
+  document.body.appendChild(v);const stop=brancherSon(v);
+  const fermer=()=>{stop();v.remove()};$('#fs-son-ok').onclick=fermer;v.onclick=e=>{if(e.target===v)fermer()};
 }
 function sortie(s){if(!A.joue)return;fondu(0,s);clearTimeout(A.stopT);A.stopT=setTimeout(()=>{A.el.pause();A.joue=false;majMusique()},s*1000+120)}
 let ecouteId=null;
@@ -1207,7 +1302,7 @@ async function creerEnregistreur(o={}){
   if(!audioInit())throw new Error('Le son n’est pas disponible sur cet appareil.');
   await A.ctx.resume();
   let flux;
-  try{flux=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:!!o.musique,noiseSuppression:false,autoGainControl:true}})}
+  try{flux=await ouvrirMicro({echoCancellation:!!o.musique,noiseSuppression:false,autoGainControl:true})}
   catch(e){throw new Error('Le micro n’est pas accessible. Autorisez-le dans le navigateur (icône à gauche de l’adresse), puis réessayez.')}
   const ctx=A.ctx,mic=ctx.createMediaStreamSource(flux),mix=ctx.createGain(),ana=ctx.createAnalyser(),proc=ctx.createScriptProcessor(4096,2,2),muet=ctx.createGain();
   muet.gain.value=0;ana.fftSize=1024;
@@ -1249,7 +1344,7 @@ function fenetreResultat(blob,ms,nom,o={}){
   v.innerHTML=`<div class="fenetre enr-fen">
     <h2>${IC.micro} ${o.recupere?'Enregistrement retrouvé':'Votre enregistrement'}</h2>
     <p class="sous" style="margin:0 0 12px">${o.recupere?'Cet enregistrement n’avait pas été terminé. Le voici, tel qu’il a été gardé. ':''}Durée <b>${mmss(ms)}</b> · ${(blob.size/1048576).toFixed(1)} Mo · MP3</p>
-    <audio controls src="${u}" style="width:100%;margin-bottom:12px"></audio>
+    <audio class="enr-ecoute" controls src="${u}" style="width:100%;margin-bottom:12px"></audio>
     <label class="champ">Nom du fichier<input type="text" id="er-nom" value="${esc(nom||'Enregistrement')}"></label>
     <div class="enr-actions">
       ${o.utiliser?`<button class="btn p" id="er-utiliser">${IC.check} ${esc(o.utiliser.label)}</button>`:''}
@@ -1261,6 +1356,7 @@ function fenetreResultat(blob,ms,nom,o={}){
     <div class="actions" style="margin-top:12px"><button class="btn nu danger" id="er-jeter">${IC.poubelle} Supprimer</button><span style="flex:1"></span><button class="btn" id="er-fermer">Fermer</button></div>
   </div>`;
   document.body.appendChild(v);
+  {const au=v.querySelector('audio');if(D.prefs.sortieId&&au.setSinkId)au.setSinkId(D.prefs.sortieId).catch(()=>{})}
   const nomF=()=>$('#er-nom').value.trim()||'Enregistrement';
   const fin=()=>{URL.revokeObjectURL(u);v.remove();oublierEnr()};
   $('#er-dl').onclick=()=>{telecharger(blob,nomF());fait=true;toast('Fichier téléchargé : il est dans vos Téléchargements')};
@@ -1292,11 +1388,12 @@ function fenetreEnregistreur(o={}){
     ${o.texte?`<div class="enr-texte">${esc(o.texte)}</div>`:''}
     ${o.fond&&D.musiques.length?`<div class="enr-fond"><label class="champ" style="margin:0">Musique de fond <span style="font-weight:500;color:var(--muted)">(facultatif)</span><select id="ef-m"><option value="">— Sans musique —</option>${D.musiques.map(m=>`<option value="${m.id}">${esc(m.nom)}</option>`).join('')}</select></label>
       <label class="champ" style="margin:8px 0 0">Volume de la musique <b id="ef-vol-v">30 %</b><input type="range" id="ef-vol" min="0" max="100" value="30"></label></div>`:''}
+    <div id="ef-son">${panneauSon()}</div>
     <div class="enr-ecran"><div class="enr-t" id="ef-t">00:00</div><div class="enr-niv"><b id="ef-n"></b></div><div class="enr-etat" id="ef-etat">Prêt à enregistrer</div></div>
     <div class="err cache" id="ef-err"></div>
     <div class="actions" id="ef-act"></div>
   </div>`;
-  document.body.appendChild(v);
+  document.body.appendChild(v);let stopSon=brancherSon($('#ef-son'));
   const vol=()=>{const r=$('#ef-vol');return r?+r.value/100:.3};
   const r=$('#ef-vol');if(r)r.oninput=()=>{$('#ef-vol-v').textContent=r.value+' %';if(fond&&A.joue&&A.id===fond)fondu(vol(),.3)};
   const etat=(t,cls)=>{const e=$('#ef-etat');e.textContent=t;e.className='enr-etat '+(cls||'')};
@@ -1305,7 +1402,7 @@ function fenetreEnregistreur(o={}){
     if(!E)a.innerHTML=`<button class="btn" id="ef-annuler">Annuler</button><button class="btn p" id="ef-go"><i class="pt-rouge"></i> Commencer</button>`;
     else a.innerHTML=`<button class="btn nu danger" id="ef-jeter">Abandonner</button><span style="flex:1"></span>${E.etat==='enr'?`<button class="btn" id="ef-pause">${IC.pause} Pause</button>`:`<button class="btn" id="ef-reprendre"><i class="pt"></i> Reprendre</button>`}<button class="btn p" id="ef-fin">${IC.stop} Terminer</button>`;
     const q=id=>$('#'+id);
-    if(q('ef-annuler'))q('ef-annuler').onclick=()=>v.remove();
+    if(q('ef-annuler'))q('ef-annuler').onclick=()=>{stopSon();v.remove()};
     if(q('ef-go'))q('ef-go').onclick=commencer;
     if(q('ef-pause'))q('ef-pause').onclick=()=>{ENRL.pause();if(fond&&A.joue){A.el.pause();A.joue=false}etat('En pause','pause');boutons()};
     if(q('ef-reprendre'))q('ef-reprendre').onclick=async()=>{ENRL.reprendre();if(fond)await jouer(fond,vol(),1,false);etat('Enregistrement en cours','enr');boutons()};
@@ -1314,10 +1411,10 @@ function fenetreEnregistreur(o={}){
   };
   const commencer=async()=>{
     const go=$('#ef-go');go.disabled=true;go.textContent='Ouverture du micro…';$('#ef-err').classList.add('cache');
-    const m=$('#ef-m');fond=m&&m.value||null;
+    const m=$('#ef-m');fond=m&&m.value||null;stopSon();
     try{ENRL=await creerEnregistreur({musique:!!fond,nom:o.nom||'Enregistrement'})}
-    catch(e){const er=$('#ef-err');er.textContent=e.message;er.classList.remove('cache');go.disabled=false;go.innerHTML='<i class="pt-rouge"></i> Réessayer';return}
-    if(m)m.disabled=true;
+    catch(e){const er=$('#ef-err');er.textContent=e.message;er.classList.remove('cache');go.disabled=false;go.innerHTML='<i class="pt-rouge"></i> Réessayer';stopSon=brancherSon($('#ef-son'));return}
+    if(m)m.disabled=true;$('#ef-son').classList.add('cache');
     ENRL.demarrer();if(fond)jouer(fond,vol(),3);
     etat('Enregistrement en cours','enr');boutons();
     tH=setInterval(()=>{if(!ENRL)return;$('#ef-t').textContent=mmss(ENRL.duree());$('#ef-n').style.width=(ENRL.etat==='enr'?Math.round(ENRL.niveau()*100):0)+'%'},150);
@@ -1347,25 +1444,28 @@ function majEnr(){
 function fenetreLancerEnr(){
   if(ENR)return;
   const v=document.createElement('div');v.className='voile';
-  v.innerHTML=`<div class="fenetre">
+  v.innerHTML=`<div class="fenetre enr-fen">
     <h2>${IC.micro} Enregistrer la séance</h2>
     <p class="sous" style="margin:0 0 12px">Tout ce que vous dites au micro est enregistré, avec les musiques de la séance. À la fin, vous obtenez un fichier MP3 à envoyer à la personne.</p>
+    ${panneauSon()}
     <label class="bascule" style="margin-bottom:6px"><input type="checkbox" id="le-musique" checked>Ajouter les musiques directement dans l’enregistrement</label>
     <span class="aide" style="display:block;margin-bottom:12px">Conseil : avec un casque, ou le volume de l’ordinateur baissé, la musique est enregistrée nette, sans écho. Elle part au bon niveau dans le fichier.</span>
     <div class="info-bloc" style="margin-bottom:12px">${IC.info}<span>L’enregistrement suit la séance : il se met en pause quand vous faites « Pause », et s’arrête quand vous la terminez.</span></div>
     <div class="err cache" id="le-err"></div>
     <div class="actions"><button class="btn" id="le-annuler">Annuler</button><button class="btn p" id="le-go"><i class="pt-rouge"></i> Commencer</button></div>
   </div>`;
-  document.body.appendChild(v);
-  $('#le-annuler').onclick=()=>v.remove();v.onclick=e=>{if(e.target===v)v.remove()};
+  document.body.appendChild(v);let stopSon=brancherSon(v);
+  const fermer=()=>{stopSon();v.remove()};
+  $('#le-annuler').onclick=fermer;v.onclick=e=>{if(e.target===v)fermer()};
   $('#le-go').onclick=async()=>{
+    stopSon();
     const go=$('#le-go');go.disabled=true;go.textContent='Ouverture du micro…';
     try{
       const d=new Date();
       ENR=await creerEnregistreur({musique:$('#le-musique').checked,nom:`${G.s.titre} – ${d.toLocaleDateString('fr-FR')}`});
       ENR.demarrer();if(!G.run)ENR.pause();
-      v.remove();rendreBoutonEnr();toast(G.run?'Enregistrement en cours':'Prêt : l’enregistrement commence avec « Démarrer »');
-    }catch(e){const er=$('#le-err');er.textContent=e.message;er.classList.remove('cache');go.disabled=false;go.innerHTML='<i class="pt-rouge"></i> Réessayer'}
+      fermer();rendreBoutonEnr();toast(G.run?'Enregistrement en cours':'Prêt : l’enregistrement commence avec « Démarrer »');
+    }catch(e){const er=$('#le-err');er.textContent=e.message;er.classList.remove('cache');go.disabled=false;go.innerHTML='<i class="pt-rouge"></i> Réessayer';stopSon=brancherSon(v)}
   };
 }
 function arreterEnrSeance(){
@@ -1440,6 +1540,8 @@ function rendreReglagesGuide(){
     <div class="sep"></div>
     <div class="bloc-reglage"><label class="bascule"><input type="checkbox" id="r-blocs" ${p.autoBlocs?'checked':''}>Passer au temps suivant tout seul</label></div>
     <div class="sep"></div>
+    <button id="r-son">${IC.casque} Micro et son…</button>
+    <div class="sep"></div>
     <div class="bloc-reglage" style="color:var(--muted);line-height:1.6;font-size:12.5px">Pédale tourne-page ou clavier :<br>→ temps suivant · ← précédent<br>Espace : démarrer / pause · N : mode nuit<br>↑ ↓ : faire défiler le texte</div>`;
   const rapide=$('#g-rapide');
   if(rapide)rapide.innerHTML=`<details class="o-replie" id="rr-volet" ${p.reglagesOuverts?'open':''}><summary>${IC.reglages}<span>Réglages</span><i class="fleche">›</i></summary>
@@ -1453,6 +1555,7 @@ function rendreReglagesGuide(){
     $('#rr-blocs').onchange=e=>{p.autoBlocs=e.target.checked;sauverBientot();rendreReglagesGuide()};
     $$('#g-rapide [data-rr]').forEach(x=>x.onclick=()=>{const [k,d]=x.dataset.rr.split(':');p[k]=k==='wpm'?clamp(p.wpm+ +d,40,180):clamp(p.taille+ +d,18,52);if(k==='wpm')p.autoTexte=true;document.documentElement.style.setProperty('--taille',p.taille+'px');sauverBientot();rendreReglagesGuide()});
   }
+  $('#r-son').onclick=fenetreSon;
   $('#r-auto').onchange=e=>{p.autoTexte=e.target.checked;sauverBientot();rendreReglagesGuide()};
   $('#r-blocs').onchange=e=>{p.autoBlocs=e.target.checked;sauverBientot();rendreReglagesGuide()};
   $$('#g-reglages [data-r]').forEach(x=>x.onclick=e=>{e.stopPropagation();const [k,d]=x.dataset.r.split(':');p[k]=k==='wpm'?clamp(p.wpm+ +d,40,180):clamp(p.taille+ +d,18,52);if(k==='wpm')p.autoTexte=true;document.documentElement.style.setProperty('--taille',p.taille+'px');sauverBientot();rendreReglagesGuide()});
@@ -1983,7 +2086,7 @@ async function fenetreSalle(seanceId,atelierId){
   $('#fs-annuler').onclick=fermer;
   const apercu=async()=>{
     if(flux)flux.getTracks().forEach(t=>t.stop());
-    try{flux=await navigator.mediaDevices.getUserMedia({video:$('#fs-cam').value?{deviceId:{exact:$('#fs-cam').value}}:true,audio:$('#fs-mic').value?{deviceId:{exact:$('#fs-mic').value}}:true})}
+    try{flux=await navigator.mediaDevices.getUserMedia({video:$('#fs-cam').value?{deviceId:{exact:$('#fs-cam').value}}:true,audio:$('#fs-mic').value?{deviceId:{exact:$('#fs-mic').value}}:D.prefs.micId?{deviceId:{ideal:D.prefs.micId}}:true})}
     catch(e){try{flux=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e2){flux=null}}
     $('#fs-video').srcObject=flux;$('#fs-sans').classList.toggle('cache',!!(flux&&flux.getVideoTracks().length));
     if(flux&&flux.getAudioTracks().length){try{ctxVu&&ctxVu.close();ctxVu=new AudioContext();const an=ctxVu.createAnalyser();an.fftSize=512;ctxVu.createMediaStreamSource(flux).connect(an);const d=new Uint8Array(512),barres=[...$('#fs-vu').children];
@@ -2045,7 +2148,7 @@ async function fenetreSalle(seanceId,atelierId){
   $('#fs-ok').onclick=async()=>{
     const a=ateliers.find(x=>x.cle===$('#fs-atelier').value);if(!a)return;
     const ok=$('#fs-ok');ok.disabled=true;ok.textContent='Ouverture…';$('#fs-err').classList.add('cache');$('#fs-detail').classList.add('cache');
-    SALLE.camId=$('#fs-cam').value;SALLE.micId=$('#fs-mic').value;SALLE.ecoute=$('#fs-ecoute').checked;
+    SALLE.camId=$('#fs-cam').value;SALLE.micId=$('#fs-mic').value;SALLE.ecoute=$('#fs-ecoute').checked;SALLE.sonId=SALLE.sonId||D.prefs.sortieId||'';
     const seance=$('#fs-seance').value;
     if(a.genre==='atelier'&&a.seance_id!==seance)sb(`ateliers?id=eq.${a.id}`,{method:'PATCH',body:JSON.stringify({seance_id:seance})},jeton).catch(()=>{});
     if(flux)flux.getTracks().forEach(t=>t.stop());flux=null;
@@ -2088,6 +2191,7 @@ async function ouvrirSalle(atelier,seanceId){
   const {Track,AudioPresets}=LivekitClient;
   try{await room.localParticipant.setCameraEnabled(true)}catch(e){}
   try{await room.localParticipant.setMicrophoneEnabled(true,undefined,{audioPreset:AudioPresets.musicHighQuality,dtx:false})}catch(e){}
+  if(SALLE.sonId){try{await room.switchActiveDevice('audiooutput',SALLE.sonId)}catch(e){}}
   // La musique du lecteur part directement dans la salle.
   audioInit();try{await A.ctx.resume()}catch(e){}
   if(A.ctx&&A.gain){
