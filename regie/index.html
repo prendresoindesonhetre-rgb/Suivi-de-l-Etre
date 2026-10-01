@@ -1625,7 +1625,8 @@ function vueGuider(id){
   $('#g-terminer').onclick=()=>{if(G.glob<5000){aller('seances');return}if(confirm('Terminer la séance et voir le bilan ?'))terminer()};
   $('#g-go').onclick=basculerRun;$('#g-prec').onclick=()=>allerTemps(G.i-1);$('#g-suiv').onclick=()=>allerTemps(G.i+1);
   brancherSouris();
-  const tx=$('#g-texte');['wheel','pointerdown','touchstart'].forEach(ev=>tx.addEventListener(ev,()=>{G.manuel=performance.now()+2500},{passive:true}));
+  const tx=$('#g-texte');// Défiler le texte à la main suspend un instant le défilement automatique (sauf en mode souris : la roulette y règle la vitesse).
+  ['wheel','pointerdown','touchstart'].forEach(ev=>tx.addEventListener(ev,e=>{if(!souris&&e.button!==1)G.manuel=performance.now()+2500},{passive:true}));
   rendreReglagesGuide();menus();afficherTemps();
   if(SALLE.actif)monterSalle();
   clearInterval(tickH);tickH=setInterval(tick,200);
