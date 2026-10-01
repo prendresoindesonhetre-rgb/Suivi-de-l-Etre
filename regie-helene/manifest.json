@@ -1,0 +1,16 @@
+{
+  "name": "Régie · Hélène Laudijois Hypnocoach",
+  "short_name": "Ma régie",
+  "description": "Préparer, guider et enregistrer mes séances — Hélène Laudijois, hypnocoach",
+  "id": "/regie-helene/",
+  "start_url": "/regie-helene/",
+  "scope": "/regie-helene/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fffaf2",
+  "theme_color": "#fffaf2",
+  "icons": [
+    { "src": "icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
