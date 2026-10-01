@@ -441,7 +441,21 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .g-enr .lbl{font-weight:700}
 @keyframes clignote{50%{opacity:.25}}
 @media(max-width:820px){.g-enr .lbl,.g-enr .niv{display:none}}
+@media(max-width:560px){.g-haut .g-horaire>span:first-child{display:none}.g-haut .g-enr{padding:6px 8px}.g-haut .btn.rond{width:34px;height:34px}}
 .enr-fen{max-width:470px;max-height:calc(100dvh - 36px);overflow:auto}
+.enr-texte{max-height:38vh;overflow:auto;white-space:pre-wrap;font-family:var(--serif);font-size:20px;line-height:1.6;color:var(--ink);background:var(--carte);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin:4px 0 12px}
+.enr-fond{background:var(--carte);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin:4px 0 12px}
+.enr-fond input[type=range]{width:100%;accent-color:var(--canard);margin-top:6px}
+.enr-ecran{text-align:center;padding:10px 0 14px}
+.enr-t{font-size:44px;font-weight:800;color:var(--peri-darker);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.enr-niv{height:8px;border-radius:4px;background:var(--violet-soft);overflow:hidden;max-width:260px;margin:6px auto 8px}
+.enr-niv b{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--canard),var(--alerte));transition:width .12s}
+.enr-etat{font-size:13px;font-weight:700;color:var(--muted)}
+.enr-etat.enr{color:var(--alerte)}.enr-etat.enr::before{content:'';display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--alerte);margin-right:6px;animation:clignote 1.2s infinite}
+.enr-etat.pause{color:#8a5a14}
+#ef-act .pt{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--alerte)}
+.nouvelles{display:grid;grid-template-columns:2fr 1fr;gap:10px}
+@media(max-width:560px){.nouvelles{grid-template-columns:1fr}}
 .enr-actions{display:flex;flex-wrap:wrap;gap:8px}
 .voile{position:fixed;inset:0;z-index:80;background:rgba(56,54,80,.38);display:flex;align-items:center;justify-content:center;padding:18px}
 .fenetre{background:var(--plein);border-radius:22px;box-shadow:0 30px 70px -30px rgba(56,54,80,.6);width:100%;max-width:410px;padding:24px}
@@ -713,11 +727,12 @@ function vueSeances(){
           <div class="menu"><button class="btn rond nu" title="Plus">${IC.points}</button><div class="menu-liste">
             <button data-dupliquer="${s.id}">${IC.copie} Dupliquer</button><button data-supprimer="${s.id}" style="color:var(--alerte)">${IC.poubelle} Supprimer</button></div></div>
         </div></div>`).join('')}
-      <button class="nouvelle" id="b-nouvelle">${IC.plus} Nouvelle séance</button>
+      <div class="nouvelles"><button class="nouvelle" id="b-nouvelle">${IC.plus} Nouvelle séance</button><button class="nouvelle" id="b-enr-libre">${IC.micro} Enregistrement libre</button></div>
     </div>${legende}
   </div>`;
   menus();
   $$('[data-guider]').forEach(b=>b.onclick=()=>aller('guider',b.dataset.guider));
+  $('#b-enr-libre').onclick=()=>fenetreEnregistreur({titre:'Enregistrement libre',fond:true,nom:`Séance – ${new Date().toLocaleDateString('fr-FR')}`});
   $$('[data-editer]').forEach(b=>b.onclick=()=>aller('editer',b.dataset.editer));
   $$('[data-visio]').forEach(b=>b.onclick=()=>fenetreSalle(b.dataset.visio));
   $$('[data-dupliquer]').forEach(b=>b.onclick=()=>{const s=clone(trouverSeance(b.dataset.dupliquer));s.id=uid();s.titre+=' (copie)';s.blocs.forEach(x=>x.id=uid());D.seances.push(s);sauver();vueSeances();toast('Séance dupliquée')});
@@ -998,6 +1013,8 @@ function rendreTemps(){
       <div class="champ">Entrée en douceur<div class="pas"><button class="btn" data-fondu="entree:-1">−</button><b id="e-entree">${b.entree} s</b><button class="btn" data-fondu="entree:1">+</button></div></div>
       <div class="champ">Sortie en douceur<div class="pas"><button class="btn" data-fondu="sortie:-1">−</button><b id="e-sortie">${b.sortie} s</b><button class="btn" data-fondu="sortie:1">+</button></div><span class="aide">avant la fin du temps</span></div></div>`:''}
     ${b.type==='silence'?`<div class="sect"><label class="champ">Pour clore le silence<select data-k="fin">${Object.entries(FINS).map(([k,v])=>`<option value="${k}" ${b.fin===k?'selected':''}>${v}</option>`).join('')}</select><span class="aide">Un rappel discret s’affiche 30 secondes avant la fin.</span></label></div>`:''}
+    ${b.type!=='musique'?`<div class="sect"><label class="champ">Audio de ce temps <span style="font-weight:500;color:var(--muted)">(facultatif)</span><select data-k="voixId"><option value="">— Aucun —</option>${D.musiques.map(m=>`<option value="${m.id}" ${b.voixId===m.id?'selected':''}>${esc(m.nom)} (${mmss(m.duree*1000)})</option>`).join('')}</select><span class="aide">Joué dès le début du temps pendant la séance : votre voix enregistrée, un son, une musique.</span></label>
+      <button class="btn s" id="e-voix-enr" style="margin:-4px 0 14px;width:100%;white-space:normal">${IC.micro} Enregistrer ma voix pour ce temps</button></div>`:''}
     <div class="sect">
       <label class="champ">Position<select data-k="position"><option value="">—</option>${Object.entries(POS).map(([k,v])=>`<option value="${k}" ${b.position===k?'selected':''}>${v}</option>`).join('')}</select></label>
       <label class="champ">Repère de conduite <span style="font-weight:500;color:var(--muted)">(pour vous)</span><textarea data-k="repere" rows="3">${esc(b.repere)}</textarea></label>
@@ -1015,7 +1032,7 @@ function rendreTemps(){
     const k=f.dataset.k,ev=f.tagName==='SELECT'||f.type==='checkbox'?'onchange':'oninput';
     f[ev]=()=>{
       let v=f.type==='checkbox'?f.checked:f.value;
-      if(k==='position'||k==='musiqueId')v=v||null;
+      if(k==='position'||k==='musiqueId'||k==='voixId')v=v||null;
       b[k]=v;
       if(k==='type'){if(v==='instrument'&&!b.instrument){b.instrument='pluie';b.rythme=5;b.expire=5}if(v==='silence'&&!b.fin)b.fin='carillon';rendreTemps()}
       if(k==='instrument'){b.rythme={pluie:5,ocean:8,tambour:60}[v]||null;b.expire=v==='pluie'?5:null;rendreTemps()}
@@ -1038,6 +1055,8 @@ function rendreTemps(){
     if(a==='suppr'){if(!confirm(`Supprimer le temps « ${b.nom} » ?`))return;S.blocs.splice(i,1);selId=S.blocs[Math.min(i,S.blocs.length-1)]?.id||null;$('#espace').classList.remove('detail')}
     sauver();rendreListe();rendreTemps();majJauge();
   });
+  const ve=$('#e-voix-enr');if(ve)ve.onclick=()=>fenetreEnregistreur({titre:`Votre voix pour « ${b.nom} »`,texte:b.texte,nom:`${S.titre} – ${b.nom}`,
+    utiliser:{label:'Utiliser pour ce temps',fn:m=>{b.voixId=m.id;const mn=Math.ceil(m.duree/60);let t='Audio ajouté à ce temps';if(mn>b.min){b.min=mn;t+=` · durée passée à ${mn} min`}sauver();rendreTemps();rendreListe();majJauge();toast(t)}}});
   const rm=$('#e-liste-retour');if(rm)rm.onclick=()=>{$('#espace').classList.remove('detail');window.scrollTo(0,0)};
 }
 
@@ -1133,20 +1152,25 @@ async function jouer(id,vol,entree,depuisDebut=true){
 function sortie(s){if(!A.joue)return;fondu(0,s);clearTimeout(A.stopT);A.stopT=setTimeout(()=>{A.el.pause();A.joue=false;majMusique()},s*1000+120)}
 let ecouteId=null;
 function vueMusiques(){
-  $('#vue').innerHTML=`<div class="page"><h1 class="titre">Mes musiques</h1><p class="sous">Les morceaux que vous utilisez dans vos séances.</p>
+  $('#vue').innerHTML=`<div class="page"><h1 class="titre">Mes musiques</h1><p class="sous">Les morceaux et enregistrements que vous utilisez dans vos séances.</p>
     <div class="info-bloc">${IC.info}<span>Vos morceaux sont gardés <b>sur cet appareil</b> : ils marchent même sans internet dans la salle. La liste se retrouve sur vos autres appareils ; le fichier, lui, s’ajoute une fois sur chacun. Utilisez des musiques dont vous avez les droits (achetées avec une licence, ou libres de droits).</span></div>
-    <button class="btn p" id="m-ajout">${IC.plus} Ajouter des morceaux</button>
-    <div style="margin-top:14px">${D.musiques.map(m=>`<div class="ligne"><span class="ic t-musique">${IC.musique}</span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" id="m-ajout">${IC.plus} Ajouter des morceaux</button><button class="btn" id="m-enr">${IC.micro} Enregistrer</button></div>
+    <div style="margin-top:14px">${D.musiques.map(m=>`<div class="ligne"><span class="ic t-musique">${m.enr?IC.micro:IC.musique}</span>
       <div class="txt"><input type="text" value="${esc(m.nom)}" data-mnom="${m.id}" aria-label="Nom du morceau"><small>${mmss(m.duree*1000)} · ${(m.taille/1048576).toFixed(1)} Mo<span class="manque cache" data-mmanque="${m.id}">Pas encore sur cet appareil</span></small></div>
       <button class="btn s cache" data-mrelier="${m.id}">${IC.plus} Ajouter le fichier ici</button>
       <button class="btn rond" data-ecoute="${m.id}" title="Écouter">${ecouteId===m.id?IC.stop:IC.play}</button>
+      <button class="btn rond nu" data-mdl="${m.id}" title="Télécharger le fichier">${IC.sauve}</button>
       <button class="btn rond nu danger" data-msuppr="${m.id}" title="Supprimer">${IC.poubelle}</button></div>`).join('')||'<div class="vide">Aucun morceau pour l’instant. Ajoutez vos fichiers audio (mp3, m4a, wav…).</div>'}</div></div>`;
   $('#m-ajout').onclick=()=>$('#f-musique').click();
+  $('#m-enr').onclick=()=>fenetreEnregistreur({titre:'Enregistrer',fond:true,nom:`Enregistrement – ${new Date().toLocaleDateString('fr-FR')}`});
+  $$('[data-mdl]').forEach(x=>x.onclick=async()=>{const m=D.musiques.find(y=>y.id===x.dataset.mdl),b=await idbGet(m.id);if(!b)return toast('Ce fichier n’est pas sur cet appareil');
+    const ext=(b.name||'').split('.').pop();const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;
+    a.download=b.type==='audio/mpeg'||!b.name?nomFichier(m.nom):nomFichier(m.nom).replace(/\.mp3$/,'.'+ext);document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)});
   $$('[data-mnom]').forEach(x=>x.oninput=()=>{D.musiques.find(m=>m.id===x.dataset.mnom).nom=x.value;sauverBientot()});
   $$('[data-ecoute]').forEach(x=>x.onclick=async()=>{const id=x.dataset.ecoute;if(ecouteId===id){sortie(.4);ecouteId=null}else{ecouteId=id;await jouer(id,.8,.4)}vueMusiques()});
   D.musiques.forEach(async m=>{if(await idbGet(m.id))return;$$(`[data-mmanque="${m.id}"],[data-mrelier="${m.id}"]`).forEach(x=>x.classList.remove('cache'))});
   $$('[data-mrelier]').forEach(x=>x.onclick=()=>{relierId=x.dataset.mrelier;$('#f-relier').click()});
-  $$('[data-msuppr]').forEach(x=>x.onclick=()=>{const m=D.musiques.find(y=>y.id===x.dataset.msuppr);if(!confirm(`Retirer « ${m.nom} » de vos morceaux ?`))return;idbDel(m.id);D.musiques=D.musiques.filter(y=>y!==m);D.seances.forEach(s=>s.blocs.forEach(b=>{if(b.musiqueId===m.id)b.musiqueId=null}));sauver();vueMusiques()});
+  $$('[data-msuppr]').forEach(x=>x.onclick=()=>{const m=D.musiques.find(y=>y.id===x.dataset.msuppr);if(!confirm(`Retirer « ${m.nom} » de vos morceaux ?`))return;idbDel(m.id);D.musiques=D.musiques.filter(y=>y!==m);D.seances.forEach(s=>s.blocs.forEach(b=>{if(b.musiqueId===m.id)b.musiqueId=null;if(b.voixId===m.id)b.voixId=null}));D.mesBlocs.forEach(b=>{if(b.musiqueId===m.id)b.musiqueId=null;if(b.voixId===m.id)b.voixId=null});sauver();vueMusiques()});
 }
 let relierId=null;
 $('#f-relier').onchange=async e=>{
@@ -1255,6 +1279,56 @@ async function retrouverEnr(){
   fenetreResultat(b,m.ms||0,m.nom,{recupere:true});
 }
 window.addEventListener('beforeunload',e=>{if((ENR&&ENR.etat!=='fini')||(ENRL&&ENRL.etat!=='fini')){e.preventDefault();e.returnValue=''}});
+
+/* ——— Enregistreur libre : d'un seul tenant, sans séance découpée ———
+   o.texte : un texte à lire, affiché en grand ; o.fond : proposer une musique
+   de fond (jouée et mélangée dans l'enregistrement) ; o.utiliser : action
+   principale une fois l'enregistrement fait (ex. « Utiliser pour ce temps »). */
+function fenetreEnregistreur(o={}){
+  if(ENRL||ENR)return toast('Un enregistrement est déjà en cours');
+  const v=document.createElement('div');v.className='voile';let tH=null,fond=null;
+  v.innerHTML=`<div class="fenetre enr-fen">
+    <h2>${IC.micro} ${esc(o.titre||'Enregistrer')}</h2>
+    ${o.texte?`<div class="enr-texte">${esc(o.texte)}</div>`:''}
+    ${o.fond&&D.musiques.length?`<div class="enr-fond"><label class="champ" style="margin:0">Musique de fond <span style="font-weight:500;color:var(--muted)">(facultatif)</span><select id="ef-m"><option value="">— Sans musique —</option>${D.musiques.map(m=>`<option value="${m.id}">${esc(m.nom)}</option>`).join('')}</select></label>
+      <label class="champ" style="margin:8px 0 0">Volume de la musique <b id="ef-vol-v">30 %</b><input type="range" id="ef-vol" min="0" max="100" value="30"></label></div>`:''}
+    <div class="enr-ecran"><div class="enr-t" id="ef-t">00:00</div><div class="enr-niv"><b id="ef-n"></b></div><div class="enr-etat" id="ef-etat">Prêt à enregistrer</div></div>
+    <div class="err cache" id="ef-err"></div>
+    <div class="actions" id="ef-act"></div>
+  </div>`;
+  document.body.appendChild(v);
+  const vol=()=>{const r=$('#ef-vol');return r?+r.value/100:.3};
+  const r=$('#ef-vol');if(r)r.oninput=()=>{$('#ef-vol-v').textContent=r.value+' %';if(fond&&A.joue&&A.id===fond)fondu(vol(),.3)};
+  const etat=(t,cls)=>{const e=$('#ef-etat');e.textContent=t;e.className='enr-etat '+(cls||'')};
+  const boutons=()=>{
+    const E=ENRL,a=$('#ef-act');
+    if(!E)a.innerHTML=`<button class="btn" id="ef-annuler">Annuler</button><button class="btn p" id="ef-go"><i class="pt-rouge"></i> Commencer</button>`;
+    else a.innerHTML=`<button class="btn nu danger" id="ef-jeter">Abandonner</button><span style="flex:1"></span>${E.etat==='enr'?`<button class="btn" id="ef-pause">${IC.pause} Pause</button>`:`<button class="btn" id="ef-reprendre"><i class="pt"></i> Reprendre</button>`}<button class="btn p" id="ef-fin">${IC.stop} Terminer</button>`;
+    const q=id=>$('#'+id);
+    if(q('ef-annuler'))q('ef-annuler').onclick=()=>v.remove();
+    if(q('ef-go'))q('ef-go').onclick=commencer;
+    if(q('ef-pause'))q('ef-pause').onclick=()=>{ENRL.pause();if(fond&&A.joue){A.el.pause();A.joue=false}etat('En pause','pause');boutons()};
+    if(q('ef-reprendre'))q('ef-reprendre').onclick=async()=>{ENRL.reprendre();if(fond)await jouer(fond,vol(),1,false);etat('Enregistrement en cours','enr');boutons()};
+    if(q('ef-fin'))q('ef-fin').onclick=terminer;
+    if(q('ef-jeter'))q('ef-jeter').onclick=()=>{if(!confirm('Abandonner cet enregistrement ? Il sera perdu.'))return;clearInterval(tH);ENRL.annuler();ENRL=null;if(fond)sortie(.5);v.remove()};
+  };
+  const commencer=async()=>{
+    const go=$('#ef-go');go.disabled=true;go.textContent='Ouverture du micro…';$('#ef-err').classList.add('cache');
+    const m=$('#ef-m');fond=m&&m.value||null;
+    try{ENRL=await creerEnregistreur({musique:!!fond,nom:o.nom||'Enregistrement'})}
+    catch(e){const er=$('#ef-err');er.textContent=e.message;er.classList.remove('cache');go.disabled=false;go.innerHTML='<i class="pt-rouge"></i> Réessayer';return}
+    if(m)m.disabled=true;
+    ENRL.demarrer();if(fond)jouer(fond,vol(),3);
+    etat('Enregistrement en cours','enr');boutons();
+    tH=setInterval(()=>{if(!ENRL)return;$('#ef-t').textContent=mmss(ENRL.duree());$('#ef-n').style.width=(ENRL.etat==='enr'?Math.round(ENRL.niveau()*100):0)+'%'},150);
+  };
+  const terminer=()=>{
+    clearInterval(tH);const E=ENRL;ENRL=null;const res=E.arreter();if(fond)sortie(1.5);v.remove();
+    if(res.ms<1000){oublierEnr();toast('Enregistrement vide : rien n’a été gardé');return}
+    fenetreResultat(res.blob,res.ms,o.nom,{utiliser:o.utiliser});
+  };
+  boutons();
+}
 
 /* ——— Enregistrer la séance pendant qu'on la guide ———
    L'enregistrement suit la séance : il se met en pause avec elle. */
@@ -1395,6 +1469,13 @@ function calculerObjectif(s){
   if(s.debut&&s.finH){const d=aujourdhuiA(s.debut);if(Math.abs(Date.now()-d)<=45*60000){let f=aujourdhuiA(s.finH);if(f<=d)f+=86400000;return f}}
   return Date.now()+total(s)*60000;
 }
+// L'audio d'un temps : le morceau d'un temps de musique, ou l'audio (voix…) d'un autre temps.
+const audioDe=b=>b?(b.type==='musique'?b.musiqueId:b.voixId)||null:null;
+function lancerAudioTemps(b,reprise){
+  const au=audioDe(b);if(!au)return;
+  if(b.type==='musique'){if(A.joue&&A.id===au)fondu(b.volume/100,reprise?1.5:Math.max(2,b.entree));else jouer(au,b.volume/100,b.entree)}
+  else jouer(au,1,.15,!(reprise&&A.id===au));   // une voix part tout de suite, et reprend là où elle était
+}
 function basculerRun(){
   if(G.termine)return terminer();
   audioInit();A.ctx&&A.ctx.resume();
@@ -1404,20 +1485,22 @@ function basculerRun(){
     if(!G.debut){G.debut=Date.now();G.objectif=calculerObjectif(G.s)}
     garderEveil();
     const b=G.blocs[G.i];
-    if(b.type==='musique'&&b.musiqueId){if(A.joue&&A.id===b.musiqueId)fondu(b.volume/100,1.5);else jouer(b.musiqueId,b.volume/100,b.entree)}
-  }else if(A.joue)fondu(Math.min(.15,A.gain.gain.value),1.2);
+    lancerAudioTemps(b,true);
+  }else if(A.joue){const b=G.blocs[G.i];
+    if(b.type!=='musique'&&A.id===audioDe(b)){A.el.pause();A.joue=false}   // la voix s'arrête net, elle reprendra au même endroit
+    else fondu(Math.min(.15,A.gain.gain.value),1.2)}
   majMusique();
   $('#g-go').textContent=G.run?'Pause':'Reprendre';$('#g-go').classList.toggle('pause',G.run);
 }
 function allerTemps(n){
   if(!G||n<0||n>=G.blocs.length)return;
-  if(A.joue&&G.blocs[G.i].type==='musique'&&A.id===G.blocs[G.i].musiqueId)sortie(3);
+  {const p=G.blocs[G.i];if(A.joue&&audioDe(p)&&A.id===audioDe(p))sortie(p.type==='musique'?3:.6)}
   G.i=n;G.bloc=0;G.sig[n]=false;G.sortie[n]=false;G.termine=false;G.manuel=0;
   try{navigator.vibrate&&navigator.vibrate(40)}catch(e){}
   $('#guide').classList.remove('tiroir');
   afficherTemps();
   const b=G.blocs[n];
-  if(G.run&&b.type==='musique'&&b.musiqueId){if(A.joue&&A.id===b.musiqueId)fondu(b.volume/100,Math.max(2,b.entree));else jouer(b.musiqueId,b.volume/100,b.entree)}
+  if(G.run)lancerAudioTemps(b,false);
 }
 function rendreListeGuide(){
   $('#g-liste').innerHTML=G.blocs.map((b,j)=>`<div class="ti ${j<G.i?'fait':''} ${j===G.i?'courant':''}" data-j="${j}">
