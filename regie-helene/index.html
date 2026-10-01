@@ -8,8 +8,8 @@
 <link rel="apple-touch-icon" href="icone-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Régie">
-<title>Régie de l’Être</title>
+<meta name="apple-mobile-web-app-title" content="Ma régie">
+<title>Régie · Hélène Laudijois Hypnocoach</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,6 +17,10 @@
 <style>
 .lien-boite{background:var(--canard-light);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--canard-dark);font-weight:600;word-break:break-all;margin:10px 0}
 .fs-detail{margin-top:6px;font-size:12px;color:var(--muted);word-break:break-word}
+/* Pas de visio dans cette régie : on cache ses réglages */
+label.champ:has(select[data-k=visio]),.o-infos .chip[title="Mode de la salle de visio"]{display:none!important}
+.marque-nom{display:flex;flex-direction:column;line-height:1.1}
+.marque-nom small{font-family:var(--sans,inherit);font-style:normal;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#d29a1c;margin-top:2px}
 :root{
   --fond:#f4f0fb; --carte:rgba(255,255,255,.88); --plein:#fff; --ink:#383650; --muted:#6b6880;
   --line:#e4dff0; --line-bleu:#bfdaf3; --canard:#2c7a87; --canard-deep:#1a7a7a; --canard-dark:#145f5f; --canard-light:#e8f5f5;
@@ -586,11 +590,11 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 <body>
 
 <header class="haut" id="haut"><div class="in">
-  <div class="marque"><img src="logo.png" alt=""><span>Régie de l’Être</span></div>
+  <div class="marque"><img src="logo.png" alt=""><span class="marque-nom">Hélène Laudijois<small>Hypnocoach</small></span></div>
   <nav class="onglets" id="onglets">
     <button data-v="seances">Séances</button><button data-v="blocs">Mes blocs</button><button data-v="musiques">Musiques</button><button data-v="bilans">Bilans</button>
   </nav>
-  <div class="droite"><span class="etat-save" id="etat-save"></span><button class="sync" id="etat-sync" type="button"></button></div>
+  <div class="droite"><span class="etat-save" id="etat-save"></span></div>
 </div></header>
 <div id="bandeau"></div>
 <div id="vue"></div>
@@ -650,10 +654,10 @@ const KIND={atelier:'Atelier en groupe',individuel:'Séance individuelle',autre:
 const PRESETS=[[5,5,'Cohérence 5 · 5'],[4,6,'Apaisant 4 · 6'],[6,6,'Lent 6 · 6'],[4,4,'Plus vif 4 · 4']];
 
 /* ——— Stockage ——— */
-const CLE='regieEtre.v1';let stockOK=true;const memoire={};
+const CLE='regieHelene.v1';let stockOK=true;const memoire={};
 function lire(){try{const v=localStorage.getItem(CLE);return v?JSON.parse(v):null}catch(e){stockOK=false;return memoire[CLE]||null}}
 function ecrire(v){try{localStorage.setItem(CLE,JSON.stringify(v))}catch(e){stockOK=false;memoire[CLE]=v}}
-try{localStorage.setItem('regieEtre.test','1');localStorage.removeItem('regieEtre.test')}catch(e){stockOK=false}
+try{localStorage.setItem('regieHelene.test','1');localStorage.removeItem('regieHelene.test')}catch(e){stockOK=false}
 let saveT=null;
 function sauver(){D.maj=Date.now();ecrire(D);etatSave('Enregistré');if(typeof planifierSync==='function')planifierSync()}
 function sauverBientot(){etatSave('…');clearTimeout(saveT);saveT=setTimeout(sauver,450)}
@@ -661,7 +665,7 @@ function etatSave(t){const e=$('#etat-save');if(e)e.innerHTML=t==='…'?'Enregis
 
 /* ——— Musiques : fichiers gardés dans IndexedDB ——— */
 let dbP=null;const blobsMem=new Map();
-function idb(){if(!dbP)dbP=new Promise((res,rej)=>{try{const r=indexedDB.open('regie-etre',1);r.onupgradeneeded=()=>r.result.createObjectStore('musiques');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});return dbP}
+function idb(){if(!dbP)dbP=new Promise((res,rej)=>{try{const r=indexedDB.open('regie-helene',1);r.onupgradeneeded=()=>r.result.createObjectStore('musiques');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});return dbP}
 async function idbPut(id,blob){try{const db=await idb();await new Promise((res,rej)=>{const tx=db.transaction('musiques','readwrite');tx.objectStore('musiques').put(blob,id);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}catch(e){blobsMem.set(id,blob)}}
 async function idbGet(id){if(blobsMem.has(id))return blobsMem.get(id);try{const db=await idb();return await new Promise((res,rej)=>{const r=db.transaction('musiques').objectStore('musiques').get(id);r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error)})}catch(e){return null}}
 async function idbDel(id){blobsMem.delete(id);try{const db=await idb();db.transaction('musiques','readwrite').objectStore('musiques').delete(id)}catch(e){}}
@@ -669,31 +673,7 @@ async function idbDel(id){blobsMem.delete(id);try{const db=await idb();db.transa
 /* ——— Contenu de départ (textes d’exemple, à remplacer par les tiens) ——— */
 function nb(type,nom,min,o={}){return Object.assign({id:uid(),type,nom,min,texte:'',repere:'',instrument:null,rythme:null,expire:null,musiqueId:null,volume:70,entree:8,sortie:10,souple:false,position:null,fin:'',visio:'auto'},o)}
 function contenuDepart(){
-  const s1={id:uid(),titre:'Atelier du jeudi',genre:'atelier',debut:'19:30',finH:'21:00',blocs:[
-    nb('parole','Accueil',8,{visio:'cercle',position:'assis',texte:'Bonsoir, et bienvenue.\n\nPrenez le temps d’arriver…\n\nDe laisser derrière vous la journée, tout ce qui s’est passé avant ce moment.\n\nCe soir, il n’y a rien à réussir.\n\nSeulement un temps pour vous.',repere:'Saluer chaque personne par son prénom.'}),
-    nb('transition','Installation',5,{position:'allonge',texte:'Je vous invite maintenant à vous installer confortablement, en position allongée.\n\nUne couverture, un coussin sous la tête ou sous les genoux…\n\nEt prenez le temps de trouver la position dans laquelle votre corps se sent bien.',repere:'Laisser le temps à chacun de s’installer.'}),
-    nb('instrument','Bâton de pluie · respiration',8,{instrument:'pluie',rythme:5,expire:5,position:'allonge',texte:'Laissez le son du bâton de pluie accompagner votre respiration.\n\nÀ l’inspiration, le ventre se gonfle doucement…\n\nÀ l’expiration, il redescend.\n\nSi ce rythme ne vous convient pas, laissez simplement votre souffle faire comme il en a besoin.',repere:'Suivre l’inclinaison du bâton à l’écran.'}),
-    nb('instrument','Tambour océan',7,{instrument:'ocean',rythme:8,position:'allonge',texte:'Écoutez le mouvement de l’eau.\n\nUne vague arrive…\n\npuis repart.\n\nLaissez venir un lieu où vous vous sentez bien, en sécurité.\n\nRien à faire.\n\nSimplement écouter.',repere:'Laisser le son s’éteindre avant la musique.'}),
-    nb('musique','Musique 432 Hz',8,{souple:true,position:'allonge',repere:'Aucune parole pendant ce temps.'}),
-    nb('transition','Retour vers l’assise',3,{position:'assis',texte:'Doucement, remettez un peu de mouvement dans les doigts, dans les pieds.\n\nVenez sur le côté, et restez-y quelques instants…\n\nPuis, à votre rythme, installez-vous en position assise.',repere:'Toujours passer par le côté.'}),
-    nb('silence','Méditation assise en silence',15,{position:'assis',fin:'carillon',texte:'Sentez vos appuis.\n\nLe souffle, tel qu’il est.\n\nLes pensées viennent et repartent, sans que vous ayez à les suivre.\n\nJe vous laisse maintenant dans le silence.',repere:'Silence complet.'}),
-    nb('instrument','Flûte et carillon',12,{instrument:'flute',position:'allonge',texte:'Vous pouvez revenir vous allonger.\n\nLaissez simplement le son venir à vous.',repere:'La flûte d’abord, le carillon pour clore.'}),
-    nb('parole','Retour',4,{visio:'retour',texte:'Retrouvez doucement le contact de votre corps, les sons autour de vous.\n\nPrenez votre temps.',repere:'Regarder chaque personne.'}),
-    nb('partage','Partage',15,{souple:true,position:'assis',texte:'Qui souhaite partager ce moment ?\n\nIl n’y a rien de juste ou de faux.\n\nVous pouvez aussi simplement écouter.',repere:'Une parole à la fois.'})
-  ]};
-  const s2={id:uid(),titre:'Relaxation individuelle',genre:'individuel',debut:'',finH:'',blocs:[
-    nb('parole','Accueil',5,{texte:'Installez-vous confortablement.\n\nComment vous sentez-vous aujourd’hui ?'}),
-    nb('instrument','Respiration au bâton de pluie',6,{instrument:'pluie',rythme:4,expire:6,position:'allonge',texte:'Inspirez doucement…\n\net laissez l’expiration être un peu plus longue.'}),
-    nb('instrument','Voyage au tambour océan',8,{instrument:'ocean',rythme:8,position:'allonge'}),
-    nb('musique','Musique douce',12,{souple:true,position:'allonge'}),
-    nb('parole','Retour',4,{texte:'Retrouvez doucement votre corps, votre respiration.'}),
-    nb('partage','Échange',10,{souple:true,position:'assis'})
-  ]};
-  return {schema:1,maj:Date.now(),seances:[s1,s2],mesBlocs:[
-    nb('instrument','Cohérence cardiaque · bâton de pluie',5,{instrument:'pluie',rythme:5,expire:5,position:'allonge',texte:'À l’inspiration, le ventre se gonfle…\n\nÀ l’expiration, il redescend.'}),
-    nb('transition','Retour en douceur',3,{position:'assis',texte:'Remettez un peu de mouvement…\n\nVenez sur le côté…\n\nPuis asseyez-vous à votre rythme.'}),
-    nb('silence','Silence et carillon',10,{position:'assis',fin:'carillon'})
-  ],musiques:[],bilans:[],prefs:{}};
+  return {schema:1,maj:Date.now(),seances:[],mesBlocs:[],musiques:[],bilans:[],prefs:{}};
 }
 const PREFS={nuit:false,wpm:90,taille:30,autoBlocs:true,autoTexte:false};
 let D=lire();
@@ -706,7 +686,7 @@ function boutonsDepart(){return Object.entries(TYPES).map(([k,t])=>({id:'bt-'+k,
 if(!Array.isArray(D.boutons)){D.boutons=boutonsDepart();D.boutonsVierges=true}
 if(!Array.isArray(D.mesBlocs))D.mesBlocs=[];
 // Ancien exemple de la première version : on reprend le nouveau titre.
-D.seances.forEach(s=>{if(s.titre==='Méditer ensemble')s.titre='Atelier du jeudi'});
+
 
 /* ——— Petits outils ——— */
 let toastT;function toast(t){const e=$('#toast');e.innerHTML=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),2600)}
@@ -741,11 +721,11 @@ $$('#onglets button').forEach(b=>b.onclick=()=>aller(b.dataset.v));
 /* =============================== MES SÉANCES =============================== */
 function vueSeances(){
   $('#vue').innerHTML=`<div class="page">
-    <div class="tete-page"><div><h1 class="titre">Mes séances</h1><p class="sous">Préparez une séance une fois, guidez-la en présentiel comme en visio.</p></div>
+    <div class="tete-page"><div><h1 class="titre">Mes séances</h1><p class="sous">Préparez une séance une fois, guidez-la et enregistrez-la.</p></div>
       <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap"><button class="btn s" id="b-son">${IC.casque} Micro et son</button>
       <div class="menu"><button class="btn s">${IC.points} Sauvegarde</button><div class="menu-liste">
         <button id="b-sauve">${IC.sauve} Télécharger une sauvegarde</button><button id="b-restaure">${IC.restaure} Restaurer une sauvegarde</button>
-        <button id="b-import">${IC.restaure} Reprendre l’ancienne régie</button></div></div></div></div>
+        </div></div></div></div>
     <div class="liste-seances">
       ${D.seances.map(s=>`<div class="ls">
         <div><h3 data-editer="${s.id}">${esc(s.titre)}</h3>
@@ -754,7 +734,6 @@ function vueSeances(){
         <div class="ls-actions">
           <button class="btn p" data-guider="${s.id}">${IC.play} Guider</button>
           <button class="btn" data-editer="${s.id}">${IC.edit} Préparer</button>
-          <button class="btn" data-visio="${s.id}" title="Guider cette séance dans la salle de visio">${IC_VISIO} En visio</button>
           <div class="menu"><button class="btn rond nu" title="Plus">${IC.points}</button><div class="menu-liste">
             <button data-dupliquer="${s.id}">${IC.copie} Dupliquer</button><button data-supprimer="${s.id}" style="color:var(--alerte)">${IC.poubelle} Supprimer</button></div></div>
         </div></div>`).join('')}
@@ -770,7 +749,7 @@ function vueSeances(){
   $$('[data-supprimer]').forEach(b=>b.onclick=()=>{const s=trouverSeance(b.dataset.supprimer);if(confirm(`Supprimer « ${s.titre} » ?`)){D.seances=D.seances.filter(x=>x!==s);sauver();vueSeances();toast('Séance supprimée')}});
   $('#b-nouvelle').onclick=()=>{const s={id:uid(),titre:'Nouvelle séance',genre:'atelier',debut:'',finH:'',blocs:[nb('parole','Accueil',5)]};D.seances.push(s);sauver();aller('editer',s.id);setTimeout(()=>{const t=$('#e-titre');t.focus();t.select()},60)};
   $('#b-son').onclick=fenetreSon;
-  $('#b-sauve').onclick=exporter;$('#b-restaure').onclick=()=>$('#f-restaure').click();$('#b-import').onclick=fenetreImport;
+  $('#b-sauve').onclick=exporter;$('#b-restaure').onclick=()=>$('#f-restaure').click();
 }
 
 /* =============================== PRÉPARER =============================== */
@@ -1369,7 +1348,7 @@ $('#f-musique').onchange=async e=>{
    en MP3 au fil de l'eau : un fichier lisible partout, à envoyer tel quel.
    Toutes les 20 s, ce qui est enregistré est mis de côté sur l'appareil :
    si la page se ferme, l'enregistrement est retrouvé au lancement suivant. */
-const CLE_ENR='regieEtre.enr',ID_ENR='__enregistrement';
+const CLE_ENR='regieHelene.enr',ID_ENR='__enregistrement';
 let lameP=null;
 function chargerLame(){
   if(window.lamejs)return Promise.resolve();
@@ -1992,7 +1971,7 @@ function vueBilans(){
 function exporter(){
   const blob=new Blob([JSON.stringify(D,null,1)],{type:'application/json'});
   const a=document.createElement('a'),d=new Date();
-  a.href=URL.createObjectURL(blob);a.download=`regie-de-l-etre-sauvegarde-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}.json`;
+  a.href=URL.createObjectURL(blob);a.download=`regie-helene-laudijois-sauvegarde-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}.json`;
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
   toast('Sauvegarde téléchargée (les fichiers de musique restent sur l’appareil)');
 }
@@ -2012,10 +1991,10 @@ $('#f-restaure').onchange=async e=>{
    au retour du réseau. Les fichiers audio restent sur chaque appareil.
    Pendant qu'une séance est guidée ou préparée, rien ne vient la modifier :
    ce qui arrive d'ailleurs attend la sortie de l'écran. */
-const SB_URL='https://issedanlnadbhidlymnc.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
+const SB_URL='';   // régie autonome : aucun compte, aucune synchronisation
+const SB_KEY='';
 const COLL=['seances','mesBlocs','bilans','musiques','boutons'];
-const CLE_BASE='regieEtre.base';
+const CLE_BASE='regieHelene.base';
 const SYN={etat:'',enCours:false,encore:false,differe:false,t:null,derniere:null};
 const occupe=()=>vue==='guider'||vue==='editer';
 
@@ -2070,9 +2049,9 @@ function etatSync(e,detail){
   b.title=detail||(e==='ok'&&SYN.derniere?`Dernière synchronisation à ${heureTxt(SYN.derniere)}`:txt);
 }
 
-function planifierSync(){clearTimeout(SYN.t);SYN.t=setTimeout(synchroniser,3000)}
+function planifierSync(){return;clearTimeout(SYN.t);SYN.t=setTimeout(synchroniser,3000)}
 
-async function synchroniser(){
+async function synchroniser(){return;
   if(!stockOK)return;
   if(SYN.enCours){SYN.encore=true;return}
   const jeton=await jetonValide();
@@ -2158,7 +2137,7 @@ function fenetreConnexion(){
   setTimeout(()=>$('#cx-mail').focus(),50);
 }
 
-function demarrerSync(){
+function demarrerSync(){return;
   const b=$('#etat-sync');
   if(b)b.onclick=()=>{if(SYN.etat==='compte'||SYN.etat==='refuse')fenetreConnexion();else synchroniser()};
   addEventListener('online',()=>synchroniser());
@@ -2177,7 +2156,7 @@ function demarrerSync(){
    musique ; votre micro garde le vrai son des instruments pendant les temps
    « Musique ». Moteur vidéo : LiveKit (clé d'entrée donnée par la page de
    rendez-vous, qui vérifie votre session). */
-const RDV_API='https://rendez-vous.prendresoindesonhetre.fr';
+const RDV_API='';   // pas de visio dans cette régie
 const LK_SRC='https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js';
 const MODES={cercle:{nom:'Cercle',aide:'Tout le monde se voit et peut parler'},ecoute:{nom:'Écoute',aide:'Micros coupés, lumière baissée'},musique:{nom:'Musique',aide:'Lumière baissée, votre micro garde le vrai son'},retour:{nom:'Retour',aide:'« Comment vous sentez-vous ? »'}};
 const SALLE={actif:false,room:null,atelier:null,mode:'cercle',manuel:false,pause:false,aparte:null,ecoute:false,instruments:null,ecran:false,chat:[],chatOuvert:false,chatNonLus:0,micId:'',camId:'',sonId:'',alertes:[],pubMusique:null,grand:false,etat:''};
@@ -2770,7 +2749,7 @@ else aller('seances');
 demarrerSync();
 setTimeout(retrouverEnr,800);
 const visioDirect=location.hash.match(/^#visio(?:-(\d+))?$/);
-if(visioDirect)setTimeout(()=>fenetreSalle((D.seances.find(x=>x.genre==='atelier')||D.seances[0]||{}).id,visioDirect[1]),300);
+if(false)setTimeout(()=>fenetreSalle((D.seances.find(x=>x.genre==='atelier')||D.seances[0]||{}).id,visioDirect[1]),300);
 // En ligne (https) : la régie s'installe comme une application et marche sans internet.
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>

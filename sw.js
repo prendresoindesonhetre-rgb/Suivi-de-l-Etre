@@ -87,7 +87,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;
   // La régie (/regie/) a sa propre copie hors ligne, toujours à jour.
-  if (url.pathname.startsWith('/regie/')) return;
+  if (url.pathname.startsWith('/regie/') || url.pathname.startsWith('/regie-helene/')) return;
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
       if (res && res.status === 200) {
