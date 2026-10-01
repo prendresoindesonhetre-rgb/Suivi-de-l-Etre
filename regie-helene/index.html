@@ -47,7 +47,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 .cache{display:none!important}
 /* Le logo en filigrane, très léger, sur la page d'accueil */
-.filigrane{position:fixed;inset:var(--haut) 0 0 0;z-index:-1;pointer-events:none;background:url(logo.png) center 60%/min(86vw,700px) no-repeat;opacity:.13}
+.filigrane{position:fixed;inset:var(--haut) 0 0 0;z-index:-1;pointer-events:none;background:url(logo.png) center 62%/min(52vw,400px) no-repeat;opacity:.13}
 body.nuit .filigrane{opacity:.08}
 svg{display:block;flex:none}
 
@@ -492,6 +492,31 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .ecouter-sur select{width:auto;flex:1;min-width:0;padding:4px 8px;font-size:12px;border-radius:10px}
 .enr-diag{font-size:12px;color:var(--muted);margin:-6px 0 12px}
 .alerte-bloc{background:var(--attente-pale);color:#8a5a14}
+.dossiers{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:16px}
+.puce-dos{border:1px solid var(--line);background:var(--plein);color:var(--muted);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px}
+.puce-dos span{font-size:11px;opacity:.7}
+.puce-dos.on{background:var(--violet-soft);color:var(--peri-darker);border-color:var(--violet)}
+.puce-dos.plus{border-style:dashed;color:var(--canard-dark)}
+.puce-dos svg{width:13px;height:13px}
+.m-dossier{width:auto;max-width:170px;padding:5px 8px;font-size:12px;border-radius:10px;flex:none}
+@media(max-width:640px){.m-dossier{max-width:110px}}
+.mt-liste{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.mt-partie{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;background:var(--plein);border:1px solid var(--line)}
+.mt-num{font-size:12px;font-weight:800;color:var(--muted);width:18px;text-align:center;flex:none}
+.mt-partie .ic{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:none}
+.mt-partie .txt{flex:1;min-width:0}
+.mt-partie .txt b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mt-coupe{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;margin-top:4px;font-size:12px;color:var(--muted)}
+.mt-coupe input{width:72px;padding:3px 6px;font-size:12px;border-radius:8px;margin:0 3px}
+.mt-duree{font-size:13px;font-weight:800;color:var(--canard-dark);font-variant-numeric:tabular-nums;flex:none}
+.mt-act{display:flex;flex:none}.mt-act .btn.rond{width:30px;height:30px}.mt-act svg{width:14px;height:14px}
+.mt-ajout{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.mt-ajout-l{display:flex;gap:6px;flex:1;min-width:260px}.mt-ajout-l select{flex:1;min-width:0}
+.mt-reglages{margin-bottom:14px}
+.mt-reglages input[type=range]{width:100%;accent-color:var(--canard);margin-top:6px}
+.mt-bas{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end}
+.mt-total{flex:1;font-size:14px;color:var(--muted)}.mt-total b{color:var(--ink)}#mt-ou{margin-left:8px;font-weight:700;color:var(--canard-dark)}
+@media(max-width:640px){.mt-partie{flex-wrap:wrap}.mt-act{width:100%;justify-content:flex-end}}
 .m-lecteur{display:flex;align-items:center;gap:8px;margin:-2px 6px 10px;padding:8px 12px;background:var(--carte);border:1px solid var(--line);border-top:0;border-radius:0 0 16px 16px}
 .m-lecteur input[type=range]{flex:1;accent-color:var(--canard);min-width:0}
 .ml-vol{display:inline-flex;align-items:center;gap:4px;color:var(--muted)}.ml-vol input{width:90px;accent-color:var(--canard)}
@@ -677,6 +702,7 @@ const IC={
   stop:I('<rect x="6" y="6" width="12" height="12" rx="2"/>',15),
   casque:I('<path d="M4 15v-3a8 8 0 0116 0v3"/><rect x="3" y="14" width="4" height="7" rx="1.5"/><rect x="17" y="14" width="4" height="7" rx="1.5"/>',16),
   souris:I('<rect x="6" y="3" width="12" height="18" rx="6"/><path d="M12 7v4"/>',15),
+  ciseaux:I('<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.1 8.1L20 20M8.1 15.9L20 4"/>',16),
   micro:I('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>',17),
   check:I('<path d="M5 12l5 5 9-10"/>',15),partager:I('<path d="M12 15V4M7 9l5-5 5 5M5 14v5h14v-5"/>',15),
   pause:I('<path d="M8 5v14M16 5v14"/>',15,2.4),recaler:I('<path d="M4 12a8 8 0 0114-5.3L20 9"/><path d="M20 4v5h-5"/>',15)
@@ -750,8 +776,9 @@ function aller(v,p){
   vue=v;
   $('#haut').classList.toggle('cache',v==='guider');
   $('#onglets').classList.toggle('cache',v==='editer');
-  $$('#onglets button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
-  ({seances:vueSeances,blocs:vueBlocs,musiques:vueMusiques,bilans:vueBilans,editer:vueEditer,guider:vueGuider,bilan:vueBilan})[v](p);
+  $$('#onglets button').forEach(b=>b.classList.toggle('on',b.dataset.v===(v==='montage'?'musiques':v)));
+  if(v!=='montage')arreterEcoute();
+  ({seances:vueSeances,blocs:vueBlocs,musiques:vueMusiques,bilans:vueBilans,editer:vueEditer,guider:vueGuider,bilan:vueBilan,montage:vueMontage})[v](p);
   window.scrollTo(0,0);
   if(SYN.differe&&!occupe()){SYN.differe=false;setTimeout(synchroniser,300)}
 }
@@ -1220,7 +1247,8 @@ function appliquerSortie(){
 // La contrainte micro à demander : celui choisi, sinon celui par défaut.
 // L'amplification manuelle du micro (1 = telle quelle, jusqu'à 8 pour un micro faible).
 const gainMicro=()=>clamp(+D.prefs.micGain||1,1,8);
-const micAuto=()=>D.prefs.micAuto!==false;
+const sonBrut=()=>D.prefs.sonBrut===true;
+const micAuto=()=>!sonBrut()&&D.prefs.micAuto!==false;
 const antiBruit=()=>D.prefs.antiBruit!==false;
 /* La voix avant l'enregistrement : coupe des graves inutiles (grondements),
    niveau réglé tout seul (on vise une voix bien présente : il monte doucement
@@ -1238,6 +1266,8 @@ let dernierEtouffe=0;
   if(ev==='wheel'&&t-dernierEtouffe<400)return;dernierEtouffe=t;etoufferClic();
 },{capture:true,passive:true}));
 function chaineVoix(ctx){
+  // Son brut : la voix passe telle quelle (aucun filtre, aucun réglage, aucun effacement de clic).
+  if(sonBrut()){const n=ctx.createGain();n.gain.value=gainMicro();return {entree:n,sortie:n,etouffe:ctx.createGain(),ctx,gain:()=>n.gain.value,regler(v){n.gain.value=v},stop(){try{n.disconnect()}catch(e){}}}}
   const hp=ctx.createBiquadFilter(),amp=ctx.createGain(),comp=ctx.createDynamicsCompressor(),porte=ctx.createGain(),etouffe=ctx.createGain(),lim=ctx.createDynamicsCompressor(),mes=ctx.createAnalyser();
   hp.type='highpass';hp.frequency.value=80;hp.Q.value=.7;
   comp.threshold.value=-26;comp.knee.value=14;comp.ratio.value=2.5;comp.attack.value=.015;comp.release.value=.4;
@@ -1291,7 +1321,9 @@ function panneauSon(){
     <div class="son-niv" title="Parlez : la barre doit bouger"><b></b></div>
     <label class="bascule son-auto"><input type="checkbox" data-son="auto">Volume du micro réglé automatiquement <span class="son-auto-v" data-son="auto-v"></span></label>
     <span class="aide" style="display:block;margin:2px 0 10px">Recommandé : la voix est enregistrée bien audible et agréable, sans que vous ayez à régler quoi que ce soit.</span>
-    <label class="bascule son-auto"><input type="checkbox" data-son="bruit">Retirer les bruits de fond</label>
+    <label class="bascule son-auto"><input type="checkbox" data-son="brut">Son brut (aucun traitement)</label>
+    <span class="aide" style="display:block;margin:2px 0 10px">La voix est enregistrée exactement comme le micro l’entend. À essayer si quelque chose vous semble coupé ou modifié.</span>
+    <label class="bascule son-auto son-trait"><input type="checkbox" data-son="bruit">Retirer les bruits de fond</label>
     <span class="aide" style="display:block;margin:2px 0 10px">Le bruit de la pièce est adouci entre les phrases, sans jamais couper la voix. À décocher pour des instruments très doux.</span>
     <label class="champ son-gain cache">Volume du micro <b data-son="gain-v"></b><input type="range" data-son="gain" min="1" max="8" step="0.5"><span class="aide">Montez ce curseur en parlant : la barre doit atteindre environ les deux tiers.</span></label>
     <label class="champ son-sortie">${IC.casque} Sortie (écouteurs, casque, enceintes)<select data-son="sortie"><option value="">Par défaut</option></select></label>
@@ -1335,6 +1367,9 @@ function brancherSon(el){
   const caseA=el.querySelector('[data-son=auto]'),valA=el.querySelector('[data-son=auto-v]');
   const majA=()=>{caseA.checked=micAuto();el.querySelector('.son-gain').classList.toggle('cache',micAuto())};majA();
   caseA.onchange=()=>{D.prefs.micAuto=caseA.checked;sauverBientot();majA();ecouter()};
+  const caseBr=el.querySelector('[data-son=brut]');caseBr.checked=sonBrut();
+  const majBr=()=>{el.querySelectorAll('.son-auto:not(:has([data-son=brut])),.son-trait').forEach(x=>x.classList.toggle('cache',sonBrut()));if(sonBrut())el.querySelector('.son-gain').classList.remove('cache');else majA()};
+  caseBr.onchange=()=>{D.prefs.sonBrut=caseBr.checked;sauverBientot();majBr();ecouter()};majBr();
   const caseB=el.querySelector('[data-son=bruit]');caseB.checked=antiBruit();
   caseB.onchange=()=>{D.prefs.antiBruit=caseB.checked;sauverBientot();ecouter()};
   selS.onchange=()=>{D.prefs.sortieId=selS.value;sauverBientot();appliquerSortie();sonEssai()};
@@ -1354,24 +1389,56 @@ function sonEssai(){
 function fenetreSon(){
   const v=document.createElement('div');v.className='voile';
   v.innerHTML=`<div class="fenetre"><h2>${IC.casque} Micro et son</h2><p class="sous" style="margin:0 0 12px">Choisissez le micro qui enregistre votre voix, et où jouer les musiques. Ce choix est retenu sur cet appareil.</p>
-    ${panneauSon()}<div class="actions" style="margin-top:12px"><button class="btn p" id="fs-son-ok">Terminé</button></div></div>`;
+    ${panneauSon()}<div class="actions" style="margin-top:12px;align-items:center"><span class="aide" style="flex:1" id="fs-version"></span><button class="btn p" id="fs-son-ok">Terminé</button></div></div>`;
   document.body.appendChild(v);const stop=brancherSon(v);
+  fetch('sw.js',{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/CACHE = '[a-z-]*-(v\d+)'/);if(m)$('#fs-version').textContent='Version de la régie : '+m[1]}).catch(()=>{});
   const fermer=()=>{stop();v.remove()};$('#fs-son-ok').onclick=fermer;v.onclick=e=>{if(e.target===v)fermer()};
 }
 function sortie(s){if(!A.joue)return;fondu(0,s);clearTimeout(A.stopT);A.stopT=setTimeout(()=>{A.el.pause();A.joue=false;majMusique()},s*1000+120)}
 let ecouteId=null,lecT=null;
+/* ——— Dossiers pour ranger les audios ———
+   Chaque morceau peut porter un dossier (m.dossier), qui voyage avec la liste.
+   Les dossiers encore vides sont gardés dans D.prefs.dossiersMus. */
+function dossiersMus(){
+  const l=new Set([...(D.prefs.dossiersMus||[]),...D.musiques.map(m=>m.dossier).filter(Boolean)]);
+  return [...l].sort((a,b)=>a.localeCompare(b,'fr'));
+}
+const dossierActif=()=>{const d=D.prefs.dossierMus;return d==null?'*':d};    // '*' = tous, '' = sans dossier
+function musiquesVisibles(){const d=dossierActif();return d==='*'?D.musiques:D.musiques.filter(m=>(m.dossier||'')===d)}
+function barreDossiers(){
+  const d=dossierActif(),n=k=>D.musiques.filter(m=>(m.dossier||'')===k).length,ds=dossiersMus();
+  const puce=(k,t,c)=>`<button class="puce-dos ${d===k?'on':''}" data-dos="${esc(k)}">${t}${c!=null?` <span>${c}</span>`:''}</button>`;
+  return `<div class="dossiers">${puce('*','Tous',D.musiques.length)}${ds.map(x=>puce(x,'📁 '+esc(x),n(x))).join('')}${ds.length&&n('')?puce('','Sans dossier',n('')):''}
+    <button class="puce-dos plus" id="dos-nouveau">${IC.plus} Dossier</button>
+    ${d!=='*'&&d!==''?`<button class="btn s nu" id="dos-renommer" title="Renommer ce dossier">${IC.edit}</button><button class="btn s nu danger" id="dos-suppr" title="Supprimer ce dossier (les audios restent)">${IC.poubelle}</button>`:''}</div>`;
+}
+function brancherDossiers(){
+  $$('[data-dos]').forEach(b=>b.onclick=()=>{D.prefs.dossierMus=b.dataset.dos;sauverBientot();vueMusiques()});
+  const garderVide=x=>{const l=new Set(D.prefs.dossiersMus||[]);l.add(x);D.prefs.dossiersMus=[...l]};
+  $('#dos-nouveau').onclick=()=>{const x=(prompt('Nom du nouveau dossier :')||'').trim();if(!x)return;garderVide(x);D.prefs.dossierMus=x;sauver();vueMusiques()};
+  const r=$('#dos-renommer');if(r)r.onclick=()=>{const a=dossierActif(),x=(prompt('Nouveau nom du dossier :',a)||'').trim();if(!x||x===a)return;
+    D.musiques.forEach(m=>{if(m.dossier===a)m.dossier=x});D.prefs.dossiersMus=(D.prefs.dossiersMus||[]).filter(y=>y!==a);garderVide(x);D.prefs.dossierMus=x;sauver();vueMusiques()};
+  const s=$('#dos-suppr');if(s)s.onclick=()=>{const a=dossierActif();if(!confirm(`Supprimer le dossier « ${a} » ? Les audios qu’il contient ne sont pas supprimés : ils passent « Sans dossier ».`))return;
+    D.musiques.forEach(m=>{if(m.dossier===a)delete m.dossier});D.prefs.dossiersMus=(D.prefs.dossiersMus||[]).filter(y=>y!==a);D.prefs.dossierMus='*';sauver();vueMusiques()};
+}
+
 function vueMusiques(){
   $('#vue').innerHTML=`<div class="page"><h1 class="titre">Mes musiques</h1><p class="sous">Les morceaux et enregistrements que vous utilisez dans vos séances.</p>
     <div class="info-bloc">${IC.info}<span>Vos morceaux sont gardés <b>sur cet appareil</b> : ils marchent même sans internet dans la salle. La liste se retrouve sur vos autres appareils ; le fichier, lui, s’ajoute une fois sur chacun. Utilisez des musiques dont vous avez les droits (achetées avec une licence, ou libres de droits).</span></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" id="m-ajout">${IC.plus} Ajouter des morceaux</button><button class="btn" id="m-enr">${IC.micro} Enregistrer</button></div>
-    <div style="margin-top:14px">${D.musiques.map(m=>`<div class="ligne"><span class="ic t-musique">${m.enr?IC.micro:IC.musique}</span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" id="m-ajout">${IC.plus} Ajouter des morceaux</button><button class="btn" id="m-enr">${IC.micro} Enregistrer</button><button class="btn" id="m-montage">${IC.ciseaux} Monter un audio</button></div>
+    ${barreDossiers()}
+    <div style="margin-top:10px">${musiquesVisibles().map(m=>`<div class="ligne"><span class="ic t-musique">${m.enr?IC.micro:IC.musique}</span>
       <div class="txt"><input type="text" value="${esc(m.nom)}" data-mnom="${m.id}" aria-label="Nom du morceau"><small>${mmss(m.duree*1000)} · ${(m.taille/1048576).toFixed(1)} Mo<span class="manque cache" data-mmanque="${m.id}">Pas encore sur cet appareil</span></small></div>
+      <select class="m-dossier" data-mdos="${m.id}" title="Ranger dans un dossier"><option value="">📁 Sans dossier</option>${dossiersMus().map(d=>`<option value="${esc(d)}" ${m.dossier===d?'selected':''}>📁 ${esc(d)}</option>`).join('')}</select>
       <button class="btn s cache" data-mrelier="${m.id}">${IC.plus} Ajouter le fichier ici</button>
       <button class="btn rond" data-ecoute="${m.id}" title="Écouter">${ecouteId===m.id?IC.stop:IC.play}</button>
       <button class="btn rond nu" data-mdl="${m.id}" title="Télécharger le fichier">${IC.sauve}</button>
       <button class="btn rond nu danger" data-msuppr="${m.id}" title="Supprimer">${IC.poubelle}</button></div>
-      ${ecouteId===m.id?`<div class="m-lecteur"><button class="btn s nu" id="ml-recul" title="Reculer de 15 s">↺ 15 s</button><input type="range" id="ml-pos" min="0" max="1000" value="0" aria-label="Position dans le morceau"><span id="ml-temps">00:00 / ${mmss(m.duree*1000)}</span><button class="btn s nu" id="ml-avance" title="Avancer de 15 s">15 s ↻</button><span class="ml-vol" title="Volume">${IC_VOL}<input type="range" id="ml-vol" min="0" max="100" value="${Math.round((D.prefs.volEcoute??80))}" aria-label="Volume"></span></div>`:''}`).join('')||'<div class="vide">Aucun morceau pour l’instant. Ajoutez vos fichiers audio (mp3, m4a, wav…).</div>'}</div></div>`;
+      ${ecouteId===m.id?`<div class="m-lecteur"><button class="btn s nu" id="ml-recul" title="Reculer de 15 s">↺ 15 s</button><input type="range" id="ml-pos" min="0" max="1000" value="0" aria-label="Position dans le morceau"><span id="ml-temps">00:00 / ${mmss(m.duree*1000)}</span><button class="btn s nu" id="ml-avance" title="Avancer de 15 s">15 s ↻</button><span class="ml-vol" title="Volume">${IC_VOL}<input type="range" id="ml-vol" min="0" max="100" value="${Math.round((D.prefs.volEcoute??80))}" aria-label="Volume"></span></div>`:''}`).join('')||(D.musiques.length?'<div class="vide">Ce dossier est vide. Rangez-y des audios avec le menu 📁 de chaque ligne.</div>':'<div class="vide">Aucun morceau pour l’instant. Ajoutez vos fichiers audio (mp3, m4a, wav…).</div>')}</div></div>`;
   $('#m-ajout').onclick=()=>$('#f-musique').click();
+  $('#m-montage').onclick=()=>aller('montage');
+  brancherDossiers();
+  $$('[data-mdos]').forEach(x=>x.onchange=()=>{const m=D.musiques.find(y=>y.id===x.dataset.mdos);m.dossier=x.value||null;if(!m.dossier)delete m.dossier;sauver();vueMusiques();toast(x.value?`Rangé dans « ${esc(x.value)} »`:'Sorti du dossier')});
   $('#m-enr').onclick=()=>fenetreEnregistreur({titre:'Enregistrer',fond:true,nom:`Enregistrement – ${new Date().toLocaleDateString('fr-FR')}`});
   $$('[data-mdl]').forEach(x=>x.onclick=async()=>{const m=D.musiques.find(y=>y.id===x.dataset.mdl),b=await idbGet(m.id);if(!b)return toast('Ce fichier n’est pas sur cet appareil');
     const ext=(b.name||'').split('.').pop();const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;
@@ -1648,6 +1715,142 @@ function arreterEnrSeance(){
   const r=E.arreter();rendreBoutonEnr();
   if(r.ms<1000){oublierEnr();toast('Enregistrement vide : rien n’a été gardé');return}
   fenetreResultat(r.blob,r.ms,E.nom,{pic:r.pic,micro:E.micro});
+}
+
+/* =============================== MONTAGE ===============================
+   Assembler un audio : des parties (enregistrements, morceaux, silences) mises
+   bout à bout, chacune raccourcie au début ou à la fin si besoin, reliées par un
+   fondu doux, avec une musique de fond facultative sous l'ensemble. Le montage
+   en cours est gardé sur cet appareil. L'assemblage produit un MP3. */
+const montageVide=()=>({parties:[],fond:{ref:null,vol:25},fondu:.3});
+const decodes=new Map();
+async function decoder(id){
+  if(decodes.has(id))return decodes.get(id);
+  const b=await idbGet(id);if(!b)throw Object.assign(new Error('absent'),{absent:id});
+  audioInit();const buf=await A.ctx.decodeAudioData(await b.arrayBuffer());decodes.set(id,buf);return buf;
+}
+const morceau=id=>D.musiques.find(m=>m.id===id);
+function dureePartie(p){
+  if(p.type==='silence')return Math.max(0,+p.duree||0);
+  const tot=p.total||(morceau(p.ref)||{}).duree||0;
+  return Math.max(0,Math.min(p.fin??tot,tot)-(p.debut||0));
+}
+function planMontage(M){let t=0;const l=M.parties.map(p=>{const d=dureePartie(p),x={p,t,d};t+=d;return x});return {l,total:t}}
+let PREV=null;
+function arreterEcoute(){if(!PREV)return;PREV.sources.forEach(s=>{try{s.stop()}catch(e){}});clearInterval(PREV.t);PREV=null;const b=$('#mt-ecouter');if(b)b.innerHTML=`${IC.play} Écouter le montage`;const z=$('#mt-ou');if(z)z.textContent=''}
+async function jouerPlan(items,fond,total,surFin){
+  arreterEcoute();audioInit();await A.ctx.resume();
+  const c=A.ctx,T=c.currentTime+.15,sources=[],f=Math.max(.01,(D.montage||{}).fondu||0);
+  for(const it of items){
+    if(it.p.type!=='audio'||it.d<=0)continue;
+    let buf;try{buf=await decoder(it.p.ref)}catch(e){continue}
+    const s=c.createBufferSource(),g=c.createGain();s.buffer=buf;const a=T+it.t,ff=Math.min(f,it.d/2);
+    g.gain.setValueAtTime(0,a);g.gain.linearRampToValueAtTime(1,a+ff);g.gain.setValueAtTime(1,a+it.d-ff);g.gain.linearRampToValueAtTime(0,a+it.d);
+    s.connect(g).connect(c.destination);s.start(a,it.p.debut||0,it.d);sources.push(s);
+  }
+  if(fond&&fond.ref){try{const buf=await decoder(fond.ref),s=c.createBufferSource(),g=c.createGain(),v=(fond.vol||0)/100;
+    s.buffer=buf;s.loop=true;g.gain.setValueAtTime(0,T);g.gain.linearRampToValueAtTime(v,T+Math.min(3,total/2));g.gain.setValueAtTime(v,T+Math.max(0,total-4));g.gain.linearRampToValueAtTime(0,T+total);
+    s.connect(g).connect(c.destination);s.start(T);s.stop(T+total);sources.push(s)}catch(e){}}
+  PREV={sources,T,total,t:setInterval(()=>{const x=c.currentTime-T;if(x>=total){arreterEcoute();surFin&&surFin();return}const z=$('#mt-ou');if(z)z.textContent=`${mmss(Math.max(0,x)*1000)} / ${mmss(total*1000)}`},250)};
+}
+function vueMontage(){
+  const M=D.montage||(D.montage=montageVide());
+  const {l,total}=planMontage(M);
+  const opts=sel=>D.musiques.map(m=>`<option value="${m.id}" ${sel===m.id?'selected':''}>${m.dossier?esc(m.dossier)+' · ':''}${esc(m.nom)} (${mmss(m.duree*1000)})</option>`).join('');
+  const sec=v=>(Math.round((v||0)*10)/10).toString().replace('.',',');
+  $('#vue').innerHTML=`<div class="page"><div class="tete-page"><div><h1 class="titre">${IC.ciseaux} Montage audio</h1>
+    <p class="sous">Mettez bout à bout vos enregistrements, des morceaux et des silences, ajoutez une musique de fond, puis assemblez le tout en un seul MP3.</p></div>
+    <button class="btn" id="mt-retour">${IC.retour} Mes musiques</button></div>
+    <div class="mt-liste">${l.map(({p,d},i)=>{const m=p.type==='audio'?morceau(p.ref):null,tot=p.total||(m||{}).duree||0;
+      return `<div class="mt-partie" data-mt="${i}"><span class="mt-num">${i+1}</span><span class="ic ${p.type==='silence'?'t-silence':'t-musique'}">${p.type==='silence'?IC.silence:(m&&m.enr?IC.micro:IC.musique)}</span>
+      <div class="txt">${p.type==='silence'?`<b>Silence</b><div class="mt-coupe"><label>Durée <input type="number" min="0.5" step="0.5" data-mk="duree" value="${sec(p.duree)}"> secondes</label></div>`
+        :`<b>${m?esc(m.nom):'<span class="manque">Audio supprimé</span>'}</b><div class="mt-coupe"><label>Début à <input type="number" min="0" step="0.5" data-mk="debut" value="${sec(p.debut)}"> s</label><label>Fin à <input type="number" min="0" step="0.5" data-mk="fin" value="${sec(p.fin??tot)}"> s</label><span class="aide">sur ${mmss(tot*1000)}</span></div>`}</div>
+      <span class="mt-duree">${mmss(d*1000)}</span>
+      <div class="mt-act">${p.type==='audio'?`<button class="btn rond nu" data-ma="ecouter" title="Écouter cette partie">${IC.play}</button>`:''}
+        <button class="btn rond nu" data-ma="haut" title="Monter" ${i===0?'disabled':''}>${IC.haut}</button><button class="btn rond nu" data-ma="bas" title="Descendre" ${i===l.length-1?'disabled':''}>${IC.bas}</button>
+        <button class="btn rond nu" data-ma="dup" title="Dupliquer">${IC.copie}</button><button class="btn rond nu danger" data-ma="suppr" title="Retirer du montage">${IC.poubelle}</button></div></div>`}).join('')||'<div class="vide">Le montage est vide. Ajoutez une première partie ci-dessous.</div>'}</div>
+    <div class="mt-ajout">
+      <div class="mt-ajout-l"><select id="mt-choix"><option value="">— Un enregistrement ou un morceau —</option>${opts()}</select><button class="btn s" id="mt-ajouter">${IC.plus} Ajouter</button></div>
+      <button class="btn s" id="mt-silence">${IC.silence} Ajouter un silence</button>
+      <button class="btn s" id="mt-enr">${IC.micro} Enregistrer une nouvelle partie</button>
+    </div>
+    <div class="carte mt-reglages">
+      <label class="champ">Musique de fond <span style="font-weight:500;color:var(--muted)">(facultatif, sous tout le montage, en boucle)</span><select id="mt-fond"><option value="">— Sans musique de fond —</option>${opts(M.fond.ref)}</select></label>
+      <label class="champ ${M.fond.ref?'':'cache'}" id="mt-vol-l">Volume de la musique de fond <b id="mt-vol-v">${M.fond.vol} %</b><input type="range" id="mt-vol" min="0" max="100" value="${M.fond.vol}"></label>
+      <label class="champ" style="margin-bottom:0">Entre les parties<select id="mt-fondu"><option value="0" ${!M.fondu?'selected':''}>Coupe nette</option><option value="0.3" ${M.fondu==.3?'selected':''}>Fondu doux (0,3 s)</option><option value="1" ${M.fondu==1?'selected':''}>Fondu long (1 s)</option></select></label>
+    </div>
+    <div class="mt-bas"><span class="mt-total">Durée totale : <b>${mmss(total*1000)}</b> <span id="mt-ou"></span></span>
+      <button class="btn nu danger" id="mt-vider">${IC.poubelle} Tout effacer</button>
+      <button class="btn" id="mt-ecouter" ${total?'':'disabled'}>${IC.play} Écouter le montage</button>
+      <button class="btn p" id="mt-assembler" ${total?'':'disabled'}>${IC.ciseaux} Assembler en MP3</button></div>
+  </div>`;
+  const redessiner=()=>{sauverBientot();vueMontage()};
+  $('#mt-retour').onclick=()=>aller('musiques');
+  $$('.mt-partie').forEach(el=>{
+    const i=+el.dataset.mt,p=M.parties[i];
+    el.querySelectorAll('[data-mk]').forEach(f=>f.onchange=()=>{const k=f.dataset.mk,v=Math.max(0,parseFloat(String(f.value).replace(',','.'))||0);
+      if(k==='fin'){const tot=p.total||(morceau(p.ref)||{}).duree||0;p.fin=v>=tot-.05?null:v}else p[k]=v;
+      if(p.type==='audio'&&p.fin!=null&&p.fin<=(p.debut||0)+.5)p.fin=null;
+      redessiner()});
+    el.querySelectorAll('[data-ma]').forEach(b=>b.onclick=async()=>{const a=b.dataset.ma,t=M.parties;
+      if(a==='ecouter'){const d=dureePartie(p);await jouerPlan([{p,t:0,d}],null,d);return}
+      if(a==='haut'&&i>0){t.splice(i,1);t.splice(i-1,0,p)}
+      if(a==='bas'&&i<t.length-1){t.splice(i,1);t.splice(i+1,0,p)}
+      if(a==='dup')t.splice(i+1,0,{...clone(p),id:uid()});
+      if(a==='suppr')t.splice(i,1);
+      arreterEcoute();redessiner()});
+  });
+  const ajouterAudio=async id=>{const m=morceau(id);if(!m)return;const p={id:uid(),type:'audio',ref:id,debut:0,fin:null,total:m.duree};
+    try{p.total=(await decoder(id)).duration}catch(e){if(e.absent)toast('Ce fichier n’est pas sur cet appareil')}
+    M.parties.push(p);redessiner()};
+  $('#mt-ajouter').onclick=()=>{const v=$('#mt-choix').value;if(!v)return toast('Choisissez d’abord un enregistrement ou un morceau');ajouterAudio(v)};
+  $('#mt-silence').onclick=()=>{M.parties.push({id:uid(),type:'silence',duree:10});redessiner()};
+  $('#mt-enr').onclick=()=>fenetreEnregistreur({titre:'Nouvelle partie du montage',fond:false,nom:`Partie ${M.parties.length+1} – ${new Date().toLocaleDateString('fr-FR')}`,
+    utiliser:{label:'Ajouter au montage',fn:m=>{if(vue==='montage')ajouterAudio(m.id);else{M.parties.push({id:uid(),type:'audio',ref:m.id,debut:0,fin:null,total:m.duree});sauverBientot()}}}});
+  $('#mt-fond').onchange=e=>{M.fond.ref=e.target.value||null;redessiner()};
+  $('#mt-vol').oninput=e=>{M.fond.vol=+e.target.value;$('#mt-vol-v').textContent=M.fond.vol+' %';sauverBientot()};
+  $('#mt-fondu').onchange=e=>{M.fondu=+e.target.value;sauverBientot()};
+  $('#mt-vider').onclick=()=>{if(!confirm('Effacer tout le montage ? Vos enregistrements et morceaux, eux, restent dans Musiques.'))return;arreterEcoute();D.montage=montageVide();redessiner()};
+  $('#mt-ecouter').onclick=async()=>{if(PREV){arreterEcoute();return}
+    const {l,total}=planMontage(M);$('#mt-ecouter').innerHTML=`${IC.stop} Arrêter l’écoute`;await jouerPlan(l,M.fond,total)};
+  $('#mt-assembler').onclick=()=>assemblerMontage(M);
+}
+async function assemblerMontage(M){
+  arreterEcoute();
+  const {l,total}=planMontage(M);if(!total)return;
+  const v=document.createElement('div');v.className='voile';
+  v.innerHTML=`<div class="fenetre"><h2>${IC.ciseaux} Assemblage…</h2><p class="sous" style="margin:0 0 12px">Votre montage devient un seul fichier MP3. Gardez cette page ouverte.</p>
+    <div class="enr-niv" style="max-width:none;height:10px"><b id="as-b" style="width:0"></b></div><p class="aide" id="as-t" style="text-align:center">Préparation des parties…</p></div>`;
+  document.body.appendChild(v);
+  try{
+    await chargerLame();audioInit();
+    const bufs=new Map(),manque=[];
+    for(const it of l)if(it.p.type==='audio'&&!bufs.has(it.p.ref)){try{bufs.set(it.p.ref,await decoder(it.p.ref))}catch(e){manque.push((morceau(it.p.ref)||{}).nom||'?')}}
+    let fondBuf=null;if(M.fond.ref){try{fondBuf=await decoder(M.fond.ref)}catch(e){manque.push((morceau(M.fond.ref)||{}).nom||'musique de fond')}}
+    if(manque.length&&!confirm(`Ces audios ne sont pas sur cet appareil et seront remplacés par du silence : ${manque.join(', ')}. Continuer ?`)){v.remove();return}
+    const sr=A.ctx.sampleRate,N=Math.ceil(total*sr),f=M.fondu||0,vol=(M.fond.vol||0)/100,enc=new lamejs.Mp3Encoder(2,sr,128),parts=[];
+    const pcm=x=>{const r=new Int16Array(x.length);for(let i=0;i<x.length;i++){const u=x[i]>1?1:x[i]<-1?-1:x[i];r[i]=u<0?u*32768:u*32767}return r};
+    const BLOC=sr*10;
+    for(let s0=0;s0<N;s0+=BLOC){
+      const n=Math.min(BLOC,N-s0),L=new Float32Array(n),R=new Float32Array(n);
+      for(const it of l){
+        if(it.p.type!=='audio')continue;const buf=bufs.get(it.p.ref);if(!buf)continue;
+        const a=Math.round(it.t*sr),b=a+Math.round(it.d*sr);if(b<=s0||a>=s0+n)continue;
+        const c0=buf.getChannelData(0),c1=buf.getChannelData(buf.numberOfChannels>1?1:0),off=Math.round((it.p.debut||0)*sr),ff=Math.min(f,it.d/2)*sr;
+        for(let k=Math.max(a,s0);k<Math.min(b,s0+n);k++){const u=k-a,j=off+u;if(j>=c0.length)break;
+          const g=ff>0?Math.min(1,u/ff,(b-k)/ff):1;L[k-s0]+=c0[j]*g;R[k-s0]+=c1[j]*g}
+      }
+      if(fondBuf&&vol>0){const c0=fondBuf.getChannelData(0),c1=fondBuf.getChannelData(fondBuf.numberOfChannels>1?1:0),len=c0.length,fi=Math.min(3,total/2)*sr,fo=Math.min(4,total/2)*sr;
+        for(let k=s0;k<s0+n;k++){const g=vol*Math.min(1,k/fi,(N-k)/fo),j=k%len;L[k-s0]+=c0[j]*g;R[k-s0]+=c1[j]*g}}
+      const gL=pcm(L),gR=pcm(R);
+      for(let i=0;i<n;i+=1152){const b=enc.encodeBuffer(gL.subarray(i,i+1152),gR.subarray(i,i+1152));if(b.length)parts.push(new Uint8Array(b))}
+      const pc=Math.round((s0+n)/N*100);$('#as-b').style.width=pc+'%';$('#as-t').textContent=`${pc} %`;
+      await new Promise(r=>setTimeout(r,0));
+    }
+    const fin=enc.flush();if(fin.length)parts.push(new Uint8Array(fin));
+    v.remove();
+    fenetreResultat(new Blob(parts,{type:'audio/mpeg'}),total*1000,`Montage – ${new Date().toLocaleDateString('fr-FR')}`);
+  }catch(e){v.remove();toast('L’assemblage n’a pas pu aboutir : '+(e.message||e))}
 }
 
 /* =============================== GUIDER =============================== */
