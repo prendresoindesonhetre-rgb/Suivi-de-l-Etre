@@ -492,6 +492,10 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .ecouter-sur select{width:auto;flex:1;min-width:0;padding:4px 8px;font-size:12px;border-radius:10px}
 .enr-diag{font-size:12px;color:var(--muted);margin:-6px 0 12px}
 .alerte-bloc{background:var(--attente-pale);color:#8a5a14}
+.m-lecteur{display:flex;align-items:center;gap:8px;margin:-2px 6px 10px;padding:8px 12px;background:var(--carte);border:1px solid var(--line);border-top:0;border-radius:0 0 16px 16px}
+.m-lecteur input[type=range]{flex:1;accent-color:var(--canard);min-width:0}
+.ml-vol{display:inline-flex;align-items:center;gap:4px;color:var(--muted)}.ml-vol input{width:90px;accent-color:var(--canard)}
+#ml-temps{font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .enr-actions{display:flex;flex-wrap:wrap;gap:8px}
 .voile{position:fixed;inset:0;z-index:80;background:rgba(56,54,80,.38);display:flex;align-items:center;justify-content:center;padding:18px}
 .fenetre{background:var(--plein);border-radius:22px;box-shadow:0 30px 70px -30px rgba(56,54,80,.6);width:100%;max-width:410px;padding:24px}
@@ -1227,7 +1231,12 @@ const CHAINES=new Set();
 function etoufferClic(){
   CHAINES.forEach(c=>{const g=c.etouffe.gain,t=c.ctx.currentTime;g.cancelScheduledValues(t);g.setTargetAtTime(.03,t,.003);g.setTargetAtTime(1,t+.15,.03)});
 }
-['mousedown','mouseup','wheel','keydown'].forEach(ev=>addEventListener(ev,()=>{if(CHAINES.size)etoufferClic()},{capture:true,passive:true}));
+// Un éclair par geste : une roulette « fluide » envoie des dizaines de signaux par cran.
+let dernierEtouffe=0;
+['mousedown','mouseup','wheel','keydown'].forEach(ev=>addEventListener(ev,e=>{
+  if(!CHAINES.size)return;const t=performance.now();
+  if(ev==='wheel'&&t-dernierEtouffe<400)return;dernierEtouffe=t;etoufferClic();
+},{capture:true,passive:true}));
 function chaineVoix(ctx){
   const hp=ctx.createBiquadFilter(),amp=ctx.createGain(),comp=ctx.createDynamicsCompressor(),porte=ctx.createGain(),etouffe=ctx.createGain(),lim=ctx.createDynamicsCompressor(),mes=ctx.createAnalyser();
   hp.type='highpass';hp.frequency.value=80;hp.Q.value=.7;
@@ -1283,7 +1292,7 @@ function panneauSon(){
     <label class="bascule son-auto"><input type="checkbox" data-son="auto">Volume du micro réglé automatiquement <span class="son-auto-v" data-son="auto-v"></span></label>
     <span class="aide" style="display:block;margin:2px 0 10px">Recommandé : la voix est enregistrée bien audible et agréable, sans que vous ayez à régler quoi que ce soit.</span>
     <label class="bascule son-auto"><input type="checkbox" data-son="bruit">Retirer les bruits de fond</label>
-    <span class="aide" style="display:block;margin:2px 0 10px">Souffle, ventilateur, bruits entre les phrases. À décocher pour enregistrer surtout des instruments très doux.</span>
+    <span class="aide" style="display:block;margin:2px 0 10px">Le bruit de la pièce est adouci entre les phrases, sans jamais couper la voix. À décocher pour des instruments très doux.</span>
     <label class="champ son-gain cache">Volume du micro <b data-son="gain-v"></b><input type="range" data-son="gain" min="1" max="8" step="0.5"><span class="aide">Montez ce curseur en parlant : la barre doit atteindre environ les deux tiers.</span></label>
     <label class="champ son-sortie">${IC.casque} Sortie (écouteurs, casque, enceintes)<select data-son="sortie"><option value="">Par défaut</option></select></label>
     <div class="son-pied"><button type="button" class="btn s" data-son="test">${IC.play} Tester le son</button><button type="button" class="btn s nu" data-son="relister" title="Un appareil vient d’être branché">${IC.recaler} Actualiser</button></div>
@@ -1295,7 +1304,7 @@ function brancherSon(el){
   const selM=el.querySelector('[data-son=micro]'),selS=el.querySelector('[data-son=sortie]'),barre=el.querySelector('.son-niv b');
   const ecouter=async()=>{
     if(flux)flux.getTracks().forEach(t=>t.stop());try{src&&src.disconnect()}catch(e){}
-    try{flux=await ouvrirMicro({noiseSuppression:antiBruit(),autoGainControl:!micAuto()})}catch(e){flux=null;barre.parentElement.classList.add('muet');return}
+    try{flux=await ouvrirMicro({echoCancellation:false,noiseSuppression:false,autoGainControl:!micAuto()})}catch(e){flux=null;barre.parentElement.classList.add('muet');return}
     if(fini){flux.getTracks().forEach(t=>t.stop());return}
     barre.parentElement.classList.remove('muet');
     if(!audioInit())return;A.ctx.resume().catch(()=>{});
@@ -1350,7 +1359,7 @@ function fenetreSon(){
   const fermer=()=>{stop();v.remove()};$('#fs-son-ok').onclick=fermer;v.onclick=e=>{if(e.target===v)fermer()};
 }
 function sortie(s){if(!A.joue)return;fondu(0,s);clearTimeout(A.stopT);A.stopT=setTimeout(()=>{A.el.pause();A.joue=false;majMusique()},s*1000+120)}
-let ecouteId=null;
+let ecouteId=null,lecT=null;
 function vueMusiques(){
   $('#vue').innerHTML=`<div class="page"><h1 class="titre">Mes musiques</h1><p class="sous">Les morceaux et enregistrements que vous utilisez dans vos séances.</p>
     <div class="info-bloc">${IC.info}<span>Vos morceaux sont gardés <b>sur cet appareil</b> : ils marchent même sans internet dans la salle. La liste se retrouve sur vos autres appareils ; le fichier, lui, s’ajoute une fois sur chacun. Utilisez des musiques dont vous avez les droits (achetées avec une licence, ou libres de droits).</span></div>
@@ -1360,14 +1369,29 @@ function vueMusiques(){
       <button class="btn s cache" data-mrelier="${m.id}">${IC.plus} Ajouter le fichier ici</button>
       <button class="btn rond" data-ecoute="${m.id}" title="Écouter">${ecouteId===m.id?IC.stop:IC.play}</button>
       <button class="btn rond nu" data-mdl="${m.id}" title="Télécharger le fichier">${IC.sauve}</button>
-      <button class="btn rond nu danger" data-msuppr="${m.id}" title="Supprimer">${IC.poubelle}</button></div>`).join('')||'<div class="vide">Aucun morceau pour l’instant. Ajoutez vos fichiers audio (mp3, m4a, wav…).</div>'}</div></div>`;
+      <button class="btn rond nu danger" data-msuppr="${m.id}" title="Supprimer">${IC.poubelle}</button></div>
+      ${ecouteId===m.id?`<div class="m-lecteur"><button class="btn s nu" id="ml-recul" title="Reculer de 15 s">↺ 15 s</button><input type="range" id="ml-pos" min="0" max="1000" value="0" aria-label="Position dans le morceau"><span id="ml-temps">00:00 / ${mmss(m.duree*1000)}</span><button class="btn s nu" id="ml-avance" title="Avancer de 15 s">15 s ↻</button><span class="ml-vol" title="Volume">${IC_VOL}<input type="range" id="ml-vol" min="0" max="100" value="${Math.round((D.prefs.volEcoute??80))}" aria-label="Volume"></span></div>`:''}`).join('')||'<div class="vide">Aucun morceau pour l’instant. Ajoutez vos fichiers audio (mp3, m4a, wav…).</div>'}</div></div>`;
   $('#m-ajout').onclick=()=>$('#f-musique').click();
   $('#m-enr').onclick=()=>fenetreEnregistreur({titre:'Enregistrer',fond:true,nom:`Enregistrement – ${new Date().toLocaleDateString('fr-FR')}`});
   $$('[data-mdl]').forEach(x=>x.onclick=async()=>{const m=D.musiques.find(y=>y.id===x.dataset.mdl),b=await idbGet(m.id);if(!b)return toast('Ce fichier n’est pas sur cet appareil');
     const ext=(b.name||'').split('.').pop();const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;
     a.download=b.type==='audio/mpeg'||!b.name?nomFichier(m.nom):nomFichier(m.nom).replace(/\.mp3$/,'.'+ext);document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)});
   $$('[data-mnom]').forEach(x=>x.oninput=()=>{D.musiques.find(m=>m.id===x.dataset.mnom).nom=x.value;sauverBientot()});
-  $$('[data-ecoute]').forEach(x=>x.onclick=async()=>{const id=x.dataset.ecoute;if(ecouteId===id){sortie(.4);ecouteId=null}else{ecouteId=id;await jouer(id,.8,.4)}vueMusiques()});
+  $$('[data-ecoute]').forEach(x=>x.onclick=async()=>{const id=x.dataset.ecoute;if(ecouteId===id){sortie(.4);ecouteId=null}else{ecouteId=id;await jouer(id,(D.prefs.volEcoute??80)/100,.4)}vueMusiques()});
+  // La barre de lecture : où l'on en est, et aller où l'on veut (glisser, ±15 s).
+  const pos=$('#ml-pos');
+  if(pos){
+    const dur=()=>A.el&&isFinite(A.el.duration)?A.el.duration:0;
+    const maj=()=>{if(!document.body.contains(pos)){clearInterval(lecT);return}
+      if(!A.el||A.id!==ecouteId)return;const d=dur(),c=A.el.currentTime||0;
+      if(!pos.matches(':active'))pos.value=d?Math.round(c/d*1000):0;$('#ml-temps').textContent=`${mmss(c*1000)} / ${mmss(d*1000)}`;
+      if(A.el.ended){ecouteId=null;vueMusiques()}};
+    clearInterval(lecT);lecT=setInterval(maj,250);maj();
+    pos.oninput=()=>{const d=dur();if(d){A.el.currentTime=d*pos.value/1000;maj()}};
+    $('#ml-vol').oninput=e=>{D.prefs.volEcoute=+e.target.value;if(A.joue)fondu(D.prefs.volEcoute/100,.05);sauverBientot()};
+    $('#ml-recul').onclick=()=>{if(A.el)A.el.currentTime=Math.max(0,A.el.currentTime-15);maj()};
+    $('#ml-avance').onclick=()=>{if(A.el)A.el.currentTime=Math.min(Math.max(0,dur()-.5),A.el.currentTime+15);maj()};
+  }
   D.musiques.forEach(async m=>{if(await idbGet(m.id))return;$$(`[data-mmanque="${m.id}"],[data-mrelier="${m.id}"]`).forEach(x=>x.classList.remove('cache'))});
   $$('[data-mrelier]').forEach(x=>x.onclick=()=>{relierId=x.dataset.mrelier;$('#f-relier').click()});
   $$('[data-msuppr]').forEach(x=>x.onclick=()=>{const m=D.musiques.find(y=>y.id===x.dataset.msuppr);if(!confirm(`Retirer « ${m.nom} » de vos morceaux ?`))return;idbDel(m.id);D.musiques=D.musiques.filter(y=>y!==m);D.seances.forEach(s=>s.blocs.forEach(b=>{if(b.musiqueId===m.id)b.musiqueId=null;if(b.voixId===m.id)b.voixId=null}));D.mesBlocs.forEach(b=>{if(b.musiqueId===m.id)b.musiqueId=null;if(b.voixId===m.id)b.voixId=null});sauver();vueMusiques()});
@@ -1401,33 +1425,63 @@ function chargerLame(){
   if(!lameP)lameP=new Promise((res,rej)=>{const x=document.createElement('script');x.src='lame.min.js';x.onload=()=>res();x.onerror=()=>{lameP=null;rej(new Error('encodeur'))};document.head.appendChild(x)});
   return lameP;
 }
+// Le capteur : un AudioWorklet (fil audio) quand le navigateur le permet, sinon l'ancien ScriptProcessor.
+const CAPTEUR_JS=`class Capteur extends AudioWorkletProcessor{
+  constructor(){super();this.n=0;this.g=new Float32Array(4096);this.d=new Float32Array(4096);this.port.onmessage=e=>{if(e.data==='vider')this.vider()}}
+  vider(){if(!this.n)return;this.port.postMessage([this.g.slice(0,this.n),this.d.slice(0,this.n)]);this.n=0}
+  process(inputs){const e=inputs[0];if(e&&e.length){const g=e[0],d=e[1]||e[0];
+    for(let i=0;i<g.length;i++){this.g[this.n]=g[i];this.d[this.n]=d[i];this.n++;if(this.n===4096)this.vider()}}return true}
+}
+registerProcessor('capteur-regie',Capteur);`;
+const capteurPret=new WeakMap();
+async function capteur(ctx,surPaquet){
+  if(ctx.audioWorklet&&window.AudioWorkletNode){
+    try{
+      if(!capteurPret.get(ctx)){const u=URL.createObjectURL(new Blob([CAPTEUR_JS],{type:'application/javascript'}));await ctx.audioWorklet.addModule(u);capteurPret.set(ctx,true)}
+      const n=new AudioWorkletNode(ctx,'capteur-regie',{numberOfInputs:1,numberOfOutputs:1,channelCount:2,channelCountMode:'explicit',outputChannelCount:[2]});
+      n.port.onmessage=e=>surPaquet(e.data[0],e.data[1]);
+      n.arreter=()=>{try{n.port.postMessage('vider')}catch(e){}n.port.onmessage=null};
+      return n;
+    }catch(e){}
+  }
+  const p=ctx.createScriptProcessor(4096,2,2);
+  p.onaudioprocess=e=>{const ib=e.inputBuffer;surPaquet(ib.getChannelData(0).slice(),ib.getChannelData(ib.numberOfChannels>1?1:0).slice())};
+  p.arreter=()=>{p.onaudioprocess=null};
+  return p;
+}
 async function creerEnregistreur(o={}){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('Cet appareil ne permet pas d’enregistrer (ouvrez la régie dans Chrome, Edge ou Safari).');
   try{await chargerLame()}catch(e){throw new Error('L’enregistreur n’a pas pu se charger. Vérifiez la connexion et réessayez.')}
   if(!audioInit())throw new Error('Le son n’est pas disponible sur cet appareil.');
   await A.ctx.resume();
   let flux;
-  try{flux=await ouvrirMicro({echoCancellation:!!o.musique,noiseSuppression:antiBruit(),autoGainControl:!micAuto()})}
+  // Ni réduction de bruit ni annulation d'écho du navigateur : sur une voix douce et posée, elles
+  // la prennent pour du bruit (ou pour l'écho de la musique) et la coupent net. La régie fait son
+  // propre traitement, doux (chaineVoix).
+  try{flux=await ouvrirMicro({echoCancellation:false,noiseSuppression:false,autoGainControl:!micAuto()})}
   catch(e){throw new Error('Le micro n’est pas accessible. Autorisez-le dans le navigateur (icône à gauche de l’adresse), puis réessayez.')}
-  const ctx=A.ctx,mic=ctx.createMediaStreamSource(flux),mix=ctx.createGain(),ana=ctx.createAnalyser(),proc=ctx.createScriptProcessor(4096,2,2),muet=ctx.createGain();
+  const ctx=A.ctx,mic=ctx.createMediaStreamSource(flux),mix=ctx.createGain(),ana=ctx.createAnalyser(),muet=ctx.createGain();
   muet.gain.value=0;ana.fftSize=1024;
   const voix=chaineVoix(ctx);
   mic.connect(voix.entree);voix.sortie.connect(mix);if(o.musique&&A.gain)A.gain.connect(mix);
-  mix.connect(ana);mix.connect(proc);proc.connect(muet);muet.connect(ctx.destination);
+  mix.connect(ana);
   const enc=new lamejs.Mp3Encoder(2,ctx.sampleRate,96),blocs=[];let parts=[],ms=0,etat='pret',pic=0;
   const pcm=f=>{const r=new Int16Array(f.length);for(let i=0;i<f.length;i++){const v=f[i]<-1?-1:f[i]>1?1:f[i];r[i]=v<0?v*32768:v*32767}return r};
-  proc.onaudioprocess=e=>{
+  const encoder=(g0,d0)=>{
     if(etat!=='enr')return;
     // L'encodeur abîme le son si on lui donne plus de 1152 échantillons à la fois : on découpe.
-    const ib=e.inputBuffer,g=pcm(ib.getChannelData(0)),d=pcm(ib.getChannelData(ib.numberOfChannels>1?1:0));
+    const g=pcm(g0),d=pcm(d0);
     for(let i=0;i<g.length;i+=1152){const b=enc.encodeBuffer(g.subarray(i,i+1152),d.subarray(i,i+1152));if(b.length)parts.push(new Uint8Array(b))}
-    ms+=ib.duration*1000;
-    const c0=ib.getChannelData(0);for(let i=0;i<c0.length;i+=8){const a=Math.abs(c0[i]);if(a>pic)pic=a}
+    ms+=g0.length/ctx.sampleRate*1000;
+    for(let i=0;i<g0.length;i+=8){const a=Math.abs(g0[i]);if(a>pic)pic=a}
   };
+  // Le son est capté sur le fil audio du navigateur (jamais interrompu), puis confié à la page
+  // par paquets : même si la page est occupée un instant, aucun morceau n'est perdu.
+  const proc=await capteur(ctx,encoder);mix.connect(proc);proc.connect(muet);muet.connect(ctx.destination);
   const tout=()=>{if(parts.length){blocs.push(new Blob(parts));parts=[]}return new Blob(blocs,{type:'audio/mpeg'})};
   const deCote=()=>{idbPut(ID_ENR,tout());try{localStorage.setItem(CLE_ENR,JSON.stringify({nom:o.nom||'Enregistrement',ms}))}catch(e){}};
   const tg=setInterval(()=>{if(etat==='enr')deCote()},20000);
-  const fermer=()=>{clearInterval(tg);proc.onaudioprocess=null;flux.getTracks().forEach(t=>t.stop());voix.stop();[mic,mix,proc,muet].forEach(n=>{try{n.disconnect()}catch(e){}});if(o.musique&&A.gain){try{A.gain.disconnect(mix)}catch(e){}}};
+  const fermer=()=>{clearInterval(tg);proc.arreter();flux.getTracks().forEach(t=>t.stop());voix.stop();[mic,mix,proc,muet].forEach(n=>{try{n.disconnect()}catch(e){}});if(o.musique&&A.gain){try{A.gain.disconnect(mix)}catch(e){}}};
   return {
     nom:o.nom,get etat(){return etat},duree:()=>ms,
     demarrer(){etat='enr'},pause(){if(etat==='enr')etat='pause'},reprendre(){if(etat==='pause')etat='enr'},
@@ -1570,7 +1624,7 @@ function fenetreLancerEnr(){
     <p class="sous" style="margin:0 0 12px">Tout ce que vous dites au micro est enregistré, avec les musiques de la séance. À la fin, vous obtenez un fichier MP3 à envoyer à la personne.</p>
     ${panneauSon()}
     <label class="bascule" style="margin-bottom:6px"><input type="checkbox" id="le-musique" checked>Ajouter les musiques directement dans l’enregistrement</label>
-    <span class="aide" style="display:block;margin-bottom:12px">Conseil : avec un casque, ou le volume de l’ordinateur baissé, la musique est enregistrée nette, sans écho. Elle part au bon niveau dans le fichier.</span>
+    <span class="aide" style="display:block;margin-bottom:12px">Important : écoutez la musique <b>au casque</b> (ou baissez le volume de l’ordinateur). Elle est ajoutée directement au fichier, nette et au bon niveau ; si elle sort des enceintes, le micro la reprendrait en plus.</span>
     <div class="info-bloc" style="margin-bottom:12px">${IC.info}<span>L’enregistrement suit la séance : il se met en pause quand vous faites « Pause », et s’arrête quand vous la terminez.</span></div>
     <div class="err cache" id="le-err"></div>
     <div class="actions"><button class="btn" id="le-annuler">Annuler</button><button class="btn p" id="le-go"><i class="pt-rouge"></i> Commencer</button></div>
