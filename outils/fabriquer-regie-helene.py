@@ -84,6 +84,8 @@ body:not(.nuit) .haut{background:rgba(255,252,246,.84)}
 .marque-nom small{color:#d4a64a}
 .g-texte{color:#5b504c}
 .voile{background:rgba(150,125,110,.22);backdrop-filter:blur(3px)}
+.filigrane{opacity:.07;background-size:min(78vw,620px)}
+body.nuit .filigrane{opacity:.05}
 """
 i = s.index('</style>'); s = s[:i] + DOUX + s[i:]
 s = s.replace('<meta name="theme-color" content="#f4f0fb">', '<meta name="theme-color" content="#fffaf2">')
