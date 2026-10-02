@@ -514,6 +514,7 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .mt-partie .txt b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mt-coupe{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;margin-top:4px;font-size:12px;color:var(--muted)}
 .mt-coupe input{width:72px;padding:3px 6px;font-size:12px;border-radius:8px;margin:0 3px}
+.mt-vol{display:inline-flex;align-items:center;gap:5px;color:var(--muted)}.mt-vol input{width:110px;accent-color:var(--canard)}.mt-vol b{font-size:12px;min-width:38px}
 .mt-duree{font-size:13px;font-weight:800;color:var(--canard-dark);font-variant-numeric:tabular-nums;flex:none}
 .mt-act{display:flex;flex:none}.mt-act .btn.rond{width:30px;height:30px}.mt-act svg{width:14px;height:14px}
 .mt-ajout{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
@@ -1442,11 +1443,13 @@ function vueMusiques(){
       <select class="m-dossier" data-mdos="${m.id}" title="Ranger dans un dossier"><option value="">📁 Sans dossier</option>${dossiersMus().map(d=>`<option value="${esc(d)}" ${m.dossier===d?'selected':''}>📁 ${esc(d)}</option>`).join('')}</select>
       <button class="btn s cache" data-mrelier="${m.id}">${IC.plus} Ajouter le fichier ici</button>
       <button class="btn rond" data-ecoute="${m.id}" title="Écouter">${ecouteId===m.id?IC.stop:IC.play}</button>
+      <button class="btn rond nu" data-mretr="${m.id}" title="Retravailler : musique de fond, volumes, bruit de fond">${IC.ciseaux}</button>
       <button class="btn rond nu" data-mdl="${m.id}" title="Télécharger le fichier">${IC.sauve}</button>
       <button class="btn rond nu danger" data-msuppr="${m.id}" title="Supprimer">${IC.poubelle}</button></div>
       ${ecouteId===m.id?`<div class="m-lecteur"><button class="btn s nu" id="ml-recul" title="Reculer de 15 s">↺ 15 s</button><input type="range" id="ml-pos" min="0" max="1000" value="0" aria-label="Position dans le morceau"><span id="ml-temps">00:00 / ${mmss(m.duree*1000)}</span><button class="btn s nu" id="ml-avance" title="Avancer de 15 s">15 s ↻</button><span class="ml-vol" title="Volume">${IC_VOL}<input type="range" id="ml-vol" min="0" max="100" value="${Math.round((D.prefs.volEcoute??80))}" aria-label="Volume"></span></div>`:''}`).join('')||(D.musiques.length?'<div class="vide">Ce dossier est vide. Rangez-y des audios avec le menu 📁 de chaque ligne.</div>':'<div class="vide">Aucun morceau pour l’instant. Ajoutez vos fichiers audio (mp3, m4a, wav…).</div>')}</div></div>`;
   $('#m-ajout').onclick=()=>$('#f-musique').click();
   $('#m-montage').onclick=()=>aller('montage');
+  $$('[data-mretr]').forEach(x=>x.onclick=()=>retravailler(x.dataset.mretr));
   brancherDossiers();
   $$('[data-mdos]').forEach(x=>x.onchange=()=>{const m=D.musiques.find(y=>y.id===x.dataset.mdos);m.dossier=x.value||null;if(!m.dossier)delete m.dossier;sauver();vueMusiques();toast(x.value?`Rangé dans « ${esc(x.value)} »`:'Sorti du dossier')});
   $('#m-enr').onclick=()=>fenetreEnregistreur({titre:'Enregistrer',fond:true,nom:`Enregistrement – ${new Date().toLocaleDateString('fr-FR')}`});
@@ -1593,7 +1596,7 @@ function fenetreResultat(blob,ms,nom,o={}){
       ${o.utiliser?`<button class="btn p" id="er-utiliser">${IC.check} ${esc(o.utiliser.label)}</button>`:''}
       <button class="btn ${o.utiliser?'':'p'}" id="er-dl">${IC.sauve} Télécharger</button>
       ${peutPartager(blob)?`<button class="btn" id="er-partage">${IC.partager} Envoyer…</button>`:''}
-      ${o.utiliser?'':`<button class="btn" id="er-garde">${IC.musique} Garder dans mes morceaux</button>`}
+      ${o.utiliser?'':`<button class="btn" id="er-garde">${IC.musique} Garder dans mes morceaux</button><button class="btn" id="er-retr" title="Musique de fond, volumes, bruit de fond">${IC.ciseaux} Retravailler</button>`}
     </div>
     <span class="aide" style="display:block;margin:10px 0 4px">Le fichier MP3 s’ouvre sur tous les téléphones et ordinateurs : vous pouvez l’envoyer par e-mail, WhatsApp, WeTransfer…</span>
     <div class="actions" style="margin-top:12px"><button class="btn nu danger" id="er-jeter">${IC.poubelle} Supprimer</button><span style="flex:1"></span><button class="btn" id="er-fermer">Fermer</button></div>
@@ -1616,6 +1619,7 @@ function fenetreResultat(blob,ms,nom,o={}){
   const pa=$('#er-partage');if(pa)pa.onclick=async()=>{if(await partager(blob,nomF()))fait=true};
   const ga=$('#er-garde');if(ga)ga.onclick=async()=>{if(garde){toast('Déjà dans vos morceaux');return}garde=await garderMorceau(blob,ms,nomF());fait=true;ga.disabled=true;ga.innerHTML=`${IC.check} Gardé dans mes morceaux`;if(vue==='musiques')vueMusiques()};
   const ut=$('#er-utiliser');if(ut)ut.onclick=async()=>{const m=garde||await garderMorceau(blob,ms,nomF());o.utiliser.fn(m);fin()};
+  const rt=$('#er-retr');if(rt)rt.onclick=async()=>{const m=garde||await garderMorceau(blob,ms,nomF());garde=m;fait=true;URL.revokeObjectURL(u);v.remove();oublierEnr();retravailler(m.id)};
   $('#er-nom').oninput=()=>{if(garde){garde.nom=nomF();sauverBientot()}};
   $('#er-jeter').onclick=()=>{if(!confirm('Supprimer cet enregistrement ?'+(garde?' (Il reste dans vos morceaux.)':' Il sera perdu.')))return;fin()};
   $('#er-fermer').onclick=()=>{if(!fait&&!confirm('Vous n’avez ni téléchargé ni gardé cet enregistrement. Le fermer quand même ? Il sera perdu.'))return;fin()};
@@ -1733,7 +1737,7 @@ function arreterEnrSeance(){
    bout à bout, chacune raccourcie au début ou à la fin si besoin, reliées par un
    fondu doux, avec une musique de fond facultative sous l'ensemble. Le montage
    en cours est gardé sur cet appareil. L'assemblage produit un MP3. */
-const montageVide=()=>({parties:[],fond:{ref:null,vol:25},fondu:.4,egaliser:true});
+const montageVide=()=>({parties:[],fond:{ref:null,vol:25},fondu:.4,egaliser:true,debruit:true});
 /* Chaque audio est analysé une fois : les blancs techniques du début et de la fin (ajoutés
    par l'encodeur MP3, < −60 dB) sont retirés, et son niveau de voix est mesuré pour égaliser
    les enregistrements entre eux. */
@@ -1765,9 +1769,10 @@ function dureePartie(p){
 }
 // Volume d'une partie : les enregistrements sont ramenés au même niveau de voix (≈ −20 dB).
 function gainPartie(M,p){
-  if(M.egaliser===false||p.type!=='audio')return 1;
-  const m=morceau(p.ref),inf=infos.get(p.ref);if(!m||!m.enr||!inf||!inf.rms)return 1;
-  return clamp(.1/inf.rms,.35,4);
+  if(p.type!=='audio')return 1;
+  const vol=(p.vol??100)/100,m=morceau(p.ref),inf=infos.get(p.ref);       // le curseur de volume de la partie
+  if(M.egaliser===false||!m||!m.enr||!inf||!inf.rms)return vol;
+  return clamp(.1/inf.rms,.35,4)*vol;
 }
 // Deux audios qui se suivent se chevauchent : la suivante monte pendant que la précédente s'efface.
 function planMontage(M){
@@ -1780,6 +1785,80 @@ function planMontage(M){
 }
 // Courbe « à puissance égale » : pendant le fondu enchaîné, le volume ne creuse pas.
 const courbe=(n,monte)=>{const c=new Float32Array(n);for(let i=0;i<n;i++){const u=i/(n-1);c[i]=monte?Math.sin(u*Math.PI/2):Math.cos(u*Math.PI/2)}return c};
+/* ——— Atténuer le bruit de fond (ventilateur, souffle) ———
+   Après l'enregistrement, jamais pendant : rien ne peut rogner un mot. On mesure le
+   bruit régulier de la pièce dans les moments les plus calmes, puis on le retire en
+   douceur partout (soustraction spectrale, au plus −18 dB) ; la voix, bien plus
+   forte que ce bruit, passe intacte. */
+function fftPrep(N){const lv=Math.log2(N),rev=new Uint32Array(N);for(let i=0;i<N;i++){let r=0;for(let b=0;b<lv;b++)r|=((i>>b)&1)<<(lv-1-b);rev[i]=r}
+  const cs=new Float64Array(N/2),sn=new Float64Array(N/2);for(let i=0;i<N/2;i++){cs[i]=Math.cos(2*Math.PI*i/N);sn[i]=Math.sin(2*Math.PI*i/N)}return {N,rev,cs,sn}}
+function fft(F,re,im,inv){const N=F.N;
+  for(let i=0;i<N;i++){const j=F.rev[i];if(j>i){let t=re[i];re[i]=re[j];re[j]=t;t=im[i];im[i]=im[j];im[j]=t}}
+  for(let size=2;size<=N;size<<=1){const half=size>>1,step=N/size;
+    for(let i=0;i<N;i+=size)for(let j=0,k=0;j<half;j++,k+=step){const c=F.cs[k],sn=inv?F.sn[k]:-F.sn[k],a=i+j,b=a+half,tr=re[b]*c-im[b]*sn,ti=re[b]*sn+im[b]*c;re[b]=re[a]-tr;im[b]=im[a]-ti;re[a]+=tr;im[a]+=ti}}
+  if(inv)for(let i=0;i<N;i++){re[i]/=N;im[i]/=N}}
+async function debruiter(buf,surPc){
+  const N=1024,H=512,sr=buf.sampleRate,nc=buf.numberOfChannels,len=buf.length,F=fftPrep(N),K=N/2+1;
+  const w=new Float32Array(N);for(let i=0;i<N;i++)w[i]=Math.sqrt(.5-.5*Math.cos(2*Math.PI*i/N));
+  const out=A.ctx.createBuffer(nc,len,sr);
+  // Voix seule : les deux canaux sont identiques, on ne traite qu'une fois.
+  const c0=buf.getChannelData(0);let memes=nc===1;
+  if(nc>1){const c1=buf.getChannelData(1);memes=true;for(let i=0;i<len;i+=97)if(Math.abs(c0[i]-c1[i])>1e-4){memes=false;break}}
+  const canaux=memes?[0]:[...Array(nc).keys()],nbF=Math.ceil(len/H)+1,re=new Float64Array(N),im=new Float64Array(N);
+  let fait=0;const totalF=nbF*canaux.length;
+  for(const ch of canaux){
+    const x=buf.getChannelData(ch),y=new Float32Array(len);
+    const trame=s0=>{for(let i=0;i<N;i++){const j=s0+i;re[i]=j>=0&&j<len?x[j]*w[i]:0;im[i]=0}};
+    // 1. Le bruit de la pièce : spectre moyen des 10 % de trames les plus calmes (hors silence numérique).
+    const en=[];for(let k=0;k<nbF;k++){const s0=k*H-H;let e=0;for(let i=0;i<N;i+=4){const j=s0+i;if(j>=0&&j<len)e+=x[j]*x[j]}if(e>1e-9)en.push([e,k])}
+    en.sort((a,b)=>a[0]-b[0]);const calmes=en.slice(0,Math.max(10,Math.min(400,Math.floor(en.length*.1))));
+    const bruit=new Float64Array(K);
+    for(const [,k] of calmes){trame(k*H-H);fft(F,re,im,false);for(let b=0;b<K;b++)bruit[b]+=re[b]*re[b]+im[b]*im[b]}
+    for(let b=0;b<K;b++)bruit[b]/=Math.max(1,calmes.length);
+    // 2. On retire ce bruit partout, en douceur.
+    const prec=new Float64Array(K).fill(1),g=new Float64Array(K);
+    for(let k=0;k<nbF;k++){
+      const s0=k*H-H;trame(s0);fft(F,re,im,false);
+      for(let b=0;b<K;b++){const P=re[b]*re[b]+im[b]*im[b]+1e-20;g[b]=Math.max(.12,1-2*bruit[b]/P)}
+      for(let b=0;b<K;b++){const gs=(g[Math.max(0,b-1)]+g[b]+g[Math.min(K-1,b+1)])/3,v=gs>=prec[b]?gs:.55*prec[b]+.45*gs;prec[b]=v;
+        re[b]*=v;im[b]*=v;if(b>0&&b<N/2){re[N-b]=re[b];im[N-b]=-im[b]}}
+      fft(F,re,im,true);
+      for(let i=0;i<N;i++){const j=s0+i;if(j>=0&&j<len)y[j]+=re[i]*w[i]}
+      if(++fait%400===0){surPc&&surPc(Math.round(fait/totalF*100));await new Promise(r=>setTimeout(r,0))}
+    }
+    if(memes){for(let c=0;c<nc;c++)out.copyToChannel(y,c)}else out.copyToChannel(y,ch);
+  }
+  surPc&&surPc(100);return out;
+}
+// Les versions nettoyées, préparées une à la fois (le calcul est lourd), gardées en mémoire.
+const propres=new Map(),enNettoyage=new Map(),NET={pc:{},surPc:null};let fileNet=Promise.resolve();
+const aNettoyer=(M,p)=>M.debruit!==false&&p.type==='audio'&&!!(morceau(p.ref)||{}).enr;
+function versionPropre(id){
+  if(propres.has(id))return Promise.resolve(propres.get(id));
+  if(enNettoyage.has(id))return enNettoyage.get(id);
+  const pr=fileNet=fileNet.catch(()=>{}).then(async()=>{const b=await decoder(id);NET.pc[id]=0;
+    const r=await debruiter(b,pc=>{NET.pc[id]=pc;NET.surPc&&NET.surPc()});propres.set(id,r);delete NET.pc[id];NET.surPc&&NET.surPc();return r});
+  enNettoyage.set(id,pr);pr.catch(()=>enNettoyage.delete(id));return pr;
+}
+// Le son à utiliser pour une partie (pour l'écoute : la version nettoyée seulement si elle est prête).
+async function tamponPour(M,p,attendre){
+  if(aNettoyer(M,p)){if(propres.has(p.ref))return propres.get(p.ref);if(attendre)return versionPropre(p.ref);versionPropre(p.ref).catch(()=>{})}
+  return decoder(p.ref);
+}
+function majNet(){
+  const z=$('#mt-net'),M=D.montage;if(!z||!M)return;
+  if(M.debruit===false){z.textContent='Le son de vos enregistrements est gardé tel quel.';return}
+  const ids=[...new Set(M.parties.filter(p=>aNettoyer(M,p)).map(p=>p.ref))];if(!ids.length){z.textContent='S’applique à vos enregistrements (pas aux musiques).';return}
+  const prets=ids.filter(id=>propres.has(id)).length,enc=ids.find(id=>NET.pc[id]!=null);
+  z.textContent=prets===ids.length?`Prêt : le bruit régulier de la pièce est atténué sur ${ids.length>1?'vos '+ids.length+' enregistrements':'votre enregistrement'}.`
+    :`Préparation… ${enc?NET.pc[enc]+' %':''} (${prets}/${ids.length}). En attendant, l’écoute utilise le son d’origine.`;
+}
+function retravailler(id){
+  const m=morceau(id);if(!m)return;
+  if(D.montage&&D.montage.parties.length&&!confirm('Un montage est déjà en cours. Le remplacer par cet audio ? (Vos audios, eux, ne sont pas touchés.)'))return;
+  D.montage=Object.assign(montageVide(),{parties:[{id:uid(),type:'audio',ref:id,debut:0,fin:null,total:m.duree,vol:100}],fond:{ref:null,vol:20}});
+  sauver();aller('montage');toast('Ajoutez une musique de fond, réglez les volumes, puis « Assembler en MP3 »');
+}
 let PREV=null;
 function arreterEcoute(){if(!PREV)return;PREV.sources.forEach(s=>{try{s.stop()}catch(e){}});clearInterval(PREV.t);PREV=null;const b=$('#mt-ecouter');if(b)b.innerHTML=`${IC.play} Écouter le montage`;const z=$('#mt-ou');if(z)z.textContent=''}
 async function jouerPlan(items,fond,total,surFin){
@@ -1787,7 +1866,7 @@ async function jouerPlan(items,fond,total,surFin){
   const c=A.ctx,T=c.currentTime+.15,sources=[];
   for(const it of items){
     if(it.p.type!=='audio'||it.d<=0)continue;
-    let buf;try{buf=await decoder(it.p.ref)}catch(e){continue}
+    let buf;try{buf=await tamponPour(D.montage||montageVide(),it.p,false)}catch(e){continue}
     const s=c.createBufferSource(),g=c.createGain(),a=T+it.t,G=it.g||1,b=bornes(it.p);s.buffer=buf;
     g.gain.setValueAtTime(it.fi?0:G,a);
     if(it.fi)g.gain.setValueCurveAtTime(courbe(64,true).map(x=>x*G),a,it.fi);
@@ -1805,12 +1884,12 @@ function vueMontage(){
   const opts=sel=>D.musiques.map(m=>`<option value="${m.id}" ${sel===m.id?'selected':''}>${m.dossier?esc(m.dossier)+' · ':''}${esc(m.nom)} (${mmss(m.duree*1000)})</option>`).join('');
   const sec=v=>(Math.round((v||0)*10)/10).toString().replace('.',',');
   $('#vue').innerHTML=`<div class="page"><div class="tete-page"><div><h1 class="titre">${IC.ciseaux} Montage audio</h1>
-    <p class="sous">Mettez bout à bout vos enregistrements, des morceaux et des silences, ajoutez une musique de fond, puis assemblez le tout en un seul MP3.</p></div>
+    <p class="sous">Mettez bout à bout vos enregistrements, des morceaux et des silences, ou retravaillez un seul enregistrement : musique de fond, volume de la voix et de la musique, bruit de fond atténué. Puis assemblez en un seul MP3.</p></div>
     <button class="btn" id="mt-retour">${IC.retour} Mes musiques</button></div>
     <div class="mt-liste">${l.map(({p,d},i)=>{const m=p.type==='audio'?morceau(p.ref):null,tot=p.total||(m||{}).duree||0;
       return `<div class="mt-partie" data-mt="${i}"><span class="mt-num">${i+1}</span><span class="ic ${p.type==='silence'?'t-silence':'t-musique'}">${p.type==='silence'?IC.silence:(m&&m.enr?IC.micro:IC.musique)}</span>
       <div class="txt">${p.type==='silence'?`<b>Silence</b><div class="mt-coupe"><label>Durée <input type="number" min="0.5" step="0.5" data-mk="duree" value="${sec(p.duree)}"> secondes</label></div>`
-        :`<b>${m?esc(m.nom):'<span class="manque">Audio supprimé</span>'}</b><div class="mt-coupe"><label>Début à <input type="number" min="0" step="0.5" data-mk="debut" value="${sec(p.debut)}"> s</label><label>Fin à <input type="number" min="0" step="0.5" data-mk="fin" value="${sec(p.fin??tot)}"> s</label><span class="aide">sur ${mmss(tot*1000)}</span></div>`}</div>
+        :`<b>${m?esc(m.nom):'<span class="manque">Audio supprimé</span>'}</b><div class="mt-coupe"><label>Début à <input type="number" min="0" step="0.5" data-mk="debut" value="${sec(p.debut)}"> s</label><label>Fin à <input type="number" min="0" step="0.5" data-mk="fin" value="${sec(p.fin??tot)}"> s</label><span class="aide">sur ${mmss(tot*1000)}</span><label class="mt-vol">${IC_VOL}<input type="range" min="0" max="200" step="5" data-mv value="${p.vol??100}" aria-label="Volume de cette partie"><b>${p.vol??100} %</b></label></div>`}</div>
       <span class="mt-duree">${mmss(d*1000)}</span>
       <div class="mt-act">${p.type==='audio'?`<button class="btn rond nu" data-ma="ecouter" title="Écouter cette partie">${IC.play}</button>`:''}
         <button class="btn rond nu" data-ma="haut" title="Monter" ${i===0?'disabled':''}>${IC.haut}</button><button class="btn rond nu" data-ma="bas" title="Descendre" ${i===l.length-1?'disabled':''}>${IC.bas}</button>
@@ -1824,6 +1903,8 @@ function vueMontage(){
       <label class="champ">Musique de fond <span style="font-weight:500;color:var(--muted)">(facultatif, sous tout le montage, en boucle)</span><select id="mt-fond"><option value="">— Sans musique de fond —</option>${opts(M.fond.ref)}</select></label>
       <label class="champ ${M.fond.ref?'':'cache'}" id="mt-vol-l">Volume de la musique de fond <b id="mt-vol-v">${M.fond.vol} %</b><input type="range" id="mt-vol" min="0" max="100" value="${M.fond.vol}"></label>
       <label class="champ">Entre les parties<select id="mt-fondu"><option value="0" ${!M.fondu?'selected':''}>Coupe nette</option><option value="0.4" ${M.fondu>0&&M.fondu<.8?'selected':''}>Fondu enchaîné doux (0,4 s) — conseillé</option><option value="1.2" ${M.fondu>=.8?'selected':''}>Fondu enchaîné long (1,2 s)</option></select><span class="aide">La partie suivante commence pendant que la précédente s’efface : pas de trou, pas de cassure.</span></label>
+      <label class="bascule" style="margin:0 0 2px"><input type="checkbox" id="mt-debruit" ${M.debruit!==false?'checked':''}>Atténuer le bruit de fond (ventilateur, souffle)</label>
+      <span class="aide" style="display:block;margin-bottom:12px" id="mt-net"></span>
       <label class="bascule" style="margin:0"><input type="checkbox" id="mt-egal" ${M.egaliser!==false?'checked':''}>Égaliser le volume des enregistrements</label>
       <span class="aide" style="display:block;margin-top:2px">Vos enregistrements sont ramenés au même niveau de voix, pour qu’on ne sente pas le passage de l’un à l’autre.</span>
     </div>
@@ -1836,6 +1917,7 @@ function vueMontage(){
   $('#mt-retour').onclick=()=>aller('musiques');
   $$('.mt-partie').forEach(el=>{
     const i=+el.dataset.mt,p=M.parties[i];
+    const mv=el.querySelector('[data-mv]');if(mv)mv.oninput=()=>{p.vol=+mv.value;mv.nextElementSibling.textContent=p.vol+' %';sauverBientot()};
     el.querySelectorAll('[data-mk]').forEach(f=>f.onchange=()=>{const k=f.dataset.mk,v=Math.max(0,parseFloat(String(f.value).replace(',','.'))||0);
       if(k==='fin'){const tot=p.total||(morceau(p.ref)||{}).duree||0;p.fin=v>=tot-.05?null:v}else p[k]=v;
       if(p.type==='audio'&&p.fin!=null&&p.fin<=(p.debut||0)+.5)p.fin=null;
@@ -1859,6 +1941,8 @@ function vueMontage(){
   $('#mt-vol').oninput=e=>{M.fond.vol=+e.target.value;$('#mt-vol-v').textContent=M.fond.vol+' %';sauverBientot()};
   $('#mt-fondu').onchange=e=>{M.fondu=+e.target.value;redessiner()};
   $('#mt-egal').onchange=e=>{M.egaliser=e.target.checked;sauverBientot()};
+  $('#mt-debruit').onchange=e=>{M.debruit=e.target.checked;sauverBientot();lancerNet()};
+  const lancerNet=()=>{NET.surPc=majNet;if(M.debruit!==false)M.parties.filter(p=>aNettoyer(M,p)).forEach(p=>versionPropre(p.ref).catch(()=>{}));majNet()};lancerNet();
   // Analyse des audios du montage (blancs techniques, niveau), puis durées à jour.
   {const manque=M.parties.filter(p=>p.type==='audio'&&!infos.has(p.ref));if(manque.length)Promise.all(manque.map(p=>decoder(p.ref).catch(()=>{}))).then(()=>{if(vue==='montage')vueMontage()})}
   $('#mt-vider').onclick=()=>{if(!confirm('Effacer tout le montage ? Vos enregistrements et morceaux, eux, restent dans Musiques.'))return;arreterEcoute();D.montage=montageVide();redessiner()};
@@ -1876,7 +1960,8 @@ async function assemblerMontage(M){
   try{
     await chargerLame();audioInit();
     const bufs=new Map(),manque=[];
-    for(const it of l)if(it.p.type==='audio'&&!bufs.has(it.p.ref)){try{bufs.set(it.p.ref,await decoder(it.p.ref))}catch(e){manque.push((morceau(it.p.ref)||{}).nom||'?')}}
+    NET.surPc=()=>{const v=Object.values(NET.pc);const t=$('#as-t');if(t&&v.length)t.textContent=`Atténuation du bruit de fond… ${v[0]} %`;majNet()};
+    for(const it of l)if(it.p.type==='audio'&&!bufs.has(it.p.ref)){try{bufs.set(it.p.ref,await tamponPour(M,it.p,true))}catch(e){manque.push((morceau(it.p.ref)||{}).nom||'?')}}
     let fondBuf=null;if(M.fond.ref){try{fondBuf=await decoder(M.fond.ref)}catch(e){manque.push((morceau(M.fond.ref)||{}).nom||'musique de fond')}}
     if(manque.length&&!confirm(`Ces audios ne sont pas sur cet appareil et seront remplacés par du silence : ${manque.join(', ')}. Continuer ?`)){v.remove();return}
     const {l:l2,total:t2}=planMontage(M);l.splice(0,l.length,...l2);   // durées recalculées après analyse
