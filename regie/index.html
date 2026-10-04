@@ -469,7 +469,12 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .son-auto-v{font-weight:600;color:var(--muted);font-size:11.5px;margin-left:4px}
 .son-gain b{color:var(--canard-dark);margin-left:4px}
 .son-gain input{width:100%;accent-color:var(--canard);margin:6px 0 2px}
-.son-niv{height:10px}.son-niv-aide{display:block;margin:-8px 0 12px}
+.son-niv{height:12px;position:relative;background:linear-gradient(90deg,var(--violet-soft) 0 64%,#d8f0dc 64% 88%,#fbe3cf 88% 94%,#f6cdd3 94% 100%)!important}
+.son-niv b{background:var(--canard)!important;opacity:.85}
+.son-niv.rouge b{background:var(--alerte)!important}
+.son-niv::after{content:'';position:absolute;top:0;bottom:0;left:var(--crete,0%);width:2px;background:var(--peri-darker);opacity:.6}
+.son-mode{display:flex;flex-direction:column;gap:6px;margin:4px 0 12px;font-size:13px}
+.son-mode .bascule{margin:0}.son-mode .aide{display:inline;margin-left:4px}.son-niv-aide{display:block;margin:-8px 0 12px}
 .son-avance{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
 .son-avance summary{list-style:none;cursor:pointer;font-size:12.5px;font-weight:700;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
 .son-avance summary::-webkit-details-marker{display:none}
@@ -526,6 +531,8 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 #ml-temps{font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .g-enr.sature{box-shadow:0 0 0 3px #f2b84b}
 .enr-niv.sature{outline:2px solid #f2b84b}
+.silence-voile{background:rgba(40,36,60,.45)}
+.sil-n{font-size:64px;font-weight:800;color:var(--peri-darker);font-variant-numeric:tabular-nums;line-height:1}
 .enr-actions{display:flex;flex-wrap:wrap;gap:8px}
 .voile{position:fixed;inset:0;z-index:80;background:rgba(56,54,80,.38);display:flex;align-items:center;justify-content:center;padding:18px}
 .fenetre{background:var(--plein);border-radius:22px;box-shadow:0 30px 70px -30px rgba(56,54,80,.6);width:100%;max-width:410px;padding:24px}
@@ -1338,7 +1345,11 @@ function panneauSon(){
   return `<div class="son-choix">
     <label class="champ">${IC.micro} Micro<select data-son="micro"><option value="">Recherche des micros…</option></select></label>
     <div class="son-niv" title="Parlez : la barre doit bouger"><b></b></div>
-    <span class="aide son-niv-aide">Parlez : la barre doit bouger.</span>
+    <span class="aide son-niv-aide" data-son="niv-aide">Parlez : la barre doit bouger.</span>
+    <div class="son-mode"><b>Volume de la voix</b>
+      <label class="bascule"><input type="radio" data-son="mode" value="auto">Automatique <span class="aide">(la régie règle le volume)</span></label>
+      <label class="bascule"><input type="radio" data-son="mode" value="micro">Sur mon micro <span class="aide">(bouton de gain de votre micro, ex. TONOR)</span></label>
+    </div>
     <label class="champ son-sortie">${IC.casque} Sortie (écouteurs, casque, enceintes)<select data-son="sortie"><option value="">Par défaut</option></select></label>
     <div class="son-pied"><button type="button" class="btn s" data-son="test">${IC.play} Tester le son</button><button type="button" class="btn s nu" data-son="relister" title="Un appareil vient d’être branché">${IC.recaler} Actualiser</button></div>
     <span class="aide son-sans cache">Sur cet appareil, la sortie se choisit dans les réglages du téléphone ou de l’ordinateur (sur iPhone et iPad, le casque branché est pris tout seul).</span>
@@ -1348,12 +1359,13 @@ function panneauSon(){
       <label class="champ son-gain cache">Volume du micro <b data-son="gain-v"></b><input type="range" data-son="gain" min="1" max="8" step="0.5"></label>
       <label class="bascule son-auto son-trait"><input type="checkbox" data-son="bruit">Adoucir le bruit de la pièce entre les phrases</label>
       <label class="bascule son-auto"><input type="checkbox" data-son="brut">Son brut (aucun traitement)</label>
+      <label class="bascule son-auto"><input type="checkbox" data-son="silence">Commencer par 3 secondes de silence (mesure du bruit de la pièce)</label>
       <button type="button" class="btn s nu" data-son="conseil" style="margin-top:6px">Remettre les réglages conseillés</button>
     </details>
   </div>`;
 }
 function brancherSon(el){
-  let flux=null,ana=null,src=null,gn=null,raf=null,fini=false;
+  let flux=null,ana=null,src=null,gn=null,raf=null,fini=false,crete=0;
   const selM=el.querySelector('[data-son=micro]'),selS=el.querySelector('[data-son=sortie]'),barre=el.querySelector('.son-niv b');
   const ecouter=async()=>{
     if(flux)flux.getTracks().forEach(t=>t.stop());try{src&&src.disconnect()}catch(e){}
@@ -1367,7 +1379,10 @@ function brancherSon(el){
   const boucle=()=>{
     if(fini)return;if(!el.isConnected){arreter();return}
     if(gn&&micAuto())valA.textContent='· × '+gn.gain().toFixed(1).replace('.',',');else valA.textContent='';
-    if(ana){const d=new Uint8Array(ana.fftSize);ana.getByteTimeDomainData(d);let m=0;for(let i=0;i<d.length;i++){const v=Math.abs(d[i]-128);if(v>m)m=v}barre.style.width=Math.min(100,m)+'%'}
+    // Barre en décibels (de −50 à 0 dB) : zone verte de −18 à −6 dB, rouge au-delà de −3 dB.
+    if(ana){const d=new Float32Array(ana.fftSize);ana.getFloatTimeDomainData(d);let m=0;for(let i=0;i<d.length;i++){const v=Math.abs(d[i]);if(v>m)m=v}
+      const db=20*Math.log10(m+1e-6),pc=clamp((db+50)/50*100,0,100);crete=Math.max(pc,crete-.6);
+      barre.style.width=pc+'%';barre.parentElement.style.setProperty('--crete',crete+'%');barre.parentElement.classList.toggle('rouge',db>-3)}
     raf=requestAnimationFrame(boucle);
   };
   const remplir=async()=>{
@@ -1386,9 +1401,16 @@ function brancherSon(el){
   curG.value=gainMicro();majG();
   curG.oninput=()=>{D.prefs.micGain=+curG.value;majG();if(gn&&!micAuto())gn.regler(gainMicro());sauverBientot()};
   const caseA=el.querySelector('[data-son=auto]'),valA=el.querySelector('[data-son=auto-v]');
-  const majA=()=>{caseA.checked=micAuto();el.querySelector('.son-gain').classList.toggle('cache',micAuto())};majA();
+  // Le choix principal : la régie règle le volume, ou c'est le bouton de gain du micro qui décide.
+  const nomR='mode-'+uid(),radios=[...el.querySelectorAll('[data-son=mode]')];radios.forEach(r=>r.name=nomR);
+  const aideNiv=el.querySelector('[data-son=niv-aide]');
+  const majMode=()=>{const m=micAuto()?'auto':'micro';radios.forEach(r=>r.checked=r.value===m);
+    aideNiv.innerHTML=m==='micro'?'Tournez le <b>bouton de gain de votre micro</b> en parlant normalement : la barre doit rester dans la <b>zone verte</b>, sans toucher le rouge.':'Parlez : la barre doit bouger. La régie règle le volume toute seule.'};
+  radios.forEach(r=>r.onchange=()=>{if(!r.checked)return;D.prefs.sonBrut=false;D.prefs.micAuto=r.value==='auto';if(r.value==='micro')D.prefs.micGain=1;sauverBientot();majA();majMode();ecouter()});
+  const majA=()=>{caseA.checked=micAuto();el.querySelector('.son-gain').classList.toggle('cache',micAuto());if(typeof majMode==='function')majMode()};majA();
   caseA.onchange=()=>{D.prefs.micAuto=caseA.checked;sauverBientot();majA();ecouter()};
   el.querySelector('[data-son=conseil]').onclick=()=>{reglagesConseilles();caseA.checked=true;caseB.checked=false;caseBr.checked=false;majBr();curG.value=gainMicro();majG();ecouter();toast('Réglages conseillés remis')};
+  const caseSi=el.querySelector('[data-son=silence]');caseSi.checked=D.prefs.silenceDebut!==false;caseSi.onchange=()=>{D.prefs.silenceDebut=caseSi.checked;sauverBientot()};
   const caseBr=el.querySelector('[data-son=brut]');caseBr.checked=sonBrut();
   const majBr=()=>{el.querySelectorAll('.son-auto:not(:has([data-son=brut])),.son-trait').forEach(x=>x.classList.toggle('cache',sonBrut()));if(sonBrut())el.querySelector('.son-gain').classList.remove('cache');else majA()};
   caseBr.onchange=()=>{D.prefs.sonBrut=caseBr.checked;sauverBientot();majBr();ecouter()};majBr();
@@ -1539,6 +1561,16 @@ async function capteur(ctx,surPaquet){
   p.onaudioprocess=e=>{const ib=e.inputBuffer;surPaquet(ib.getChannelData(0).slice(),ib.getChannelData(ib.numberOfChannels>1?1:0).slice())};
   p.arreter=()=>{p.onaudioprocess=null};
   return p;
+}
+// Les 3 premières secondes : silence, pendant que la régie écoute le bruit de la pièce. Elles restent
+// au début du fichier ; l'atténuation du bruit s'en sert en priorité pour connaître ce bruit.
+async function silenceDebut(){
+  if(D.prefs.silenceDebut===false)return;
+  const v=document.createElement('div');v.className='voile silence-voile';
+  v.innerHTML=`<div class="fenetre" style="text-align:center;max-width:360px"><div class="sil-n" id="sil-n">3</div><h2 style="margin:4px 0 6px">Silence…</h2><p class="sous" style="margin:0">La régie écoute le bruit de la pièce. Ne parlez pas, ne touchez à rien.</p></div>`;
+  document.body.appendChild(v);
+  for(let k=3;k>0;k--){const n=$('#sil-n');if(n)n.textContent=k;await new Promise(r=>setTimeout(r,1000))}
+  v.remove();
 }
 async function creerEnregistreur(o={}){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('Cet appareil ne permet pas d’enregistrer (ouvrez la régie dans Chrome, Edge ou Safari).');
@@ -1693,7 +1725,7 @@ function fenetreEnregistreur(o={}){
     try{ENRL=await creerEnregistreur({musique:!!fond,nom:o.nom||'Enregistrement'})}
     catch(e){const er=$('#ef-err');er.textContent=e.message;er.classList.remove('cache');go.disabled=false;go.innerHTML='<i class="pt-rouge"></i> Réessayer';stopSon=brancherSon($('#ef-son'));return}
     if(m)m.disabled=true;$('#ef-son').classList.add('cache');
-    ENRL.demarrer();if(fond)jouer(fond,vol(),3);
+    ENRL.demarrer();await silenceDebut();if(!ENRL)return;if(fond)jouer(fond,vol(),3);
     etat('Enregistrement en cours','enr');boutons();
     tH=setInterval(()=>{if(!ENRL)return;$('#ef-t').textContent=mmss(ENRL.duree());$('#ef-n').style.width=(ENRL.etat==='enr'?Math.round(ENRL.niveau()*100):0)+'%';
       const sa=ENRL.sature();$('.enr-niv').classList.toggle('sature',sa);if(sa)etat('Le micro sature : baissez son volume dans Windows, ou éloignez-vous un peu','pause');else if(ENRL.etat==='enr')etat('Enregistrement en cours','enr')},150);
@@ -1744,7 +1776,7 @@ function fenetreLancerEnr(){
     try{
       const d=new Date();
       ENR=await creerEnregistreur({musique:$('#le-musique').checked,nom:`${G.s.titre} – ${d.toLocaleDateString('fr-FR')}`});
-      ENR.demarrer();if(!G.run)ENR.pause();
+      v.classList.add('cache');ENR.demarrer();await silenceDebut();if(!ENR){fermer();return}if(!G.run)ENR.pause();
       fermer();rendreBoutonEnr();toast(G.run?'Enregistrement en cours':'Prêt : l’enregistrement commence avec « Démarrer »');
     }catch(e){const er=$('#le-err');er.textContent=e.message;er.classList.remove('cache');go.disabled=false;go.innerHTML='<i class="pt-rouge"></i> Réessayer';stopSon=brancherSon(v)}
   };
@@ -1835,12 +1867,16 @@ async function debruiter(buf,surPc){
     const trame=s0=>{for(let i=0;i<N;i++){const j=s0+i;re[i]=j>=0&&j<len?x[j]*w[i]:0;im[i]=0}};
     // 1. Le bruit de la pièce : spectre moyen des 10 % de trames les plus calmes (hors silence numérique).
     const en=[];for(let k=0;k<nbF;k++){const s0=k*H-H;let e=0;for(let i=0;i<N;i+=4){const j=s0+i;if(j>=0&&j<len)e+=x[j]*x[j]}if(e>1e-9)en.push([e,k])}
-    en.sort((a,b)=>a[0]-b[0]);const calmes=en.slice(0,Math.max(10,Math.min(400,Math.floor(en.length*.1))));
+    const debut=en.filter(([,k])=>k*H-H>=sr*.3&&k*H<=sr*2.8);   // le silence du début (après le clic de départ)
+    en.sort((a,b)=>a[0]-b[0]);let calmes=en.slice(0,Math.max(10,Math.min(400,Math.floor(en.length*.1))));
+    // Si l'enregistrement commence par un vrai silence régulier, c'est lui qui donne le bruit de la pièce.
+    if(debut.length>=8){const e=debut.map(([v])=>v).sort((a,b)=>a-b),med=en[en.length>>1][0];
+      if(e[e.length-1]<e[0]*6&&e[e.length>>1]*2.5<med){calmes=debut;buf.profilDebut=true}}
     // Garde-fou : s'il n'y a pas de vrais moments calmes (au moins 4 dB sous le niveau habituel, et réguliers),
     // ce « bruit » serait du contenu (musique continue, voix sans pause) : on ne touche à rien.
     // (un ventilateur, lui, est régulier : dans les moments calmes il garde presque toujours la même force)
     {const pc=f=>en.length?en[Math.min(en.length-1,Math.floor(en.length*f))][0]:0,moyC=calmes.reduce((a,[e])=>a+e,0)/Math.max(1,calmes.length);
-      if(!en.length||pc(.5)<moyC*2.5||pc(.25)>pc(.05)*4){surPc&&surPc(100);buf.inchange=true;return buf}}
+      if(!en.length||pc(.5)<moyC*2.5||(!buf.profilDebut&&pc(.25)>pc(.05)*4)){surPc&&surPc(100);buf.inchange=true;return buf}}
     const bruit=new Float64Array(K);
     for(const [,k] of calmes){trame(k*H-H);fft(F,re,im,false);for(let b=0;b<K;b++)bruit[b]+=re[b]*re[b]+im[b]*im[b]}
     for(let b=0;b<K;b++)bruit[b]/=Math.max(1,calmes.length);
