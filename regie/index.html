@@ -524,6 +524,8 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .m-lecteur input[type=range]{flex:1;accent-color:var(--canard);min-width:0}
 .ml-vol{display:inline-flex;align-items:center;gap:4px;color:var(--muted)}.ml-vol input{width:90px;accent-color:var(--canard)}
 #ml-temps{font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.g-enr.sature{box-shadow:0 0 0 3px #f2b84b}
+.enr-niv.sature{outline:2px solid #f2b84b}
 .enr-actions{display:flex;flex-wrap:wrap;gap:8px}
 .voile{position:fixed;inset:0;z-index:80;background:rgba(56,54,80,.38);display:flex;align-items:center;justify-content:center;padding:18px}
 .fenetre{background:var(--plein);border-radius:22px;box-shadow:0 30px 70px -30px rgba(56,54,80,.6);width:100%;max-width:410px;padding:24px}
@@ -1266,36 +1268,53 @@ function etoufferClic(){
 function chaineVoix(ctx){
   // Son brut : la voix passe telle quelle (aucun filtre, aucun réglage, aucun effacement de clic).
   if(sonBrut()){const n=ctx.createGain();n.gain.value=gainMicro();return {entree:n,sortie:n,etouffe:ctx.createGain(),ctx,gain:()=>n.gain.value,regler(v){n.gain.value=v},stop(){try{n.disconnect()}catch(e){}}}}
-  const hp=ctx.createBiquadFilter(),amp=ctx.createGain(),comp=ctx.createDynamicsCompressor(),porte=ctx.createGain(),etouffe=ctx.createGain(),lim=ctx.createDynamicsCompressor(),mes=ctx.createAnalyser();
+  // Pas de compresseur du navigateur : il ajoute de lui-même ~+9 dB (gain de compensation) et
+  // poussait la voix jusqu'à saturer. Les pointes sont arrondies plus loin, à l'encodage (plafondDoux).
+  const hp=ctx.createBiquadFilter(),amp=ctx.createGain(),porte=ctx.createGain(),etouffe=ctx.createGain(),mes=ctx.createAnalyser();
   hp.type='highpass';hp.frequency.value=80;hp.Q.value=.7;
-  comp.threshold.value=-26;comp.knee.value=14;comp.ratio.value=2.5;comp.attack.value=.015;comp.release.value=.4;
-  lim.threshold.value=-3;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=.002;lim.release.value=.2;
-  mes.fftSize=2048;hp.connect(mes);hp.connect(amp);amp.connect(comp);comp.connect(porte);porte.connect(etouffe);etouffe.connect(lim);
-  const auto=micAuto(),nettoie=antiBruit();let g=auto?clamp(+D.prefs.micAutoGain||2,1,16):gainMicro(),bruit=null,calme=0,ouverte=true,niveau=null,parole=0;amp.gain.value=g;
+  mes.fftSize=2048;hp.connect(mes);hp.connect(amp);amp.connect(porte);porte.connect(etouffe);
+  const auto=micAuto(),nettoie=antiBruit();let g=auto?clamp(+D.prefs.micAutoGain||2,1,8):gainMicro(),bruit=null,calme=0,ouverte=true,niveau=null,parole=0;amp.gain.value=g;
   const d=new Float32Array(mes.fftSize);
   const t=setInterval(()=>{
     mes.getFloatTimeDomainData(d);let q=0;for(let i=0;i<d.length;i++)q+=d[i]*d[i];const rms=Math.sqrt(q/d.length)+1e-6;
-    // Le bruit de fond de la pièce : le niveau le plus bas entendu, qui remonte très lentement.
-    // (il ne remonte que très lentement, et jamais au-delà d'un niveau de pièce calme : une voix
-    //  continue ne peut pas finir par être prise pour du bruit)
+    // Le bruit de fond de la pièce : le niveau le plus bas entendu, qui ne remonte que très lentement
+    // et jamais au-delà d'une pièce calme (une voix continue ne peut pas être prise pour du bruit).
     bruit=bruit==null?Math.min(rms,.01):Math.min(rms,bruit*1.002,.01);
     const parle=rms>Math.max(.003,bruit*3);              // la voix dépasse le bruit d'environ 10 dB
-    // Porte douce : entre deux phrases, le bruit ambiant baisse un peu (jamais de trou).
+    // Porte douce (facultative) : entre deux phrases, le bruit ambiant baisse un peu (jamais de trou).
     if(nettoie){calme=parle?0:calme+1;const ouvrir=parle||calme<8;
       if(ouvrir!==ouverte){ouverte=ouvrir;porte.gain.setTargetAtTime(ouvrir?1:.35,ctx.currentTime,ouvrir?.02:.35)}}
     if(!auto||!parle)return;                             // le niveau ne bouge que sur la voix
     // Niveau de la voix lissé sur environ une seconde : on suit la voix, pas chaque syllabe.
-    niveau=niveau==null?rms:niveau*.88+rms*.12;parole++;
-    const voulu=clamp(.13/niveau,1,16);                   // voix visée ≈ −18 dB
+    // Aucune chute brutale : un mot fort ne fait plus « disparaître » les suivants.
+    // un passage fort isolé (crié, plosive) compte au plus double : c'est le limiteur qui s'en occupe
+    niveau=niveau==null?rms:niveau*.88+Math.min(rms,niveau*2)*.12;parole++;
+    const voulu=clamp(.1/niveau,1,8);                     // voix visée ≈ −20 dB, amplification ×8 au plus
     const vite=parole<40;                                 // les 4 premières secondes de voix : on se cale
-    if(rms*g>.6)g=Math.max(voulu,g*.9);                   // trop fort d'un coup : on baisse sans attendre
-    else g=voulu<g?Math.max(voulu,g*(vite?.95:.985)):Math.min(voulu,g*(vite?1.03:1.006));
+    g=voulu<g?Math.max(voulu,g*(vite?.95:.99)):Math.min(voulu,g*(vite?1.03:1.008));
     amp.gain.setTargetAtTime(g,ctx.currentTime,.3);D.prefs.micAutoGain=g;
   },100);
-  const ch={entree:hp,sortie:lim,etouffe,ctx,gain:()=>g,
+  const ch={entree:hp,sortie:etouffe,etouffe,ctx,gain:()=>g,
     regler(v){g=v;amp.gain.setTargetAtTime(v,ctx.currentTime,.05)},
-    stop(){clearInterval(t);CHAINES.delete(ch);[hp,amp,comp,porte,etouffe,lim,mes].forEach(n=>{try{n.disconnect()}catch(e){}});if(auto)sauverBientot()}};
+    stop(){clearInterval(t);CHAINES.delete(ch);[hp,amp,porte,etouffe,mes].forEach(n=>{try{n.disconnect()}catch(e){}});if(auto)sauverBientot()}};
   CHAINES.add(ch);return ch;
+}
+// Plafond doux : sous −3 dB rien ne change ; au-dessus, la pointe est arrondie sans jamais dépasser 0 dB
+// (au lieu d'être coupée net, ce qui s'entend comme une saturation).
+const plafondDoux=v=>{const a=v<0?-v:v;if(a<=.7)return v;const y=.7+.3*Math.tanh((a-.7)/.3);return v<0?-y:y};
+/* Limiteur à anticipation (−1 dB) : il voit venir chaque pointe 5 ms à l'avance, baisse le son
+   en douceur juste ce qu'il faut, puis relâche en ~0,15 s : le mot suivant n'est pas touché.
+   Il travaille par paquets (enregistrement, assemblage) et garde son état d'un paquet à l'autre. */
+function limiteur(sr){
+  const plafond=.89,L=Math.round(sr*.005),att=1-Math.exp(-1/(L/4)),rel=1-Math.exp(-1/(sr*.15));let env=1;
+  return (G,Dr)=>{
+    const n=G.length,req=new Float32Array(n),mn=new Float32Array(n),q=new Int32Array(n);
+    for(let i=0;i<n;i++){const a=Math.max(G[i]<0?-G[i]:G[i],Dr[i]<0?-Dr[i]:Dr[i]);req[i]=a>plafond?plafond/a:1}
+    // minimum glissant sur [i, i+L] (file monotone) : le gain baisse avant la pointe
+    let h=0,t=0;
+    for(let i=n-1;i>=0;i--){while(t>h&&req[q[t-1]]>=req[i])t--;q[t++]=i;while(q[h]>i+L)h++;mn[i]=req[q[h]]}
+    for(let i=0;i<n;i++){const c=mn[i];env+=c<env?(c-env)*att:(c-env)*rel;if(env>c&&c<1&&req[i]<1)env=Math.min(env,req[i]);G[i]*=env;Dr[i]*=env}
+  };
 }
 const contrainteMicro=(o={})=>Object.assign(D.prefs.micId?{deviceId:{exact:D.prefs.micId}}:{},o);
 async function ouvrirMicro(o={}){
@@ -1535,17 +1554,25 @@ async function creerEnregistreur(o={}){
   const ctx=A.ctx,mic=ctx.createMediaStreamSource(flux),mix=ctx.createGain(),ana=ctx.createAnalyser(),muet=ctx.createGain();
   muet.gain.value=0;ana.fftSize=1024;
   const voix=chaineVoix(ctx);
-  mic.connect(voix.entree);voix.sortie.connect(mix);if(o.musique&&A.gain)A.gain.connect(mix);
+  mic.connect(voix.entree);voix.sortie.connect(mix);
+  // Le son tel qu'il arrive du micro : s'il touche déjà le plafond, la saturation vient d'avant la régie
+  // (volume d'entrée de Windows trop haut, micro trop près) et ne peut plus être réparée.
+  const brut=ctx.createAnalyser();brut.fftSize=2048;mic.connect(brut);
+  const db=new Float32Array(brut.fftSize);let satur=0,saturRecent=0;
+  const tSat=setInterval(()=>{if(etat!=='enr')return;brut.getFloatTimeDomainData(db);let n=0;for(let i=0;i<db.length;i++)if(db[i]>.985||db[i]<-.985)n++;
+    if(n>=3){satur++;saturRecent=performance.now()}},50);if(o.musique&&A.gain)A.gain.connect(mix);
   mix.connect(ana);
   const enc=new lamejs.Mp3Encoder(2,ctx.sampleRate,96),blocs=[];let parts=[],ms=0,etat='pret',pic=0;
-  const pcm=f=>{const r=new Int16Array(f.length);for(let i=0;i<f.length;i++){const v=f[i]<-1?-1:f[i]>1?1:f[i];r[i]=v<0?v*32768:v*32767}return r};
+  const pcm=f=>{const r=new Int16Array(f.length);for(let i=0;i<f.length;i++){const v=plafondDoux(f[i]);r[i]=v<0?v*32768:v*32767}return r};
+  const limiter=limiteur(ctx.sampleRate);
   const encoder=(g0,d0)=>{
     if(etat!=='enr')return;
+    for(let i=0;i<g0.length;i+=8){const a=Math.abs(g0[i]);if(a>pic)pic=a}
+    if(d0===g0)d0=g0.slice();limiter(g0,d0);
     // L'encodeur abîme le son si on lui donne plus de 1152 échantillons à la fois : on découpe.
     const g=pcm(g0),d=pcm(d0);
     for(let i=0;i<g.length;i+=1152){const b=enc.encodeBuffer(g.subarray(i,i+1152),d.subarray(i,i+1152));if(b.length)parts.push(new Uint8Array(b))}
     ms+=g0.length/ctx.sampleRate*1000;
-    for(let i=0;i<g0.length;i+=8){const a=Math.abs(g0[i]);if(a>pic)pic=a}
   };
   // Le son est capté sur le fil audio du navigateur (jamais interrompu), puis confié à la page
   // par paquets : même si la page est occupée un instant, aucun morceau n'est perdu.
@@ -1553,13 +1580,14 @@ async function creerEnregistreur(o={}){
   const tout=()=>{if(parts.length){blocs.push(new Blob(parts));parts=[]}return new Blob(blocs,{type:'audio/mpeg'})};
   const deCote=()=>{idbPut(ID_ENR,tout());try{localStorage.setItem(CLE_ENR,JSON.stringify({nom:o.nom||'Enregistrement',ms}))}catch(e){}};
   const tg=setInterval(()=>{if(etat==='enr')deCote()},20000);
-  const fermer=()=>{clearInterval(tg);proc.arreter();flux.getTracks().forEach(t=>t.stop());voix.stop();[mic,mix,proc,muet].forEach(n=>{try{n.disconnect()}catch(e){}});if(o.musique&&A.gain){try{A.gain.disconnect(mix)}catch(e){}}};
+  const fermer=()=>{clearInterval(tg);clearInterval(tSat);try{brut.disconnect()}catch(e){}proc.arreter();flux.getTracks().forEach(t=>t.stop());voix.stop();[mic,mix,proc,muet].forEach(n=>{try{n.disconnect()}catch(e){}});if(o.musique&&A.gain){try{A.gain.disconnect(mix)}catch(e){}}};
   return {
-    nom:o.nom,get etat(){return etat},duree:()=>ms,
+    nom:o.nom,musique:!!o.musique,get etat(){return etat},duree:()=>ms,
     demarrer(){etat='enr'},pause(){if(etat==='enr')etat='pause'},reprendre(){if(etat==='pause')etat='enr'},
     niveau(){const d=new Uint8Array(ana.fftSize);ana.getByteTimeDomainData(d);let m=0;for(let i=0;i<d.length;i++){const v=Math.abs(d[i]-128);if(v>m)m=v}return Math.min(1,m/100)},
     micro:(flux.getAudioTracks()[0]||{}).label||'',
-    arreter(){etat='fini';fermer();const f=enc.flush();if(f.length)parts.push(new Uint8Array(f));const blob=tout();deCote();return {blob,ms,pic}},
+    sature:()=>performance.now()-saturRecent<1500,saturations:()=>satur,
+    arreter(){etat='fini';fermer();const f=enc.flush();if(f.length)parts.push(new Uint8Array(f));const blob=tout();deCote();return {blob,ms,pic,satur}},
     annuler(){etat='fini';fermer();oublierEnr()}
   };
 }
@@ -1572,7 +1600,7 @@ async function partager(blob,nom){
   try{await navigator.share({files:[f],title:nom});return true}catch(e){if(e.name!=='AbortError')toast('Le partage n’a pas marché : téléchargez le fichier puis envoyez-le');return false}
 }
 const peutPartager=blob=>{try{return !!(navigator.canShare&&navigator.canShare({files:[new File([blob],'a.mp3',{type:'audio/mpeg'})]}))}catch(e){return false}};
-async function garderMorceau(blob,ms,nom){const id=uid();await idbPut(id,blob);const m={id,nom:nom||'Enregistrement',duree:ms/1000,taille:blob.size,enr:true};D.musiques.push(m);sauver();return m}
+async function garderMorceau(blob,ms,nom,avecMusique){const id=uid();await idbPut(id,blob);const m={id,nom:nom||'Enregistrement',duree:ms/1000,taille:blob.size,enr:true};if(avecMusique)m.avecMusique=true;D.musiques.push(m);sauver();return m}
 // L'enregistrement terminé : l'écouter, le nommer, le télécharger, l'envoyer, le garder.
 function fenetreResultat(blob,ms,nom,o={}){
   const v=document.createElement('div');v.className='voile';const u=URL.createObjectURL(blob);let fait=false,garde=null;
@@ -1580,6 +1608,7 @@ function fenetreResultat(blob,ms,nom,o={}){
     <h2>${IC.micro} ${o.recupere?'Enregistrement retrouvé':'Votre enregistrement'}</h2>
     <p class="sous" style="margin:0 0 12px">${o.recupere?'Cet enregistrement n’avait pas été terminé. Le voici, tel qu’il a été gardé. ':''}Durée <b>${mmss(ms)}</b> · ${(blob.size/1048576).toFixed(1)} Mo · MP3</p>
     ${o.micro!=null?`<p class="enr-diag">Micro utilisé : <b>${esc(o.micro||'inconnu')}</b> · niveau le plus fort capté : <b>${Math.min(100,Math.round((o.pic||0)*100))} %</b> · ${sonBrut()?'son brut':'traitement doux'} · <span class="enr-version"></span></p>`:''}
+    ${o.satur>2?`<div class="info-bloc alerte-bloc">${IC.info}<span><b>Le micro a saturé ${o.satur} fois</b> avant même d’arriver dans la régie : le son est « écrasé » à ces moments-là. Baissez le volume d’entrée du micro dans Windows (Paramètres → Son → Entrée → votre micro, vers 70 %), ou éloignez-vous un peu du micro. La régie remonte toute seule le niveau ensuite.</span></div>`:''}
     ${o.pic!=null&&o.pic<.02?`<div class="info-bloc alerte-bloc">${IC.info}<span><b>Le micro n’a presque rien capté.</b> Vérifiez qu’il n’est pas coupé, rapprochez-vous, ou montez son volume d’entrée dans les réglages de Windows (Son → Entrée).</span></div>`:''}
     <audio class="enr-ecoute" controls src="${u}" style="width:100%;margin-bottom:4px"></audio>
     <label class="ecouter-sur cache">Écouter sur <select id="er-sortie"><option value="">la sortie par défaut</option></select></label>
@@ -1609,9 +1638,9 @@ function fenetreResultat(blob,ms,nom,o={}){
   const fin=()=>{URL.revokeObjectURL(u);v.remove();oublierEnr()};
   $('#er-dl').onclick=()=>{telecharger(blob,nomF());fait=true;toast('Fichier téléchargé : il est dans vos Téléchargements')};
   const pa=$('#er-partage');if(pa)pa.onclick=async()=>{if(await partager(blob,nomF()))fait=true};
-  const ga=$('#er-garde');if(ga)ga.onclick=async()=>{if(garde){toast('Déjà dans vos morceaux');return}garde=await garderMorceau(blob,ms,nomF());fait=true;ga.disabled=true;ga.innerHTML=`${IC.check} Gardé dans mes morceaux`;if(vue==='musiques')vueMusiques()};
-  const ut=$('#er-utiliser');if(ut)ut.onclick=async()=>{const m=garde||await garderMorceau(blob,ms,nomF());o.utiliser.fn(m);fin()};
-  const rt=$('#er-retr');if(rt)rt.onclick=async()=>{const m=garde||await garderMorceau(blob,ms,nomF());garde=m;fait=true;URL.revokeObjectURL(u);v.remove();oublierEnr();retravailler(m.id)};
+  const ga=$('#er-garde');if(ga)ga.onclick=async()=>{if(garde){toast('Déjà dans vos morceaux');return}garde=await garderMorceau(blob,ms,nomF(),o.avecMusique);fait=true;ga.disabled=true;ga.innerHTML=`${IC.check} Gardé dans mes morceaux`;if(vue==='musiques')vueMusiques()};
+  const ut=$('#er-utiliser');if(ut)ut.onclick=async()=>{const m=garde||await garderMorceau(blob,ms,nomF(),o.avecMusique);o.utiliser.fn(m);fin()};
+  const rt=$('#er-retr');if(rt)rt.onclick=async()=>{const m=garde||await garderMorceau(blob,ms,nomF(),o.avecMusique);garde=m;fait=true;URL.revokeObjectURL(u);v.remove();oublierEnr();retravailler(m.id)};
   $('#er-nom').oninput=()=>{if(garde){garde.nom=nomF();sauverBientot()}};
   $('#er-jeter').onclick=()=>{if(!confirm('Supprimer cet enregistrement ?'+(garde?' (Il reste dans vos morceaux.)':' Il sera perdu.')))return;fin()};
   $('#er-fermer').onclick=()=>{if(!fait&&!confirm('Vous n’avez ni téléchargé ni gardé cet enregistrement. Le fermer quand même ? Il sera perdu.'))return;fin()};
@@ -1666,12 +1695,13 @@ function fenetreEnregistreur(o={}){
     if(m)m.disabled=true;$('#ef-son').classList.add('cache');
     ENRL.demarrer();if(fond)jouer(fond,vol(),3);
     etat('Enregistrement en cours','enr');boutons();
-    tH=setInterval(()=>{if(!ENRL)return;$('#ef-t').textContent=mmss(ENRL.duree());$('#ef-n').style.width=(ENRL.etat==='enr'?Math.round(ENRL.niveau()*100):0)+'%'},150);
+    tH=setInterval(()=>{if(!ENRL)return;$('#ef-t').textContent=mmss(ENRL.duree());$('#ef-n').style.width=(ENRL.etat==='enr'?Math.round(ENRL.niveau()*100):0)+'%';
+      const sa=ENRL.sature();$('.enr-niv').classList.toggle('sature',sa);if(sa)etat('Le micro sature : baissez son volume dans Windows, ou éloignez-vous un peu','pause');else if(ENRL.etat==='enr')etat('Enregistrement en cours','enr')},150);
   };
   const terminer=()=>{
     clearInterval(tH);const E=ENRL;ENRL=null;const res=E.arreter();if(fond)sortie(1.5);v.remove();
     if(res.ms<1000){oublierEnr();toast('Enregistrement vide : rien n’a été gardé');return}
-    fenetreResultat(res.blob,res.ms,o.nom,{utiliser:o.utiliser,pic:res.pic,micro:E.micro});
+    fenetreResultat(res.blob,res.ms,o.nom,{utiliser:o.utiliser,pic:res.pic,micro:E.micro,satur:res.satur,avecMusique:E.musique});
   };
   boutons();
 }
@@ -1688,6 +1718,8 @@ function rendreBoutonEnr(){
 function majEnr(){
   if(!ENR)return;const t=$('#g-enr-t');if(!t)return;
   t.textContent=mmss(ENR.duree());const n=$('#g-enr-n');if(n)n.style.width=(ENR.etat==='enr'?Math.round(ENR.niveau()*100):0)+'%';
+  const b0=$('#g-enr');if(b0)b0.classList.toggle('sature',ENR.sature());
+  if(ENR.sature()&&!ENR.averti){ENR.averti=true;toast('Le micro sature : baissez son volume d’entrée dans Windows, ou éloignez-vous un peu')}
   const b=$('#g-enr');if(b&&b.classList.contains('en-pause')!==(ENR.etat==='pause'))rendreBoutonEnr();
 }
 function fenetreLancerEnr(){
@@ -1721,7 +1753,7 @@ function arreterEnrSeance(){
   if(!ENR)return;const E=ENR;ENR=null;
   const r=E.arreter();rendreBoutonEnr();
   if(r.ms<1000){oublierEnr();toast('Enregistrement vide : rien n’a été gardé');return}
-  fenetreResultat(r.blob,r.ms,E.nom,{pic:r.pic,micro:E.micro});
+  fenetreResultat(r.blob,r.ms,E.nom,{pic:r.pic,micro:E.micro,satur:r.satur,avecMusique:E.musique});
 }
 
 /* =============================== MONTAGE ===============================
@@ -1804,6 +1836,11 @@ async function debruiter(buf,surPc){
     // 1. Le bruit de la pièce : spectre moyen des 10 % de trames les plus calmes (hors silence numérique).
     const en=[];for(let k=0;k<nbF;k++){const s0=k*H-H;let e=0;for(let i=0;i<N;i+=4){const j=s0+i;if(j>=0&&j<len)e+=x[j]*x[j]}if(e>1e-9)en.push([e,k])}
     en.sort((a,b)=>a[0]-b[0]);const calmes=en.slice(0,Math.max(10,Math.min(400,Math.floor(en.length*.1))));
+    // Garde-fou : s'il n'y a pas de vrais moments calmes (au moins 4 dB sous le niveau habituel, et réguliers),
+    // ce « bruit » serait du contenu (musique continue, voix sans pause) : on ne touche à rien.
+    // (un ventilateur, lui, est régulier : dans les moments calmes il garde presque toujours la même force)
+    {const pc=f=>en.length?en[Math.min(en.length-1,Math.floor(en.length*f))][0]:0,moyC=calmes.reduce((a,[e])=>a+e,0)/Math.max(1,calmes.length);
+      if(!en.length||pc(.5)<moyC*2.5||pc(.25)>pc(.05)*4){surPc&&surPc(100);buf.inchange=true;return buf}}
     const bruit=new Float64Array(K);
     for(const [,k] of calmes){trame(k*H-H);fft(F,re,im,false);for(let b=0;b<K;b++)bruit[b]+=re[b]*re[b]+im[b]*im[b]}
     for(let b=0;b<K;b++)bruit[b]/=Math.max(1,calmes.length);
@@ -1824,7 +1861,7 @@ async function debruiter(buf,surPc){
 }
 // Les versions nettoyées, préparées une à la fois (le calcul est lourd), gardées en mémoire.
 const propres=new Map(),enNettoyage=new Map(),NET={pc:{},surPc:null};let fileNet=Promise.resolve();
-const aNettoyer=(M,p)=>M.debruit!==false&&p.type==='audio'&&!!(morceau(p.ref)||{}).enr;
+const aNettoyer=(M,p)=>{const m=morceau(p.ref)||{};return M.debruit!==false&&p.type==='audio'&&!!m.enr&&!m.avecMusique};
 function versionPropre(id){
   if(propres.has(id))return Promise.resolve(propres.get(id));
   if(enNettoyage.has(id))return enNettoyage.get(id);
@@ -1840,7 +1877,8 @@ async function tamponPour(M,p,attendre){
 function majNet(){
   const z=$('#mt-net'),M=D.montage;if(!z||!M)return;
   if(M.debruit===false){z.textContent='Le son de vos enregistrements est gardé tel quel.';return}
-  const ids=[...new Set(M.parties.filter(p=>aNettoyer(M,p)).map(p=>p.ref))];if(!ids.length){z.textContent='S’applique à vos enregistrements (pas aux musiques).';return}
+  const ids=[...new Set(M.parties.filter(p=>aNettoyer(M,p)).map(p=>p.ref))];
+  if(!ids.length){z.textContent=M.parties.some(p=>(morceau(p.ref)||{}).avecMusique)?'Les enregistrements faits avec la musique sont gardés tels quels (la musique serait abîmée).':'S’applique à vos enregistrements de voix (pas aux musiques).';return}
   const prets=ids.filter(id=>propres.has(id)).length,enc=ids.find(id=>NET.pc[id]!=null);
   z.textContent=prets===ids.length?`Prêt : le bruit régulier de la pièce est atténué sur ${ids.length>1?'vos '+ids.length+' enregistrements':'votre enregistrement'}.`
     :`Préparation… ${enc?NET.pc[enc]+' %':''} (${prets}/${ids.length}). En attendant, l’écoute utilise le son d’origine.`;
@@ -1958,8 +1996,8 @@ async function assemblerMontage(M){
     if(manque.length&&!confirm(`Ces audios ne sont pas sur cet appareil et seront remplacés par du silence : ${manque.join(', ')}. Continuer ?`)){v.remove();return}
     const {l:l2,total:t2}=planMontage(M);l.splice(0,l.length,...l2);   // durées recalculées après analyse
     const sr=A.ctx.sampleRate,N=Math.ceil(t2*sr),vol=(M.fond.vol||0)/100,enc=new lamejs.Mp3Encoder(2,sr,128),parts=[];
-    const pcm=x=>{const r=new Int16Array(x.length);for(let i=0;i<x.length;i++){const u=x[i]>1?1:x[i]<-1?-1:x[i];r[i]=u<0?u*32768:u*32767}return r};
-    const BLOC=sr*10;
+    const pcm=x=>{const r=new Int16Array(x.length);for(let i=0;i<x.length;i++){const u=plafondDoux(x[i]);r[i]=u<0?u*32768:u*32767}return r};
+    const BLOC=sr*10,limMt=limiteur(sr);
     for(let s0=0;s0<N;s0+=BLOC){
       const n=Math.min(BLOC,N-s0),L=new Float32Array(n),R=new Float32Array(n);
       for(const it of l){
@@ -1973,14 +2011,14 @@ async function assemblerMontage(M){
       }
       if(fondBuf&&vol>0){const c0=fondBuf.getChannelData(0),c1=fondBuf.getChannelData(fondBuf.numberOfChannels>1?1:0),len=c0.length,fi=Math.min(3,t2/2)*sr,fo=Math.min(4,t2/2)*sr;
         for(let k=s0;k<s0+n;k++){const g=vol*Math.min(1,k/fi,(N-k)/fo),j=k%len;L[k-s0]+=c0[j]*g;R[k-s0]+=c1[j]*g}}
-      const gL=pcm(L),gR=pcm(R);
+      limMt(L,R);const gL=pcm(L),gR=pcm(R);
       for(let i=0;i<n;i+=1152){const b=enc.encodeBuffer(gL.subarray(i,i+1152),gR.subarray(i,i+1152));if(b.length)parts.push(new Uint8Array(b))}
       const pc=Math.round((s0+n)/N*100);$('#as-b').style.width=pc+'%';$('#as-t').textContent=`${pc} %`;
       await new Promise(r=>setTimeout(r,0));
     }
     const fin=enc.flush();if(fin.length)parts.push(new Uint8Array(fin));
     v.remove();
-    fenetreResultat(new Blob(parts,{type:'audio/mpeg'}),t2*1000,`Montage – ${new Date().toLocaleDateString('fr-FR')}`);
+    fenetreResultat(new Blob(parts,{type:'audio/mpeg'}),t2*1000,`Montage – ${new Date().toLocaleDateString('fr-FR')}`,{avecMusique:true});
   }catch(e){v.remove();toast('L’assemblage n’a pas pu aboutir : '+(e.message||e))}
 }
 
