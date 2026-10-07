@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v224';
+const CACHE = 'suivi-etre-v225';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -176,7 +176,10 @@ async function fetchDayFromSupabase(date) {
     const { rdvs, clients } = lu;
     return rdvs.filter(r => r.date === date && !r.annule).map(r => {
       const c = clients.find(x => x.id == r.clientId);
-      const nom = c ? `${c.prenom}${c.nom ? ' ' + c.nom : ''}` : 'Client';
+      // Un rendez-vous perso se dit simplement (« Dentiste », « avec Coralie ») ;
+      // ni lui ni un rendez-vous sans contact n'appelle de note de séance.
+      const perso = r.perso === true || (c && c.profil === 'perso');
+      const nom = perso ? (r.type || 'Perso') : c ? `${c.prenom}${c.nom ? ' ' + c.nom : ''}` : (r.type || 'Rendez-vous');
       // Un point de rencontre avance le rendez-vous : on prévient pour le
       // premier endroit où il faut être, pas pour le lieu de la séance.
       const lieu = r.pointRencontre || r.lieu || (c && c.adresse) || '';
@@ -186,7 +189,7 @@ async function fetchDayFromSupabase(date) {
       const hhmm = (h, delta) => { const [a, b] = String(h).split(':').map(Number); const t = ((a * 60 + b - delta) % 1440 + 1440) % 1440; return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); };
       const heureCible = (r.pointRencontre && r.pointRencontreHeure) ? r.pointRencontreHeure : (avance > 0 ? hhmm(r.heure, avance) : r.heure);
       const rdvTime = new Date(date + 'T' + heureCible + ':00');
-      return { id: r.id, timestamp: rdvTime.getTime(), heure: heureCible, type: r.type || 'Séance', lieu, clientName: nom, duree: r.duree || 60, trajet: r.trajetAller || 0, profil: c ? c.profil : '', materiel: [r.materielPerso, r.materiel].filter(Boolean).join(String.fromCharCode(10)) };
+      return { id: r.id, timestamp: rdvTime.getTime(), heure: heureCible, type: perso ? (c ? 'avec ' + c.prenom : 'Perso') : (r.type || 'Séance'), lieu, clientName: nom, duree: r.duree || 60, trajet: r.trajetAller || 0, profil: perso ? 'perso' : (c ? c.profil : 'professionnel'), sansNote: perso || !c, materiel: [r.materielPerso, r.materiel].filter(Boolean).join(String.fromCharCode(10)) };
     });
   } catch(e) { return []; }
 }
@@ -276,7 +279,7 @@ function scheduleTimeouts(appointments, templates) {
       self.registration.showNotification(renderTpl(tpl30.titre, vars), { body: renderTpl(tpl30.corps, vars), icon: ICON, tag: `rdv-${appt.id}-30`, requireInteraction: true, data: { rdvId: appt.id, lieu: appt.lieu } }), d30));
     if (d0 > 0 && tplNow.actif) _timeouts.push(setTimeout(() =>
       self.registration.showNotification(renderTpl(tplNow.titre, vars), { body: renderTpl(tplNow.corps, vars), icon: ICON, tag: `rdv-${appt.id}-0`, requireInteraction: true, data: { rdvId: appt.id, lieu: appt.lieu } }), d0));
-    if (dEnd > 0 && tplEnd.actif) _timeouts.push(setTimeout(() =>
+    if (dEnd > 0 && tplEnd.actif && !appt.sansNote) _timeouts.push(setTimeout(() =>
       self.registration.showNotification(renderTpl(tplEnd.titre, vars), { body: renderTpl(tplEnd.corps, vars), icon: ICON, tag: `rdv-${appt.id}-end`, requireInteraction: true, data: { rdvId: appt.id }, actions: [{ action: 'note', title: '✅ Remplir la note' }, { action: 'absent', title: '❌ Non venu' }] }), dEnd));
   });
 }
@@ -498,6 +501,24 @@ async function checkRappelsSms(force) {
   if (!force) await setMeta('rappelsSmsDate', today);
 }
 
+// Anniversaires des contacts perso : un rappel le matin, une fois par jour.
+async function checkAnniversaires(today, hour, force) {
+  if (!force && (hour < 8 || hour >= 21)) return;
+  if (!force && (await getMeta('lastAnnivDate')) === today) return;
+  const lu = await lireRdvsEtClients();
+  if (!lu) return;
+  const md = today.slice(5);
+  const fetes = (lu.clients || []).filter(c => c.profil === 'perso' && c.anniversaire && String(c.anniversaire).slice(5) === md);
+  for (const c of fetes) {
+    const age = parseInt(today.slice(0, 4), 10) - parseInt(String(c.anniversaire).slice(0, 4), 10);
+    await self.registration.showNotification(`🎂 Anniversaire de ${c.prenom}${c.nom ? ' ' + c.nom : ''}`, {
+      body: (age > 0 && age < 130 ? `${age} ans aujourd'hui` : "C'est aujourd'hui") + (c.tel ? ` · ${c.tel}` : ''),
+      icon: ICON, tag: `anniv-${c.id}-${today}`, requireInteraction: false
+    });
+  }
+  await setMeta('lastAnnivDate', today);
+}
+
 async function checkAndNotify(force) {
   const today = getFranceDate();
   const hour  = getFranceHour();
@@ -512,6 +533,7 @@ async function checkAndNotify(force) {
   await checkUrssafDeclaration(p, templates);
   await checkFacturesImpayees(p, templates);
   await checkCustomReminders(templates);
+  try { await checkAnniversaires(today, hour, force); } catch (e) {}
 
   let allAppointments = await fetchTodayFromSupabase();
   if (allAppointments.length) {
@@ -591,7 +613,7 @@ async function checkAndNotify(force) {
     }
     const tEnd = appt.timestamp + (appt.duree || 60) * 60 * 1000;
     if (!appt.sentEnd && tEnd <= now && now < tEnd + window5m) {
-      if (tplEnd.actif) await self.registration.showNotification(renderTpl(tplEnd.titre, vars), { body: renderTpl(tplEnd.corps, vars), icon: ICON, tag: `rdv-${appt.id}-end`, requireInteraction: true, data: { rdvId: appt.id }, actions: [{ action: 'note', title: '✅ Remplir la note' }, { action: 'absent', title: '❌ Non venu' }] });
+      if (tplEnd.actif && !appt.sansNote) await self.registration.showNotification(renderTpl(tplEnd.titre, vars), { body: renderTpl(tplEnd.corps, vars), icon: ICON, tag: `rdv-${appt.id}-end`, requireInteraction: true, data: { rdvId: appt.id }, actions: [{ action: 'note', title: '✅ Remplir la note' }, { action: 'absent', title: '❌ Non venu' }] });
       appt.sentEnd = true;
     }
   }
