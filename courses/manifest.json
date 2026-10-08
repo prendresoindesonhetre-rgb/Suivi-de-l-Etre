@@ -1,7 +1,7 @@
 {
-  "name": "Nos courses",
-  "short_name": "Courses",
-  "description": "Notre liste de courses partagée",
+  "name": "Notre organisation",
+  "short_name": "Organisation",
+  "description": "Notre agenda partagé et nos listes de courses",
   "id": "/courses/",
   "scope": "/courses/",
   "display": "standalone",

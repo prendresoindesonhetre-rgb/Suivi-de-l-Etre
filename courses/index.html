@@ -12,8 +12,8 @@
 <link rel="icon" type="image/png" href="../icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Courses">
-<title>Nos courses</title>
+<meta name="apple-mobile-web-app-title" content="Organisation">
+<title>Notre organisation</title>
 <link rel="stylesheet" href="../polices/polices.css">
 <link rel="stylesheet" href="../polices/tabler-icons.css">
 <style>
@@ -128,22 +128,61 @@ form { display: flex; gap: 8px; margin-bottom: 6px; }
 .modale h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; margin: 0 0 4px; color: var(--violet-fonce); }
 .modale p { font-size: 13px; color: var(--doux); margin: 0 0 10px; }
 .modale input { width: 100%; padding: 10px 12px; font-size: 16px; border: 1px solid var(--bord-md); border-radius: var(--rayon); font-family: inherit; }
-.modale .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.modale .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+/* Deux champs côte à côte (début / fin, dates) : l'un sous l'autre s'ils ne tiennent pas. */
+.deux { display: flex; flex-wrap: wrap; gap: 0 8px; }
+.deux > .champ { flex: 1 1 120px; min-width: 0; }
+.modale input { min-width: 0; }
 .modale .actions .annuler { background: #fff; }
+/* Agenda partagé : propositions, mes horaires, trouver un moment */
+.onglets .nb { display: inline-block; margin-left: 6px; background: #c05070; color: #fff; border-radius: 9px; min-width: 18px; padding: 0 5px; font-size: 11px; line-height: 18px; }
+.onglets .nb:empty { display: none; }
+.bandeau { width: 100%; text-align: left; font-family: inherit; font-weight: 700; cursor: pointer; }
+.btn.plein { background: var(--violet); border-color: var(--violet); color: #fff; }
+.props { margin-bottom: 12px; }
+.prop { background: #f6f1fb; border: 1px solid var(--pastille-bord); border-radius: var(--rayon); padding: 10px 12px; margin-bottom: 8px; }
+.prop.attente-moi { background: var(--carte); border-color: var(--bord-md); }
+.prop.refuse { background: #fbf1f3; border-color: #e8c4cc; }
+.prop .haut { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--violet); }
+.prop .quoi { font-size: 15px; font-weight: 700; margin-top: 2px; }
+.prop .quand { font-size: 12.5px; color: var(--doux); }
+.prop .quand::first-letter { text-transform: uppercase; }
+.prop .mot { font-size: 12.5px; font-style: italic; margin-top: 4px; }
+.prop .actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.cal-actions { flex-wrap: wrap; }
+.cal-actions .moment { border-color: #9cc28c; color: #2f5a22; }
+.cal-actions .horaires { border-color: #d9b38c; color: #7a5a2a; }
+.cal-rdv.hor { border-left-color: #d9b38c; cursor: pointer; }
+.cal-rdv.hor .debut { color: #7a5a2a; }
+.cal-rdv.prop-j { border: 1px dashed #c9b6e4; border-left: 3px solid #c9b6e4; background: #f8f4fc; }
+.cal-rdv.prop-j[data-prop-repondre] { cursor: pointer; }
+.jours { display: flex; gap: 5px; flex-wrap: wrap; margin: 6px 0 2px; }
+.jours label { position: relative; }
+.modale .jours input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.jours span { display: inline-block; border: 1px solid var(--pastille-bord); border-radius: 20px; padding: 6px 10px; font-size: 13px; font-weight: 700; color: var(--violet-fonce); background: #fff; cursor: pointer; }
+.jours input:checked + span { background: var(--violet); border-color: var(--violet); color: #fff; }
+.hor-ligne { display: flex; align-items: center; gap: 10px; width: 100%; border: 1px solid var(--bord-md); border-radius: var(--rayon); background: #fff; padding: 9px 10px; margin-bottom: 8px; cursor: pointer; font-family: inherit; color: var(--texte); text-align: left; }
+.hor-ligne small { display: block; font-size: 12px; color: var(--doux); font-weight: 400; margin-top: 2px; }
+.moments-jour { margin-bottom: 8px; }
+.moments-jour .titre { font-size: 12.5px; font-weight: 800; color: #2f5a22; margin-bottom: 5px; }
+.moments-jour .titre::first-letter { text-transform: uppercase; }
+.puce.moment { border-color: #9cc28c; color: #2f5a22; }
+.moments-jour .puces { margin-bottom: 4px; }
 </style>
 </head>
 <body>
 <div class="page">
-  <h1 id="titre">🛒 Nos courses</h1>
-  <div class="onglets" id="onglets" hidden><button type="button" data-onglet="courses">🛒 Courses</button><button type="button" data-onglet="agenda">📅 Agenda</button></div>
+  <h1 id="titre">Notre organisation</h1>
+  <div class="onglets" id="onglets" hidden><button type="button" data-onglet="agenda">📅 Agenda<span class="nb" id="nb-agenda"></span></button><button type="button" data-onglet="courses">🛒 Courses</button></div>
   <div class="etat" id="etat"></div>
+  <div id="bandeau-props"></div>
   <div id="contenu"></div>
   <div id="agenda" hidden></div>
 </div>
 <script>
 'use strict';
-// Page « Nos courses » : les listes de courses partagées depuis Suivi de l'Être
-// et l'agenda, rien d'autre. On y entre avec la clé du lien (?l=…), gardée ensuite sur
+// Page « Notre organisation » : l'agenda partagé depuis Suivi de l'Être (ses
+// créneaux, mes horaires, nos moments et les propositions) et les listes de courses, rien d'autre. On y entre avec la clé du lien (?l=…), gardée ensuite sur
 // l'appareil. Les modifications en attente restent ici tant qu'elles ne sont
 // pas arrivées au serveur : rien ne se perd hors connexion.
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
@@ -157,7 +196,7 @@ if (cle) ecrire('nc_cle', cle);
 let doc = lire('nc_liste', []);
 let listeCur = lire('nc_liste_cur', ''), habGerer = false;
 let agenda = lire('nc_agenda', null), agendaMaj = lire('nc_agenda_maj', '');
-let onglet = lire('nc_onglet', 'courses');
+let onglet = lire('nc_onglet', 'agenda');
 let etat = '', majLe = 0;
 
 function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -231,12 +270,89 @@ function appliquerOpCourses(doc, op) {
   // Agenda partagé : les événements ajoutés depuis la page { k:'ev', id, d, h, f, t, l, pour }.
   else if (op.t === 'ev') { doc = doc.filter(e => !(e.k === 'ev' && (String(e.id) === String(op.ev.id) || (op.purge && e.d < op.purge)))); doc.push({ ...op.ev, k: 'ev' }); }
   else if (op.t === 'supprEv') doc = doc.filter(e => !(e.k === 'ev' && String(e.id) === String(op.id)));
+  // Ses horaires { k:'hor', … } et les propositions { k:'prop', … } (voir plus bas).
+  else if (op.t === 'hor') { doc = doc.filter(e => !(e.k === 'hor' && String(e.id) === String(op.hor.id))); doc.push({ ...op.hor, k: 'hor' }); }
+  else if (op.t === 'supprHor') doc = doc.filter(e => !(e.k === 'hor' && String(e.id) === String(op.id)));
+  else if (op.t === 'horSauf') doc.forEach(e => {
+    if (e.k !== 'hor' || String(e.id) !== String(op.id)) return;
+    const s = new Set(e.sauf || []);
+    if (op.oui) s.add(op.d); else s.delete(op.d);
+    e.sauf = [...s].sort();
+  });
+  else if (op.t === 'prop') { doc = doc.filter(e => !(e.k === 'prop' && (String(e.id) === String(op.prop.id) || (op.purge && e.d < op.purge)))); doc.push({ statut: 'attente', ...op.prop, k: 'prop' }); }
+  else if (op.t === 'repondre') {
+    const p = doc.find(e => e.k === 'prop' && String(e.id) === String(op.id));
+    if (p && p.statut === 'attente') {
+      if (op.oui) {
+        doc = doc.filter(e => e !== p && !(e.k === 'ev' && String(e.id) === String(p.id)));
+        doc.push({ k: 'ev', id: p.id, d: p.d, h: p.h, f: p.f || '', t: p.t, l: p.l || '', pour: 'nous', de: p.de });
+      } else { p.statut = 'refuse'; p.reponse = op.msg || ''; }
+    }
+  }
+  else if (op.t === 'supprProp') doc = doc.filter(e => !(e.k === 'prop' && String(e.id) === String(op.id)));
   else if (op.t === 'importer') (op.entrees || []).forEach(n => {
     if (n.k === 'liste') { const l = doc.find(e => e.k === 'liste' && e.id === n.id); if (l) l.nom = n.nom; else doc.push({ ...n }); }
     else if (n.k === 'hab') { const h = hab(n.liste, n.texte); if (h) Object.assign(h, n); else doc.push({ ...n }); }
     else if (!n.k && !doc.some(a => meme(a, n.id))) doc.push({ ...n });
   });
   return doc;
+}
+// ─── Agenda partagé : ses horaires, les propositions, les moments libres ───
+// Ses horaires { k:'hor', id, t, j:[1…7] (1 = lundi), h, f, rep (1 = chaque
+// semaine, 2 = une semaine sur deux), deb, fin, sauf:[jours sans] }. Les
+// propositions { k:'prop', id, d, h, f, t, l, de:'app'|'page', statut:'attente'|'refuse',
+// reponse } deviennent un événement « Pour nous deux » une fois acceptées.
+const enMin = s => { const [a, b] = String(s || '').split(':').map(Number); return (a || 0) * 60 + (b || 0); };
+const enHeure = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+const JOURS_COURTS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+const jourIso = t => `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+function lundiDe(s) { const t = new Date(s + 'T12:00:00'); t.setDate(t.getDate() - (t.getDay() + 6) % 7); return t; }
+function horaireLe(hor, s) {
+  if (!hor || !s || s < (hor.deb || '') || (hor.fin && s > hor.fin) || (hor.sauf || []).includes(s)) return false;
+  if (!(hor.j || []).includes((new Date(s + 'T12:00:00').getDay() + 6) % 7 + 1)) return false;
+  return (hor.rep || 1) !== 2 || Math.round((lundiDe(s) - lundiDe(hor.deb || s)) / 6048e5) % 2 === 0;
+}
+function horairesDu(doc, s) { return (doc || []).filter(e => e.k === 'hor' && horaireLe(e, s)).map(e => ({ ...e, d: s })).sort((a, b) => (a.h || '').localeCompare(b.h || '')); }
+function texteHoraire(hor) {
+  const j = (hor.j || []).slice().sort((a, b) => a - b);
+  const jours = j.length === 7 ? 'Tous les jours' : j.join() === '1,2,3,4,5' ? 'Du lundi au vendredi' : j.map(n => JOURS_COURTS[n - 1]).join(' · ');
+  return `${jours} · ${(hor.h || '').replace(':', 'h')} → ${(hor.f || '').replace(':', 'h')}${(hor.rep || 1) === 2 ? ' · une semaine sur deux' : ''}`;
+}
+function propositionsDoc(doc) {
+  const auj = jourIso(new Date());
+  return (doc || []).filter(e => e.k === 'prop' && e.d >= auj).sort((a, b) => (a.d + a.h).localeCompare(b.d + b.h));
+}
+// Les moments libres (en minutes) entre debut et fin, d'au moins `duree`.
+function creneauxLibres(occupes, debut, fin, duree) {
+  const plages = occupes.map(([a, b]) => [Math.max(a, debut), Math.min(b, fin)]).filter(([a, b]) => b > a).sort((x, y) => x[0] - y[0]);
+  const libres = [];
+  let t = debut;
+  plages.forEach(([a, b]) => { if (a - t >= duree) libres.push([t, a]); t = Math.max(t, b); });
+  if (fin - t >= duree) libres.push([t, fin]);
+  return libres;
+}
+// « Trouver un moment » : quand (soirs, week-ends, journées, tout) et combien de temps.
+const MOMENTS_QUAND = [['soirs', 'Soirs'], ['weekends', 'Week-ends'], ['journees', 'Journées'], ['tout', 'Tout']];
+const MOMENTS_DUREES = [[60, '1 h'], [120, '2 h'], [180, '3 h'], [240, '½ journée']];
+function fenetreMoment(quand, s) {
+  const js = new Date(s + 'T12:00:00').getDay(), we = js === 0 || js === 6;
+  if (quand === 'soirs') return we ? null : [18 * 60, 22 * 60 + 30];
+  if (quand === 'weekends') return we ? [9 * 60, 22 * 60 + 30] : null;
+  if (quand === 'journees') return [9 * 60, 18 * 60];
+  return [8 * 60, 22 * 60 + 30];
+}
+// occupesDu(jour) → [[début, fin], …] en minutes, pour les deux ; résultat : [{ d, libres }].
+function momentsLibres(occupesDu, quand, duree, jours) {
+  const res = [], now = new Date(), auj = jourIso(now);
+  for (let i = 0; i < jours; i++) {
+    const s = jourIso(new Date(now.getFullYear(), now.getMonth(), now.getDate() + i, 12));
+    const f = fenetreMoment(quand, s);
+    if (!f) continue;
+    const debut = s === auj ? Math.max(f[0], Math.ceil((now.getHours() * 60 + now.getMinutes() + 15) / 30) * 30) : f[0];
+    const libres = creneauxLibres(occupesDu(s), debut, f[1], duree);
+    if (libres.length) res.push({ d: s, libres });
+  }
+  return res;
 }
 // Les habituels proposés : épinglés et souvent ajoutés ; pendant la saisie,
 // ceux qui ressemblent à ce qu'on tape. Pas ceux déjà à prendre dans la liste.
@@ -426,17 +542,18 @@ function rdvsDuJour(s) {
 }
 // Ce qu'elle a ajouté : « Pour nous deux » ou « Pour moi », modifiable ici seulement.
 function evsDuJour(s) { return filtreAgenda('commun') ? doc.filter(e => e.k === 'ev' && e.d === s) : []; }
-async function editerEvenement(id, jour) {
+async function editerEvenement(id, jour, pre) {
   const ev = id ? doc.find(e => e.k === 'ev' && String(e.id) === String(id)) : null;
-  const v = ev || { d: jour || iso(new Date()), h: '', f: '', t: '', l: '', pour: 'nous' };
+  const v = ev || { d: jour || iso(new Date()), h: '', f: '', t: '', l: '', pour: 'nous', ...(pre || {}) };
   const r = await fenetre(`<h2>${ev ? 'Modifier' : 'Ajouter à l’agenda'}</h2>
       <label class="champ">Quoi ?<input type="text" name="t" value="${escHtml(v.t)}" placeholder="Ex. : Dîner chez mes parents" autocomplete="off"></label>
       <label class="champ">Date<input type="date" name="d" value="${escHtml(v.d)}"></label>
-      <div style="display:flex;gap:8px"><label class="champ" style="flex:1">Début<input type="time" name="h" value="${escHtml(v.h)}"></label><label class="champ" style="flex:1">Fin<input type="time" name="f" value="${escHtml(v.f)}"></label></div>
+      <div class="deux"><label class="champ">Début<input type="time" name="h" value="${escHtml(v.h)}"></label><label class="champ">Fin<input type="time" name="f" value="${escHtml(v.f)}"></label></div>
       <label class="champ">Lieu <span style="font-weight:400;color:var(--discret)">(facultatif)</span><input type="text" name="l" value="${escHtml(v.l)}" autocomplete="off"></label>
       <div class="pour">
-        <label><input type="radio" name="pour" value="nous" ${v.pour !== 'moi' ? 'checked' : ''}> <span><b>👥 Pour nous deux</b><small>Apparaît dans son agenda et bloque son temps</small></span></label>
+        <label><input type="radio" name="pour" value="nous" ${v.pour !== 'moi' && v.pour !== 'prop' ? 'checked' : ''}> <span><b>👥 Pour nous deux</b><small>Apparaît dans son agenda et bloque son temps</small></span></label>
         <label><input type="radio" name="pour" value="moi" ${v.pour === 'moi' ? 'checked' : ''}> <span><b>🙋 Pour moi</b><small>Pour info : ne bloque pas son temps</small></span></label>
+        ${ev ? '' : `<label><input type="radio" name="pour" value="prop" ${v.pour === 'prop' ? 'checked' : ''}> <span><b>📩 Proposer</b><small>Attend sa réponse avant de bloquer son temps</small></span></label>`}
       </div>
       <div class="erreur" hidden></div>
       <div class="actions">${ev ? '<button type="button" class="btn annuler" data-suppr style="margin-right:auto;color:#c05070">Supprimer</button>' : ''}<button type="button" class="btn annuler" data-annuler>Annuler</button><button type="submit" class="btn">Enregistrer</button></div>`,
@@ -446,7 +563,8 @@ async function editerEvenement(id, jour) {
       f.onsubmit = e => {
         e.preventDefault();
         const val = n => (f.elements[n].value || '').trim();
-        const err = !val('t') ? 'Indiquez ce que c’est.' : !val('d') ? 'Choisissez la date.' : !val('h') ? 'Indiquez l’heure de début.' : val('f') && val('f') <= val('h') ? 'La fin doit être après le début.' : '';
+        const err = !val('t') ? 'Indiquez ce que c’est.' : !val('d') ? 'Choisissez la date.' : !val('h') ? 'Indiquez l’heure de début.' : val('f') && val('f') <= val('h') ? 'La fin doit être après le début.'
+          : f.elements.pour.value === 'prop' && val('d') < iso(new Date()) ? 'Choisissez une date à venir.' : '';
         if (err) { const el = fond.querySelector('.erreur'); el.textContent = err; el.hidden = false; return; }
         fin({ t: val('t'), d: val('d'), h: val('h'), f: val('f'), l: val('l'), pour: f.elements.pour.value });
       };
@@ -457,10 +575,154 @@ async function editerEvenement(id, jour) {
     if ((await choisir('Supprimer', `« ${ev.t} » sera retiré de l'agenda, chez vous deux.`, [{ cle: 'oui', label: 'Supprimer', danger: true }])) === 'oui') operation({ t: 'supprEv', id: ev.id });
     return;
   }
+  if (r.pour === 'prop') {
+    operation({ t: 'prop', prop: { id: nouvelId([]), d: r.d, h: r.h, f: r.f, t: r.t, l: r.l, de: 'page' }, purge: iso(new Date()) });
+    jourChoisi = r.d; calY = Number(r.d.slice(0, 4)); calM = Number(r.d.slice(5, 7)) - 1;
+    afficher();
+    return;
+  }
   const purge = iso(new Date(Date.now() - 60 * 864e5));
   operation({ t: 'ev', ev: { id: ev ? ev.id : nouvelId([]), ...r }, purge });
   jourChoisi = r.d; calY = Number(r.d.slice(0, 4)); calM = Number(r.d.slice(5, 7)) - 1;
   afficher();
+}
+// Mes horaires et les propositions en attente, dans la grille et la liste du jour.
+function horsDuJour(s) { return filtreAgenda('commun') ? horairesDu(doc, s) : []; }
+function propsDuJour(s) { return filtreAgenda('commun') ? propositionsDoc(doc).filter(p => p.statut === 'attente' && p.d === s) : []; }
+const jourLong = s => new Date(s + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+function propsHtml() {
+  const props = propositionsDoc(doc);
+  const recues = props.filter(p => p.de === 'app' && p.statut === 'attente'), miennes = props.filter(p => p.de === 'page');
+  if (!recues.length && !miennes.length) return '';
+  const carte = (p, cls, haut, actions) => `<div class="prop ${cls}"><div class="haut">${haut}</div><div class="quoi">${escHtml(p.t)}</div>
+      <div class="quand">${escHtml(jourLong(p.d))} · ${escHtml(finLisible(p.h))}${p.f ? ' → ' + escHtml(finLisible(p.f)) : ''}${p.l ? ' · 📍 ' + escHtml(p.l) : ''}</div>
+      ${p.reponse ? `<div class="mot">« ${escHtml(p.reponse)} »</div>` : ''}<div class="actions">${actions}</div></div>`;
+  return `<div class="props">${recues.map(p => carte(p, '', '📩 Proposition reçue',
+      `<button type="button" class="btn plein" data-prop-oui="${escHtml(p.id)}">✓ Accepter</button><button type="button" class="btn annuler" data-prop-non="${escHtml(p.id)}">Pas possible</button>`)).join('')}${miennes.map(p => p.statut === 'refuse'
+      ? carte(p, 'refuse', '❌ Pas possible', `<button type="button" class="btn annuler" data-prop-suppr="${escHtml(p.id)}">OK</button>`)
+      : carte(p, 'attente-moi', '⏳ En attente de réponse', `<button type="button" class="btn annuler" data-prop-suppr="${escHtml(p.id)}">Annuler la proposition</button>`)).join('')}</div>`;
+}
+async function repondre(id, oui) {
+  const p = propositionsDoc(doc).find(x => String(x.id) === String(id) && x.statut === 'attente');
+  if (!p) return;
+  if (oui) {
+    const a = enMin(p.h), b = p.f ? enMin(p.f) : a + 60;
+    if (occupesMoiDu(p.d).some(([x, y]) => x < b && y > a)
+      && (await choisir('Vous avez déjà quelque chose', 'À ce moment-là, vous avez déjà un horaire ou un événement. Accepter quand même ?', [{ cle: 'oui', label: '✓ Accepter quand même' }])) !== 'oui') return;
+    operation({ t: 'repondre', id: p.id, oui: true });
+    return;
+  }
+  const mot = await demander('Pas possible', 'Un petit mot pour expliquer ? (facultatif)', '', 'Envoyer');
+  if (mot === null) return;
+  operation({ t: 'repondre', id: p.id, oui: false, msg: mot.trim() });
+}
+// 🕘 Mes horaires : ce qui revient chaque semaine (ou une semaine sur deux).
+async function gererHoraires() {
+  for (;;) {
+    const hors = doc.filter(e => e.k === 'hor');
+    const r = await fenetre(`<h2>🕘 Mes horaires</h2><p>Vos horaires de travail (ou autres) qui reviennent : ils apparaissent dans son agenda, pour savoir quand vous êtes disponible.</p>
+        ${hors.length ? hors.map(h => `<button type="button" class="hor-ligne" data-hor="${escHtml(h.id)}"><span style="flex:1"><b>${escHtml(h.t)}</b><small>${escHtml(texteHoraire(h))}${h.fin ? ' · jusqu’au ' + escHtml(new Date(h.fin + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })) : ''}</small></span><span>✏️</span></button>`).join('') : '<p style="font-style:italic">Aucun horaire pour le moment.</p>'}
+        <div class="actions"><button type="button" class="btn annuler" data-annuler>Fermer</button><button type="button" class="btn plein" data-nouveau>+ Ajouter</button></div>`,
+      (fond, fin) => {
+        fond.querySelectorAll('[data-hor]').forEach(b => b.onclick = () => fin(b.dataset.hor));
+        fond.querySelector('[data-nouveau]').onclick = () => fin('nouveau');
+      });
+    if (!r) return;
+    await editerHoraire(r === 'nouveau' ? null : r);
+  }
+}
+async function editerHoraire(id) {
+  const ex = id ? doc.find(e => e.k === 'hor' && String(e.id) === String(id)) : null;
+  const v = ex || { t: 'Travail', j: [1, 2, 3, 4, 5], h: '09:00', f: '17:00', rep: 1, deb: iso(new Date()), fin: '', sauf: [] };
+  const nbSauf = (ex?.sauf || []).length;
+  const r = await fenetre(`<h2>${ex ? 'Modifier l’horaire' : 'Nouvel horaire'}</h2>
+      <label class="champ">Quoi ?<input type="text" name="t" value="${escHtml(v.t)}" autocomplete="off"></label>
+      <div class="champ">Quels jours ?<div class="jours">${JOURS_COURTS.map((n, i) => `<label><input type="checkbox" name="j" value="${i + 1}" ${(v.j || []).includes(i + 1) ? 'checked' : ''}><span>${n}</span></label>`).join('')}</div></div>
+      <div class="deux"><label class="champ">Début<input type="time" name="h" value="${escHtml(v.h)}"></label><label class="champ">Fin<input type="time" name="f" value="${escHtml(v.f)}"></label></div>
+      <div class="pour">
+        <label><input type="radio" name="rep" value="1" ${(v.rep || 1) !== 2 ? 'checked' : ''}> <span><b>Chaque semaine</b></span></label>
+        <label><input type="radio" name="rep" value="2" ${v.rep === 2 ? 'checked' : ''}> <span><b>Une semaine sur deux</b><small>En comptant à partir de la semaine du début</small></span></label>
+      </div>
+      <div class="deux"><label class="champ">À partir du<input type="date" name="deb" value="${escHtml(v.deb)}"></label><label class="champ">Jusqu’au <span style="font-weight:400;color:var(--discret)">(facult.)</span><input type="date" name="fin" value="${escHtml(v.fin || '')}"></label></div>
+      ${nbSauf ? `<div class="pour"><label><input type="checkbox" name="remettre"> <span>Remettre ${nbSauf > 1 ? `les ${nbSauf} jours retirés` : 'le jour retiré'}<small>Les jours marqués « Pas ce jour-là »</small></span></label></div>` : ''}
+      <div class="erreur" hidden></div>
+      <div class="actions">${ex ? '<button type="button" class="btn annuler" data-suppr style="margin-right:auto;color:#c05070">Supprimer</button>' : ''}<button type="button" class="btn annuler" data-annuler>Annuler</button><button type="submit" class="btn plein">Enregistrer</button></div>`,
+    (fond, fin) => {
+      const f = fond.querySelector('form');
+      fond.querySelector('[data-suppr]')?.addEventListener('click', () => fin('supprimer'));
+      f.onsubmit = e => {
+        e.preventDefault();
+        const val = n => (f.elements[n].value || '').trim();
+        const j = [...f.querySelectorAll('input[name=j]:checked')].map(x => Number(x.value));
+        const err = !val('t') ? 'Indiquez ce que c’est (ex. : Travail).' : !j.length ? 'Choisissez au moins un jour.' : !val('h') || !val('f') ? 'Indiquez le début et la fin.'
+          : val('f') <= val('h') ? 'La fin doit être après le début.' : !val('deb') ? 'Indiquez à partir de quand.' : val('fin') && val('fin') < val('deb') ? 'La date de fin est avant le début.' : '';
+        if (err) { const el = fond.querySelector('.erreur'); el.textContent = err; el.hidden = false; return; }
+        fin({ t: val('t'), j, h: val('h'), f: val('f'), rep: Number(f.elements.rep.value) === 2 ? 2 : 1, deb: val('deb'), fin: val('fin'), sauf: f.elements.remettre?.checked ? [] : (ex?.sauf || []) });
+      };
+    });
+  if (!r) return;
+  if (r === 'supprimer') {
+    if ((await choisir('Supprimer', `« ${ex.t} » sera retiré de vos horaires.`, [{ cle: 'oui', label: 'Supprimer', danger: true }])) === 'oui') operation({ t: 'supprHor', id: ex.id });
+    return;
+  }
+  operation({ t: 'hor', hor: { id: ex ? ex.id : nouvelId([]), ...r } });
+}
+async function horaireDuJour(id, d) {
+  const h = doc.find(e => e.k === 'hor' && String(e.id) === String(id));
+  if (!h) return;
+  const c = await choisir(h.t, `${jourLong(d)} · ${finLisible(h.h)} → ${finLisible(h.f)}`, [{ cle: 'sauf', label: '🚫 Pas ce jour-là' }, { cle: 'modifier', label: '✏️ Modifier l’horaire' }]);
+  if (c === 'sauf') operation({ t: 'horSauf', id: h.id, d, oui: true });
+  else if (c === 'modifier') editerHoraire(h.id);
+}
+// 💞 Trouver un moment : ses heures prises (envoyées par l'appli, trajets compris,
+// sans aucun détail), mes horaires et nos événements sont retirés.
+let momentQuand = lire('nc_moment_quand', 'soirs'), momentDuree = lire('nc_moment_duree', 120);
+function occupesAgendaDu(s) {
+  const a = agenda || [], occ = a.filter(x => x.k === 'occ');
+  return (occ.length ? occ : a.filter(x => !x.k)).filter(x => x.d === s && x.h).map(x => [enMin(x.h), x.f ? enMin(x.f) : enMin(x.h) + 60]);
+}
+function occupesMoiDu(s) {
+  return [...horairesDu(doc, s).map(h => [enMin(h.h), enMin(h.f)]),
+    ...doc.filter(e => e.k === 'ev' && e.d === s && e.h).map(e => [enMin(e.h), e.f ? enMin(e.f) : enMin(e.h) + 60])];
+}
+async function trouverMoment() {
+  const r = await fenetre('<div data-moments></div>', (fond, fin) => {
+    const zone = fond.querySelector('[data-moments]');
+    const dessiner = () => {
+      const res = momentsLibres(s => [...occupesAgendaDu(s), ...occupesMoiDu(s)], momentQuand, momentDuree, 28);
+      zone.innerHTML = `<h2>💞 Trouver un moment</h2><p>Les moments où vous êtes libres tous les deux, sur les 4 prochaines semaines : ses rendez-vous, vos horaires et vos événements sont déjà retirés. Touchez-en un pour le proposer.</p>
+        <div class="champ">Quand ?</div><div class="puces">${MOMENTS_QUAND.map(([k, l]) => `<button type="button" class="puce${momentQuand === k ? ' on' : ''}" data-quand="${k}">${l}</button>`).join('')}</div>
+        <div class="champ">Au moins</div><div class="puces">${MOMENTS_DUREES.map(([m, l]) => `<button type="button" class="puce${momentDuree === m ? ' on' : ''}" data-duree="${m}">${l}</button>`).join('')}</div>
+        ${res.length ? res.map(j => `<div class="moments-jour"><div class="titre">${escHtml(jourLong(j.d))}</div><div class="puces">${j.libres.map(([a, b]) => `<button type="button" class="puce moment" data-moment="${j.d}|${a}|${b}">${finLisible(enHeure(a))} → ${finLisible(enHeure(b))}</button>`).join('')}</div></div>`).join('')
+          : '<div class="cal-vide"><div>🗓️</div>Aucun moment libre pour vous deux avec ces choix.<br>Essayez un autre moment ou une durée plus courte.</div>'}
+        <div class="actions"><button type="button" class="btn annuler" data-fermer>Fermer</button></div>`;
+    };
+    zone.addEventListener('click', e => {
+      const q = e.target.closest('[data-quand]'), du = e.target.closest('[data-duree]'), m = e.target.closest('[data-moment]');
+      if (q) { momentQuand = q.dataset.quand; ecrire('nc_moment_quand', momentQuand); dessiner(); }
+      else if (du) { momentDuree = Number(du.dataset.duree); ecrire('nc_moment_duree', momentDuree); dessiner(); }
+      else if (m) { const [d, a, b] = m.dataset.moment.split('|'); fin({ d, a: Number(a), b: Number(b) }); }
+      else if (e.target.closest('[data-fermer]')) fin(null);
+    });
+    dessiner();
+  });
+  if (!r) return;
+  editerEvenement(null, r.d, { h: enHeure(r.a), f: enHeure(Math.min(r.b, r.a + Math.max(momentDuree, 60))), pour: 'prop' });
+}
+// Une ligne de la liste du jour.
+function carteJour(x) {
+  if (x.k === 'hor') return `<div class="cal-rdv hor" data-hor-jour="${escHtml(x.id)}" data-d="${escHtml(x.d)}">
+      <div class="haut"><span class="debut">${escHtml(x.h)}</span><span class="fin">→ ${escHtml(finLisible(x.f))}</span><span class="quoi">${escHtml(x.t)}</span><span class="modif">✏️</span></div>
+      <div class="pour-qui" style="color:#7a5a2a">🕘 Mes horaires</div></div>`;
+  if (x.k === 'prop') return `<div class="cal-rdv prop-j"${x.de === 'app' ? ` data-prop-repondre="${escHtml(x.id)}"` : ''}>
+      <div class="haut"><span class="debut">${escHtml(x.h)}</span>${x.f ? `<span class="fin">→ ${escHtml(finLisible(x.f))}</span>` : ''}<span class="quoi">${escHtml(x.t)}</span></div>
+      ${x.l ? `<div class="ou">📍 ${escHtml(x.l)}</div>` : ''}
+      <div class="pour-qui" style="color:#6a5a8a">📩 ${x.de === 'app' ? 'Proposition reçue · touchez pour répondre' : 'Proposée · en attente de réponse'}</div></div>`;
+  return `<div class="cal-rdv${x.k === 'ev' ? (x.pour === 'moi' ? ' commun info' : ' commun') : x.p ? ' perso' : ''}"${x.k === 'ev' ? ` data-ev="${escHtml(x.id)}"` : ''}>
+      <div class="haut"><span class="debut">${escHtml(x.h)}</span>${x.f ? `<span class="fin">→ ${escHtml(finLisible(x.f))}</span>` : ''}<span class="quoi">${escHtml(x.t || 'Occupé')}</span>${x.k === 'ev' ? '<span class="modif">✏️</span>' : ''}</div>
+      ${x.l ? `<div class="ou">📍 ${escHtml(x.l)}</div>` : ''}
+      ${x.k === 'ev' ? `<div class="pour-qui">${x.pour === 'moi' ? '🙋 Pour moi' : '👥 Pour nous deux'}</div>` : ''}
+    </div>`;
 }
 function afficherAgenda() {
   const el = document.getElementById('agenda');
@@ -480,7 +742,8 @@ function afficherAgenda() {
       continue;
     }
     const j = i - decalage + 1, s = `${moisCle}-${String(j).padStart(2, '0')}`;
-    const points = [...rdvsDuJour(s).map(x => x.p ? '#b8a8d0' : x.tr ? 'var(--amber)' : 'var(--teal)'), ...evsDuJour(s).map(e => e.pour === 'moi' ? '#b9d4ae' : '#7aaa6a')];
+    const points = [...rdvsDuJour(s).map(x => x.p ? '#b8a8d0' : x.tr ? 'var(--amber)' : 'var(--teal)'), ...evsDuJour(s).map(e => e.pour === 'moi' ? '#b9d4ae' : '#7aaa6a'),
+      ...horsDuJour(s).map(() => '#d9b38c'), ...propsDuJour(s).map(() => '#c9b6e4')];
     const vac = vacanceDu(s);
     cases += `<div class="cal-cell${s === auj ? ' today' : ''}${feries.has(s) ? ' jour-ferie' : ''}${vac ? ' vacances-sco' : ''}${s === jourChoisi ? ' cal-select' : ''}" data-jour="${s}">
       ${vac ? '<div class="vacances-stripe"></div>' : ''}<div class="cal-num">${j}</div>
@@ -489,19 +752,19 @@ function afficherAgenda() {
   const cm = ceMois(), auPremierMois = calY < cm.y || (calY === cm.y && calM <= cm.m);
   const caseHtml = (k, l, coul, fond, coche, bord) => `<label style="color:${coul}"><input type="checkbox" class="case-cachee" data-voir="${k}" ${filtreAgenda(k) ? 'checked' : ''}><span class="case-coul" style="border-color:${bord};--coul:${fond};--coche:${coche}"><i class="ti ti-check"></i></span>${l}</label>`;
   // Le jour choisi, comme sous le calendrier de l'appli sur téléphone.
-  const du = [...rdvsDuJour(jourChoisi), ...evsDuJour(jourChoisi)].sort((a, b) => (a.h || '').localeCompare(b.h || ''));
+  const du = [...rdvsDuJour(jourChoisi), ...evsDuJour(jourChoisi), ...horsDuJour(jourChoisi), ...propsDuJour(jourChoisi)].sort((a, b) => (a.h || '').localeCompare(b.h || ''));
   const vacJ = vacanceDu(jourChoisi);
   const titreJour = new Date(jourChoisi + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
   const infos = (feries.has(jourChoisi) ? '<div class="cal-info" style="color:#c07000">Jour férié</div>' : '')
     + (vacJ ? `<div class="cal-info" style="color:#7a5ab8">Vacances scolaires${vacJ.t ? ' · ' + escHtml(vacJ.t) : ''}</div>` : '');
-  el.innerHTML = `<div class="cal-nav">
+  el.innerHTML = `${propsHtml()}<div class="cal-nav">
       <button type="button" data-cal="prec" aria-label="Mois précédent" ${auPremierMois ? 'disabled' : ''}><i class="ti ti-chevron-left"></i></button>
       <span class="cal-month">${MOIS[calM]} ${calY}</span>
       <button type="button" data-cal="suiv" aria-label="Mois suivant"><i class="ti ti-chevron-right"></i></button>
     </div>
     ${agenda ? '' : `<div class="cal-info" style="color:var(--doux);font-weight:600">Son agenda n'est pas encore partagé : il apparaîtra dès la prochaine ouverture de l'appli.</div>`}
     <div class="agenda-cases">${caseHtml('pro', 'Pro', '#1a7a7a', '#1a7a7a', 'white', '#1a7a7a')}${caseHtml('perso', 'Perso', '#7a6a9a', '#e4daf2', '#4a3a6a', '#b8a8d0')}${caseHtml('commun', 'Partagé', '#4f7a3e', '#dcebd5', '#2f5a22', '#9cc28c')}</div>
-    <div class="cal-actions"><button type="button" data-cal="auj">Aujourd'hui</button><button type="button" data-cal="ajouter" class="ajouter"><i class="ti ti-plus"></i> Ajouter</button></div>
+    <div class="cal-actions"><button type="button" data-cal="auj">Aujourd'hui</button><button type="button" data-cal="ajouter" class="ajouter"><i class="ti ti-plus"></i> Ajouter</button><button type="button" data-cal="moment" class="moment">💞 Trouver un moment</button><button type="button" data-cal="horaires" class="horaires">🕘 Mes horaires</button></div>
     <div class="cal-grid">
       <div class="cal-days-header">${['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map(n => `<div class="cal-day-name">${n}</div>`).join('')}</div>
       <div class="cal-days">${cases}</div>
@@ -511,16 +774,13 @@ function afficherAgenda() {
       <span><div class="leg-dot" style="background:#fdf0e6;border:1px solid var(--amber)"></div> Déplacement inclus</span>
       <span><div class="leg-dot" style="background:#f0eaf8;border:1px solid #b8a8d0"></div> Perso</span>
       <span><div class="leg-dot" style="background:#eef6ea;border:1px solid #7aaa6a"></div> Partagé</span>
+      <span><div class="leg-dot" style="background:#f7efe2;border:1px solid #d9b38c"></div> Mes horaires</span>
       <span><div class="leg-dot" style="background:rgba(255,165,50,0.5)"></div> Jour férié</span>
       <span><div class="leg-dot" style="background:rgba(160,110,240,0.35)"></div> Vac. scolaires (Aube)</span>
     </div>
     <div class="cal-jour">
       <div class="cal-jour-titre">${escHtml(titreJour)}</div>${infos}
-      ${du.length ? du.map(x => `<div class="cal-rdv${x.k === 'ev' ? (x.pour === 'moi' ? ' commun info' : ' commun') : x.p ? ' perso' : ''}"${x.k === 'ev' ? ` data-ev="${escHtml(x.id)}"` : ''}>
-          <div class="haut"><span class="debut">${escHtml(x.h)}</span>${x.f ? `<span class="fin">→ ${escHtml(finLisible(x.f))}</span>` : ''}<span class="quoi">${escHtml(x.t || 'Occupé')}</span>${x.k === 'ev' ? '<span class="modif">✏️</span>' : ''}</div>
-          ${x.l ? `<div class="ou">📍 ${escHtml(x.l)}</div>` : ''}
-          ${x.k === 'ev' ? `<div class="pour-qui">${x.pour === 'moi' ? '🙋 Pour moi' : '👥 Pour nous deux'}</div>` : ''}
-        </div>`).join('') : '<div class="cal-vide"><div>🌿</div>Aucun rendez-vous</div>'}
+      ${du.length ? du.map(carteJour).join('') : '<div class="cal-vide"><div>🌿</div>Aucun rendez-vous</div>'}
     </div>`;
 }
 document.getElementById('agenda').addEventListener('click', e => {
@@ -529,10 +789,26 @@ document.getElementById('agenda').addEventListener('click', e => {
     if (b.dataset.cal === 'prec') { calM--; if (calM < 0) { calM = 11; calY--; } }
     else if (b.dataset.cal === 'suiv') { calM++; if (calM > 11) { calM = 0; calY++; } }
     else if (b.dataset.cal === 'ajouter') { editerEvenement(null, jourChoisi); return; }
+    else if (b.dataset.cal === 'moment') { trouverMoment(); return; }
+    else if (b.dataset.cal === 'horaires') { gererHoraires(); return; }
     else { const t = ceMois(); calY = t.y; calM = t.m; jourChoisi = iso(new Date()); }
     afficherAgenda();
     return;
   }
+  const pr = e.target.closest('[data-prop-oui],[data-prop-non],[data-prop-suppr],[data-prop-repondre]');
+  if (pr) {
+    if (pr.dataset.propOui) repondre(pr.dataset.propOui, true);
+    else if (pr.dataset.propNon) repondre(pr.dataset.propNon, false);
+    else if (pr.dataset.propSuppr) operation({ t: 'supprProp', id: pr.dataset.propSuppr });
+    else {
+      const p = propositionsDoc(doc).find(x => String(x.id) === pr.dataset.propRepondre);
+      if (p) choisir(`📩 ${p.t}`, `${jourLong(p.d)} · ${finLisible(p.h)}${p.f ? ' → ' + finLisible(p.f) : ''}`, [{ cle: 'oui', label: '✓ Accepter' }, { cle: 'non', label: 'Pas possible' }])
+        .then(c => { if (c) repondre(p.id, c === 'oui'); });
+    }
+    return;
+  }
+  const hj = e.target.closest('[data-hor-jour]');
+  if (hj) { horaireDuJour(hj.dataset.horJour, hj.dataset.d); return; }
   const ev = e.target.closest('[data-ev]');
   if (ev) { editerEvenement(ev.dataset.ev); return; }
   const c = e.target.closest('[data-jour]');
@@ -549,14 +825,18 @@ function afficher() {
   const ongletsEl = document.getElementById('onglets'), agendaEl = document.getElementById('agenda');
   if (!cle || etat === 'invalide') {
     ongletsEl.hidden = true; agendaEl.hidden = true; contenu.hidden = false;
+    document.getElementById('bandeau-props').innerHTML = '';
     etatEl.textContent = '';
-    contenu.innerHTML = `<div class="message"><div>🔗</div>${cle ? 'Ce lien ne marche plus.<br>Demandez le nouveau lien de la liste de courses.' : 'Ouvrez le lien de la liste de courses que vous avez reçu par message.'}</div>`;
+    contenu.innerHTML = `<div class="message"><div>🔗</div>${cle ? 'Ce lien ne marche plus.<br>Demandez le nouveau lien.' : 'Ouvrez le lien « Notre organisation » que vous avez reçu par message.'}</div>`;
     if (cle) { try { localStorage.removeItem('nc_cle'); } catch (e) {} }
     return;
   }
   ongletsEl.hidden = false;
   ongletsEl.querySelectorAll('button').forEach(b => b.classList.toggle('actif', b.dataset.onglet === onglet));
-  document.getElementById('titre').textContent = onglet === 'agenda' ? '📅 Agenda' : '🛒 Nos courses';
+  // Les propositions qui attendent ma réponse : un chiffre sur l'onglet, un rappel côté Courses.
+  const aRepondre = propositionsDoc(doc).filter(p => p.de === 'app' && p.statut === 'attente').length;
+  document.getElementById('nb-agenda').textContent = aRepondre || '';
+  document.getElementById('bandeau-props').innerHTML = onglet === 'courses' && aRepondre ? `<button type="button" class="astuce bandeau" data-aller-agenda>📩 ${aRepondre} proposition${aRepondre > 1 ? 's' : ''} à voir dans l'Agenda <span style="margin-left:auto">›</span></button>` : '';
   contenu.hidden = onglet === 'agenda'; agendaEl.hidden = onglet !== 'agenda';
   const heure = majLe ? new Date(majLe).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
   if (onglet === 'agenda') {
@@ -618,6 +898,12 @@ document.getElementById('contenu').addEventListener('click', e => {
   else if (t.dataset.liste) choisirListe(t.dataset.liste);
   else if (t.hasAttribute('data-liste-menu')) menuListe();
   else if (t.hasAttribute('data-liste-nouvelle')) nouvelleListe();
+});
+document.getElementById('bandeau-props').addEventListener('click', e => {
+  if (!e.target.closest('[data-aller-agenda]')) return;
+  onglet = 'agenda'; ecrire('nc_onglet', onglet);
+  afficher();
+  window.scrollTo(0, 0);
 });
 document.getElementById('onglets').addEventListener('click', e => {
   const b = e.target.closest('[data-onglet]');
