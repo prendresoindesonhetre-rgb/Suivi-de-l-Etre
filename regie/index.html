@@ -657,6 +657,7 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .i-titre{font-family:var(--serif);font-size:19px;color:var(--peri-darker);margin-bottom:6px}
 .i-txt{font-size:12.5px;color:var(--muted);margin-top:2px}
 .i-ecoute{min-height:20px;font-size:13px;color:var(--muted);font-style:italic;text-align:left}
+.i-ecoute .i-ok{color:var(--ok);font-style:normal;font-weight:700}.i-ecoute .i-ko{color:var(--alerte);font-style:normal;font-weight:700}
 .chip.a-relire{background:var(--attente-pale);color:var(--attente)}
 .champ.mc{display:block;font-size:12.5px;font-weight:700;color:var(--peri-darker);margin-bottom:8px}
 .nouvelle.dicter{width:100%;border-style:solid;background:var(--canard-light);font-size:16px;padding:16px;margin:0 0 14px}
@@ -965,7 +966,7 @@ const enBase64=blob=>new Promise((res,rej)=>{const f=new FileReader();f.onload=(
 // Ranger une dictée (texte ou audio) : renvoie {transcription, seance}.
 async function rangerDictee(d,cle){
   const parts=[];
-  const consigne=CONSIGNE_SEANCE+(d.inspiration?consigneMotsCles():'');
+  const consigne=CONSIGNE_SEANCE+consigneMotsCles();
   if(d.texte)parts.push({text:consigne+'\n\nSa dictée (transcription automatique) :\n"""\n'+d.texte+'\n"""'});
   else{const blob=await idbGet(d.id);if(!blob)throw new Error('Le son de cette dictée est introuvable sur cet appareil.');
     parts.push({inline_data:{mime_type:'audio/mp3',data:await enBase64(blob)}},{text:consigne+'\n\nSa dictée est dans le fichier audio joint.'})}
@@ -1199,13 +1200,13 @@ function brancherDictees(){
 }
 
 /* =============================== J'AI UNE INSPIRATION =============================== */
-// Tout à la voix, sans rien toucher : des mots clés créent les temps au fur et à mesure (« bâton de
-// pluie », « silence de 5 minutes »…), le reste devient le texte du temps en cours. Un mot clé ne compte
-// qu'en début de phrase (après une pause, un point, ou « puis », « ensuite »…) : dit au milieu d'une
-// phrase, il reste du texte. « Fin de l'inspiration » crée la séance, marquée « à relire ».
-// Les mots se règlent dans « Mots clés » (D.prefs.motsVoix).
+// Tout à la voix, sans rien toucher. Tout ce qui est dit devient le texte du temps en cours, sauf ce
+// qui suit le mot déclencheur (« Régie ») : c'est une consigne, dite librement (« Régie, crée un silence
+// d'une minute », « Régie, ajoute un bâton de pluie en 5 s 5 s », « Régie, c'était la partie induction,
+// passe à une autre partie »). « Régie, fin de l'inspiration » crée la séance, marquée « à relire ».
+// Le mot déclencheur et le vocabulaire se règlent dans « Mes mots clés » (D.prefs.declencheur, motsVoix).
 const MOTS_VOIX={
-  parole:{nom:'Parole (la suite devient le texte)',mots:['je dis','parole'],temps:{type:'parole'}},
+  parole:{nom:'Nouveau temps de parole',mots:['parole','nouveau temps','je dis'],temps:{type:'parole'}},
   pluie:{nom:'Bâton de pluie',mots:['bâton de pluie'],temps:{type:'instrument',instrument:'pluie'}},
   ocean:{nom:'Tambour océan',mots:['tambour océan'],temps:{type:'instrument',instrument:'ocean'}},
   flute:{nom:'Flûte',mots:['flûte'],temps:{type:'instrument',instrument:'flute'}},
@@ -1215,97 +1216,171 @@ const MOTS_VOIX={
   musique:{nom:'Musique',mots:['musique'],temps:{type:'musique'}},
   transition:{nom:'Transition',mots:['transition'],temps:{type:'transition'}},
   partage:{nom:'Partage',mots:['partage','échange'],temps:{type:'partage'}},
-  duree:{nom:'Durée du temps en cours (« pendant 3 minutes »)',mots:['pendant']},
+
   allonge:{nom:'Position allongée',mots:['allongé','allongée','allongés'],position:'allonge'},
   cote:{nom:'Position sur le côté',mots:['sur le côté'],position:'cote'},
   assis:{nom:'Position assise',mots:['assis','assise'],position:'assis'},
   debout:{nom:'Position debout',mots:['debout'],position:'debout'},
-  titre:{nom:'Titre de la séance (« titre … »)',mots:['titre']},
+
   annule:{nom:'Annuler le dernier temps',mots:['annule','annuler'],commande:true},
   pause:{nom:'Pause',mots:['pause'],commande:true},
   reprends:{nom:'Reprendre après la pause',mots:['reprends','reprendre'],commande:true},
   fin:{nom:'Terminer et créer la séance',mots:["fin de l'inspiration",'fin inspiration'],commande:true}
 };
-const LIAISONS=['puis','ensuite','alors','maintenant','apres','et','voila'];
-const normMot=m=>m.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[’`]/g,"'").replace(/[^a-z0-9']/g,'');
+const normMot=m=>m.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[’`]/g,"'").replace(/[^a-z0-9'.,]/g,'').replace(/^[.,]+|[.,]+$/g,'');
 const motsDe=t=>String(t||'').replace(/[’`]/g,"'").replace(/'/g,"' ").split(/\s+/).map(m=>m.trim()).filter(Boolean);
 function motsVoix(){const p=D.prefs.motsVoix||{};return Object.fromEntries(Object.entries(MOTS_VOIX).map(([k,v])=>[k,(Array.isArray(p[k])&&p[k].length?p[k]:v.mots).map(m=>motsDe(m).map(normMot).filter(Boolean)).filter(x=>x.length)]))}
-const NOMBRES={un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,onze:11,douze:12,treize:13,quatorze:14,quinze:15,seize:16,dixsept:17,dixhuit:18,dixneuf:19,vingt:20,vingtcinq:25,trente:30,trentecinq:35,quarante:40,quarantecinq:45,cinquante:50,soixante:60};
-// « 5 minutes », « cinq minutes », « de 10 min », « d'une minute » au début de mots normalisés → [minutes, mots lus].
-function lireDuree(n){
-  let i=0;if(['de',"d'",'pendant','durant'].includes(n[i]))i++;
-  const brut=n[i];if(!brut)return null;
-  const v=/^\d+$/.test(brut)?+brut:NOMBRES[brut];if(!v)return null;
-  if(!/^(minutes?|min|mn)$/.test(n[i+1]||''))return null;
-  return [Math.min(120,Math.max(1,v)),i+2];
+// Le mot déclencheur (« Régie » par défaut). Le téléphone l'entend parfois « Régis » ou « régi » : acceptés aussi.
+const DECLENCHEUR_DEFAUT='régie';
+function declencheurs(){
+  const l=String(D.prefs.declencheur||DECLENCHEUR_DEFAUT).split(',').map(m=>motsDe(m).map(normMot).filter(Boolean)).filter(x=>x.length);
+  if(l.some(x=>x.length===1&&x[0]==='regie'))l.push(['regis'],['regi'],['reggie']);
+  return l;
 }
-// Le mot clé (le plus long) qui ouvre ces mots normalisés.
-function motCleAuDebut(n,mv){
-  let best=null;
-  for(const [k,listes] of Object.entries(mv))for(const m of listes)if(m.length<=n.length&&m.every((w,i)=>n[i]===w)&&(!best||m.length>best.n))best={k,n:m.length};
-  return best;
+const NOMBRES={un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,onze:11,douze:12,treize:13,quatorze:14,quinze:15,seize:16,dixsept:17,dixhuit:18,dixneuf:19,vingt:20,vingtcinq:25,trente:30,trentecinq:35,quarante:40,quarantecinq:45,cinquante:50,soixante:60,quatrevingt:80,quatrevingts:80,cent:100};
+const nombre=w=>/^\d+([.,]\d+)?$/.test(w)?parseFloat(w.replace(',','.')):NOMBRES[w];
+const estMinute=w=>/^(minutes?|min|mn)$/.test(w||''),estSeconde=w=>/^(secondes?|sec|s)$/.test(w||'');
+// Les durées et nombres d'une consigne : minutes (« 1 minute 30 », « une minute et demie »), secondes, nombres seuls.
+function lireMesures(t){
+  let minutes=null;const secondes=[],seuls=[];
+  for(let i=0;i<t.length;i++){
+    const v=nombre(t[i]);if(v==null)continue;
+    if(estMinute(t[i+1])){
+      let m=v;i++;
+      if(t[i+1]==='et'&&/^demie?$/.test(t[i+2]||'')){m+=.5;i+=2}
+      else{const s=nombre(t[i+1]||'');if(s!=null&&s<60&&!estMinute(t[i+2])){m+=s/60;i++;if(estSeconde(t[i+1]))i++}}
+      minutes=(minutes||0)+m;
+    }else if(estSeconde(t[i+1])){secondes.push(v);i++}
+    else if(!['un','une'].includes(t[i]))seuls.push(v);   // « un », « une » : souvent des articles
+  }
+  return {minutes,secondes,seuls};
 }
-// Une phrase reconnue → des morceaux qui commencent chacun (peut-être) par un mot clé.
-function decouperPhrase(texte,mv){
-  const morceaux=[];
-  String(texte||'').split(/[.!?;]+/).forEach(ph=>{
-    const o=motsDe(ph),n=o.map(normMot);let debut=0;
-    for(let i=1;i<n.length;i++)if(LIAISONS.includes(n[i-1])&&motCleAuDebut(n.slice(i),mv)){
-      if(i-1>debut)morceaux.push(o.slice(debut,i-1));debut=i;
-    }
-    if(debut<o.length){
-      // « … et voilà fin de l'inspiration » : la fin compte aussi en bout de phrase.
-      const reste=o.slice(debut),rn=n.slice(debut);let coupe=-1;
-      for(const m of mv.fin||[])if(m.length<rn.length&&m.every((w,i)=>rn[rn.length-m.length+i]===w))coupe=rn.length-m.length;
-      if(coupe>0){morceaux.push(reste.slice(0,coupe));morceaux.push(reste.slice(coupe))}else morceaux.push(reste);
-    }
-  });
-  // Des mots de liaison seuls (« et voilà ») avant une commande ne sont pas du texte.
-  return morceaux.filter(m=>m.length&&!m.every(w=>LIAISONS.includes(normMot(w))));
-}
-// Le « cerveau » de l'inspiration : il reçoit les phrases et tient la séance à jour.
+// La régie compte en minutes entières (1 à 180) : « 30 secondes » donne 1 minute.
+const demiMin=m=>Math.min(180,Math.max(1,Math.round(m)));
+// Une suite de mots (normalisés) trouvée dans t, à partir de la position « depuis ».
+function chercher(t,seq,depuis=0){for(let i=depuis;i+seq.length<=t.length;i++)if(seq.every((w,j)=>t[i+j]===w))return i;return -1}
+const contient=(t,...listes)=>listes.some(s=>chercher(t,motsDe(s).map(normMot))>-1);
+const ARRETS_NOM=['passe','passer','passons','on','et','puis','nouvelle','autre','maintenant','ensuite','alors','prochaine','suivante'];
+// Le « cerveau » de l'inspiration : il reçoit les phrases reconnues et tient la séance à jour.
+// Seul ce qui suit le mot déclencheur est une consigne ; tout le reste est le texte du temps en cours.
 function nouvelleInspiration(){
-  const mv=motsVoix();
-  const st={titre:'',blocs:[],enPause:false,position:null};
+  const mv=motsVoix(),decl=declencheurs();
+  const st={titre:'',blocs:[],enPause:false,position:null,partieDebut:0,partieNom:'',nouveauTemps:false,dernier:null};
   const courant=()=>st.blocs[st.blocs.length-1];
-  const ajouterTexte=(b,t)=>{t=t.trim();if(t)b.texte=(b.texte?b.texte.replace(/\s+$/,'')+' ':'')+t};
-  const nouveau=(k,reste)=>{
-    const a=MOTS_VOIX[k],t=a.temps,o=optionsType(t.type);
-    if(t.instrument){o.instrument=t.instrument;o.rythme={pluie:5,ocean:8,tambour:60}[t.instrument]||null;o.expire=t.instrument==='pluie'?5:null}
-    const nom=t.type==='instrument'?INSTR[t.instrument]:TYPES[t.type].nom;
-    const b=nb(t.type,nom,t.type==='transition'?3:t.type==='partage'?10:5,o);
-    if(st.position){b.position=st.position;st.position=null}
-    let n=reste.map(normMot);const d=lireDuree(n);if(d){b.min=d[0];reste=reste.slice(d[1]);n=n.slice(d[1])}
-    // « silence de 5 minutes avec le carillon / le bol » : la fin du silence.
-    if(t.type==='silence'){const f=n.findIndex(w=>['carillon','bol','flute'].includes(w));if(f>-1&&f<=4){b.fin=n[f];reste=reste.slice(f+1)}}
-    ajouterTexte(b,reste.join(' ').replace(/' /g,"'"));
-    st.blocs.push(b);return 'ajout';
+  const propre=o=>o.join(' ').replace(/' /g,"'").trim();
+  const majuscule=s=>s.charAt(0).toUpperCase()+s.slice(1);
+  const ajouterTexte=t=>{t=t.trim();if(!t)return;let b=courant();
+    if(!b||st.nouveauTemps){b=nb('parole','Parole',5);if(st.position){b.position=st.position;st.position=null}st.blocs.push(b);st.nouveauTemps=false}
+    b.texte=(b.texte?b.texte.replace(/\s+$/,'')+' ':'')+t};
+  // Nommer la partie qui se termine : ses temps de parole prennent son nom.
+  const nommerPartie=nom=>{
+    nom=majuscule(nom.trim());if(!nom)return false;
+    const l=st.blocs.slice(st.partieDebut),paroles=l.filter(b=>b.type==='parole');
+    if(paroles.length)paroles.forEach((b,i)=>{b.nom=i?nom+' (suite)':nom;b.nomPartie=true});
+    else if(l[0]){l[0].nom=nom+' · '+l[0].nom;l[0].nomPartie=true}
+    else return false;
+    return true;
   };
-  // Un morceau de phrase : une action (son à jouer) ou du texte (rien).
-  const morceau=o=>{
-    const n=o.map(normMot),m=motCleAuDebut(n,mv);
-    const k=m&&m.k,reste=m?o.slice(m.n):o,a=k&&MOTS_VOIX[k];
-    if(a&&a.commande&&reste.length<=2){   // suivie d'une vraie phrase, une commande reste du texte
-      if(k==='fin')return 'fin';
-      if(k==='pause'){st.enPause=true;return 'pause'}
-      if(k==='reprends'){st.enPause=false;return 'reprise'}
-      if(k==='annule'&&!st.enPause){st.blocs.pop();return 'annule'}
-    }
+  const nouvellePartie=nom=>{if(st.partieNom)nommerPartie(st.partieNom);st.partieDebut=st.blocs.length;st.partieNom=nom?majuscule(nom):'';st.nouveauTemps=true};
+  const reglerInstrument=(b,m)=>{
+    if(b.type!=='instrument')return false;
+    const s=m.secondes.length?m.secondes:m.seuls;if(!s.length)return false;
+    if(b.instrument==='pluie'&&s[0]<=20){b.rythme=Math.round(s[0]);b.expire=Math.round(s[1]||s[0]);return true}
+    if(b.instrument==='ocean'&&s[0]<=20){b.rythme=Math.round(s[0]);return true}
+    if(b.instrument==='tambour'&&s[0]>=30&&s[0]<=120){b.rythme=Math.round(s[0]);return true}
+    return false;
+  };
+  // Une consigne (les mots qui suivent « Régie ») → l'action comprise, ou null.
+  const consigne=o=>{
+    const brut=propre(o).replace(/(\d+)\s*[-–/]\s*(\d+)/g,'$1 s $2 s').replace(/(\d)\s*(s|sec)\b/gi,'$1 secondes');
+    const t=motsDe(brut).map(normMot).filter(Boolean),txt=propre(motsDe(brut));
+    if(!t.length)return null;
+    // Fin, pause, reprise : même en pause.
+    if(mv.fin.some(s=>chercher(t,s)>-1)||contient(t,'termine','terminé','c\'est fini','enregistre la séance')||(t.length===1&&t[0]==='fin'))return {r:'fin',dit:'Fin de l’inspiration'};
+    if(mv.pause.some(s=>chercher(t,s)>-1)){st.enPause=true;return {r:'pause',dit:'Pause'}}
+    if(mv.reprends.some(s=>chercher(t,s)>-1)||contient(t,'continue','on reprend')){st.enPause=false;return {r:'reprise',dit:'On reprend'}}
     if(st.enPause)return null;
-    if(a&&a.temps)return nouveau(k,reste);
-    if(a&&a.position){const b=courant();if(b)b.position=a.position;else st.position=a.position;if(b)ajouterTexte(b,reste.join(' ').replace(/' /g,"'"));return 'reglage'}
-    if(k==='duree'){const d=lireDuree(['pendant',...reste.map(normMot)]);const b=courant();if(d&&b){b.min=d[0];ajouterTexte(b,reste.slice(d[1]-1).join(' ').replace(/' /g,"'"));return 'reglage'}}
-    if(k==='titre'&&reste.length){st.titre=reste.join(' ').replace(/' /g,"'");st.titre=st.titre.charAt(0).toUpperCase()+st.titre.slice(1);return 'reglage'}
-    let b=courant();if(!b){b=nb('parole','Parole',5);if(st.position){b.position=st.position;st.position=null}st.blocs.push(b)}
-    ajouterTexte(b,o.join(' ').replace(/' /g,"'"));return null;
+    if(mv.annule.some(s=>chercher(t,s)>-1)||contient(t,'efface','supprime le dernier','retire le dernier')){
+      const b=st.blocs.pop();if(st.partieDebut>st.blocs.length)st.partieDebut=st.blocs.length;
+      return {r:'annule',dit:b?`« ${b.nom} » retiré`:'Rien à retirer'};
+    }
+    // Titre de la séance
+    let i=chercher(t,['titre']);if(i<0){i=chercher(t,['la','seance','s\'','appelle']);if(i>-1)i+=3}if(i<0){i=chercher(t,['appelle','la','seance']);if(i>-1)i+=2}
+    if(i>-1&&t.length>i+1){const mots=motsDe(brut).slice(i+1);st.titre=majuscule(propre(mots));return {r:'reglage',dit:'Titre : '+st.titre}}
+    // Les parties : « c'était la partie induction », « passe à une autre partie », « on passe à la partie approfondissement »
+    let r=null;const dits=[];
+    let j=chercher(t,["c'",'etait']);if(j<0){j=chercher(t,['cette','partie','s\'','appelle']);if(j>-1)j+=2}
+    if(j>-1){
+      let k=j+2;while(['la',"l'",'le','partie','une','un','de',"d'"].includes(t[k]))k++;
+      const fin=t.findIndex((w,x)=>x>=k&&ARRETS_NOM.includes(w));
+      const nom=propre(motsDe(brut).slice(k,fin<0?t.length:fin));
+      if(nom&&nommerPartie(nom)){st.partieNom='';r='partie';dits.push('Partie « '+majuscule(nom)+' »')}
+    }
+    const nouvelle=contient(t,'autre partie','nouvelle partie','partie suivante','prochaine partie','fin de la partie','change de partie')||chercher(t,['passe'])>-1&&contient(t,'partie')||contient(t,'on passe a la partie','passons a la partie');
+    if(nouvelle){
+      let nom='';const p=chercher(t,['a','la','partie']);
+      if(p>-1&&t[p+3]&&!ARRETS_NOM.includes(t[p+3])&&!['suivante','prochaine'].includes(t[p+3]))nom=propre(motsDe(brut).slice(p+3));
+      nouvellePartie(nom);r='partie';dits.push(nom?'Nouvelle partie : '+majuscule(nom):'Nouvelle partie');
+    }
+    if(r)return {r,dit:dits.join(' · ')};
+    // Un nouveau temps : le premier mot de temps trouvé dans la consigne.
+    let meilleur=null;
+    for(const [k,listes] of Object.entries(mv)){if(!MOTS_VOIX[k].temps)continue;for(const s of listes){const p=chercher(t,s);if(p>-1&&(!meilleur||p<meilleur.p||p===meilleur.p&&s.length>meilleur.n))meilleur={k,p,n:s.length}}}
+    const m=lireMesures(t);
+    const pos=Object.entries(mv).find(([k,l])=>MOTS_VOIX[k].position&&l.some(s=>chercher(t,s)>-1));
+    if(meilleur){
+      const a=MOTS_VOIX[meilleur.k].temps,o2=optionsType(a.type);
+      if(a.instrument){o2.instrument=a.instrument;o2.rythme={pluie:5,ocean:8,tambour:60}[a.instrument]||null;o2.expire=a.instrument==='pluie'?5:null}
+      const nom=a.type==='instrument'?INSTR[a.instrument]:TYPES[a.type].nom;
+      const b=nb(a.type,nom,a.type==='transition'?3:a.type==='partage'?10:5,o2);
+      const rythme=reglerInstrument(b,m);
+      if(m.minutes!=null)b.min=demiMin(m.minutes);
+      else if(!rythme&&m.secondes.length)b.min=demiMin(m.secondes.reduce((x,y)=>x+y,0)/60);
+      if(a.type==='silence'){const f=['carillon','bol','flute'].find(w=>t.indexOf(w,meilleur.p+meilleur.n)>-1);if(f)b.fin=f;if(contient(t,'sans carillon','sans rien','sans son'))b.fin=''}
+      if(pos)b.position=MOTS_VOIX[pos[0]].position;else if(st.position){b.position=st.position;st.position=null}
+      if(contient(t,'duree libre','libre'))b.libre=true;
+      st.blocs.push(b);st.nouveauTemps=false;
+      return {r:'ajout',dit:[nom,b.libre?'durée libre':b.min+' min',b.type==='instrument'&&b.instrument==='pluie'?`${b.rythme} s / ${b.expire} s`:'',b.position?POS[b.position]:'',b.fin?'fin : '+(FINS[b.fin]||b.fin):''].filter(Boolean).join(' · ')};
+    }
+    // Sinon : régler le temps en cours (durée, rythme, position).
+    const b=courant(),faits=[];
+    if(pos){if(b)b.position=MOTS_VOIX[pos[0]].position;else st.position=MOTS_VOIX[pos[0]].position;faits.push(POS[MOTS_VOIX[pos[0]].position])}
+    if(b&&reglerInstrument(b,m))faits.push(b.instrument==='pluie'?`${b.rythme} s / ${b.expire} s`:String(b.rythme));
+    else if(b&&m.minutes!=null){b.min=demiMin(m.minutes);faits.push(b.min+' min')}
+    else if(b&&m.secondes.length){b.min=demiMin(m.secondes.reduce((x,y)=>x+y,0)/60);faits.push(b.min+' min')}
+    if(b&&contient(t,'duree libre')){b.libre=true;faits.push('durée libre')}
+    if(faits.length)return {r:'reglage',dit:faits.join(' · ')};
+    // Pas comprise : gardée dans le repère du temps, pour la retrouver.
+    if(b)b.repere=(b.repere?b.repere+'\n':'')+'🎙️ Consigne non comprise : « '+txt+' »';
+    return {r:'incompris',dit:'Pas compris : « '+txt+' »'};
   };
   return {
     st,
-    phrase(texte){const actions=[];for(const o of decouperPhrase(texte,mv)){const r=morceau(o);if(r)actions.push(r);if(r==='fin')break}return actions},
-    // La séance finale : les temps de parole prennent leurs premiers mots pour nom.
+    // Une phrase reconnue : le texte va au temps en cours, chaque « Régie … » est une consigne.
+    phrase(texte){
+      const actions=[];
+      for(const ph of String(texte||'').split(/[.!?;]+/)){
+        const o=motsDe(ph),n=o.map(normMot);
+        const debuts=[];for(let i=0;i<n.length;i++)for(const d of decl)if(d.every((w,j)=>n[i+j]===w)){debuts.push([i,d.length]);break}
+        let pos=0;
+        for(let x=0;x<=debuts.length;x++){
+          const fin=x<debuts.length?debuts[x][0]:o.length;
+          if(fin>pos&&!st.enPause)ajouterTexte(propre(o.slice(pos,fin).filter((w,i)=>!(i===0&&/^[,:]$/.test(w)))).replace(/^[,:\s]+/,''));
+          if(x<debuts.length){
+            const debut=debuts[x][0]+debuts[x][1],suite=x+1<debuts.length?debuts[x+1][0]:o.length;
+            const c=consigne(o.slice(debut,suite).map(w=>w.replace(/^[,:]+|[,:]+$/g,'')).filter(Boolean));
+            if(c){st.dernier=c;actions.push(c.r);if(c.r==='fin')return actions}
+            pos=suite;
+          }
+        }
+      }
+      return actions;
+    },
+    // La séance finale. Les temps de parole sans nom de partie prennent leurs premiers mots pour nom.
     seance(){
-      const blocs=st.blocs.map(b=>{const x=Object.assign({},b);if(x.texte)x.texte=x.texte.charAt(0).toUpperCase()+x.texte.slice(1);
-        if(x.type==='parole'&&x.nom==='Parole'&&x.texte){const m=x.texte.split(/\s+/).slice(0,5).join(' ').replace(/[,.;:!?]+$/,'');x.nom=m.length>40?m.slice(0,40)+'…':m}return x});
+      if(st.partieNom)nommerPartie(st.partieNom);
+      const blocs=st.blocs.map(b=>{const x=Object.assign({},b);delete x.nomPartie;if(x.texte)x.texte=majuscule(x.texte);
+        if(x.type==='parole'&&!b.nomPartie&&x.nom==='Parole'&&x.texte){const m=x.texte.split(/\s+/).slice(0,5).join(' ').replace(/[,.;:!?]+$/,'');x.nom=m.length>40?m.slice(0,40)+'…':m}return x});
       const quand=new Date();
       return {id:uid(),titre:st.titre||`Inspiration du ${quand.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} à ${heureTxt(quand)}`,genre:'atelier',debut:'',finH:'',blocs,aRelire:true};
     }
@@ -1314,17 +1389,18 @@ function nouvelleInspiration(){
 // Les petits sons : un « ding » par temps, plus grave pour « annule », deux notes pour la fin.
 function sonVoix(q){
   if(!audioInit())return;A.ctx.resume();const t=A.ctx.currentTime;
-  const notes={ajout:[[880,0]],reglage:[[1046.5,0]],annule:[[523.3,0],[392,.16]],pause:[[659.3,0],[523.3,.16]],reprise:[[523.3,0],[659.3,.16]],fin:[[659.3,0],[880,.18],[1318.5,.36]],cree:[[880,0],[1318.5,.2]]}[q]||[[880,0]];
+  const notes={ajout:[[880,0]],reglage:[[1046.5,0]],partie:[[659.3,0],[987.8,.15]],incompris:[[233.1,0],[196,.2]],annule:[[523.3,0],[392,.16]],pause:[[659.3,0],[523.3,.16]],reprise:[[523.3,0],[659.3,.16]],fin:[[659.3,0],[880,.18],[1318.5,.36]],cree:[[880,0],[1318.5,.2]]}[q]||[[880,0]];
   notes.forEach(([f,d])=>{const o=A.ctx.createOscillator(),g=A.ctx.createGain();o.type='sine';o.frequency.value=f;
     g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.22,t+d+.02);g.gain.exponentialRampToValueAtTime(.001,t+d+.9);o.connect(g).connect(A.ctx.destination);o.start(t+d);o.stop(t+d+1)});
 }
 function consigneMotsCles(){
-  const mv=D.prefs.motsVoix||{};
-  return '\n\nIl structure sa dictée avec des mots clés, dits en début de phrase : '+Object.entries(MOTS_VOIX).map(([k,v])=>`${(Array.isArray(mv[k])&&mv[k].length?mv[k]:v.mots).map(m=>'« '+m+' »').join(' ou ')} = ${v.nom}`).join(' ; ')+'. Respecte-les : chaque mot clé de temps ouvre un nouveau temps, dans l’ordre ; « annule » retire le temps précédent ; ignore « pause », « reprends » et la phrase de fin.';
+  const mv=D.prefs.motsVoix||{},decl=String(D.prefs.declencheur||DECLENCHEUR_DEFAUT);
+  return `\n\nIl donne ses consignes à la régie avec le mot « ${decl} » (le téléphone peut l'avoir écrit « Régis » ou « régi ») : tout ce qui suit ce mot jusqu'à la fin de la phrase est une consigne, pas du texte à dire ; tout le reste est le texte du temps en cours. Exemples : « ${decl}, crée un silence d'une minute » (nouveau temps silence d'1 min) ; « ${decl}, ajoute un temps de bâton de pluie en 5 s 5 s » (instrument pluie, inspire 5 s, expire 5 s) ; « ${decl}, là c'était la partie induction, passe à une autre partie » (les temps de parole de ce passage s'appellent « Induction », la suite commence un nouveau temps) ; « ${decl}, annule » (retire le temps précédent) ; « ${decl}, pause » / « reprends » (ignore ce qui est dit entre les deux) ; « ${decl}, fin de l'inspiration » (fin). Son vocabulaire : `+Object.entries(MOTS_VOIX).map(([k,v])=>`${(Array.isArray(mv[k])&&mv[k].length?mv[k]:v.mots).map(m=>'« '+m+' »').join(' ou ')} = ${v.nom}`).join(' ; ')+'. Respecte ses consignes dans l’ordre. Pour un bâton de pluie, mets le rythme dans "repere" (ex. « inspire 5 s · expire 5 s »).';
 }
 function creerSeanceInspiration(s){D.seances.push(s);sauver();return s}
 
 // La fenêtre de l'inspiration. o.auto : ouverte par le raccourci (on tente de démarrer seul).
+const majuscule1=s=>s.charAt(0).toUpperCase()+s.slice(1);
 function fenetreInspiration(o={}){
   if($('.dictee'))return;
   const id='dictee-'+uid(),ins=nouvelleInspiration();
@@ -1346,10 +1422,12 @@ function fenetreInspiration(o={}){
   const dessiner=()=>{
     const b=ins.st.blocs;
     $i('#i-temps').innerHTML=(ins.st.titre?`<div class="i-titre">${esc(ins.st.titre)}</div>`:'')+(b.length?frise(b,{large:true})+`<ol>${b.map(x=>`<li><span class="chip t-${x.type}">${IC[x.type]||''} ${esc(x.type==='parole'?'Parole':x.nom)}</span> ${x.libre?'':x.min+' min'}${x.position?' · '+POS[x.position]:''}${x.fin?' · fin : '+esc(FINS[x.fin]||x.fin):''}${x.texte?`<div class="i-txt">${esc(x.texte.length>140?'…'+x.texte.slice(-140):x.texte)}</div>`:''}</li>`).join('')}</ol>`:'');
-    $i('#i-ecoute').textContent=ins.st.enPause?'⏸ En pause : dites « reprends » pour continuer.':interim;
+    const der=ins.st.dernier;
+    $i('#i-ecoute').innerHTML=ins.st.enPause?`⏸ En pause : dites « ${esc(decl)}, reprends » pour continuer.`:interim?esc(interim):der?`<span class="${der.r==='incompris'?'i-ko':'i-ok'}">${der.r==='incompris'?'✗':'✓'} ${esc(der.dit)}</span>`:'';
     const l=$i('#i-temps ol');if(l)l.lastElementChild?.scrollIntoView({block:'nearest'});
   };
-  const majMode=()=>{$i('#i-mode').textContent=mode==='direct'?'Parlez : les mots clés créent les temps, le reste devient le texte. « Fin de l’inspiration » pour terminer.':'Enregistrement (pas de reconnaissance en direct ici) : parlez avec vos mots clés, l’IA rangera la séance. Elle s’arrête seule après une minute de silence.'};
+  const decl=majuscule1(String(D.prefs.declencheur||DECLENCHEUR_DEFAUT).split(',')[0].trim());
+  const majMode=()=>{$i('#i-mode').textContent=mode==='direct'?`Parlez librement : c’est le texte. Pour une consigne, dites « ${decl} » puis ce que vous voulez (« ${decl}, crée un silence d’une minute »). « ${decl}, fin de l’inspiration » pour terminer.`:`Enregistrement (pas de reconnaissance en direct ici) : parlez avec vos consignes « ${decl}, … », l’IA rangera la séance. Elle s’arrête seule après une minute de silence.`};
   const majActions=()=>{
     const a=$i('#i-actions');
     a.innerHTML=etat==='pret'?`<button class="btn" data-i="fermer">Fermer</button>`:etat==='fini'?'':`<button class="btn" data-i="annuler">Annuler</button><button class="btn p" data-i="fin">${IC.check} Terminer</button>`;
@@ -1417,17 +1495,21 @@ function fenetreMotsCles(){
   const mv=D.prefs.motsVoix||{};
   v.innerHTML=`<div class="fenetre dictee-fen relire">
     <h2>🎙️ Mes mots clés</h2>
-    <p class="sous" style="margin:0 0 12px">Dits en début de phrase, ils créent les temps ou les règlent. Plusieurs façons de dire la même chose : séparez-les par des virgules.</p>
+    <p class="sous" style="margin:0 0 12px">Dites le mot déclencheur, puis votre consigne : « Régie, crée un silence d’une minute ». Sans lui, tout est du texte. Plusieurs façons de dire la même chose : séparez-les par des virgules.</p>
+    <label class="champ mc">Mot déclencheur<input type="text" data-decl value="${esc(D.prefs.declencheur||DECLENCHEUR_DEFAUT)}"></label>
+    <div class="kicker" style="margin:6px 0 8px">Ce que la régie comprend après ce mot</div>
     ${Object.entries(MOTS_VOIX).map(([k,a])=>`<label class="champ mc">${esc(a.nom)}<input type="text" data-mc="${k}" value="${esc((Array.isArray(mv[k])&&mv[k].length?mv[k]:a.mots).join(', '))}"></label>`).join('')}
     <div class="d-actions"><button class="btn" data-mc-defaut>Mots d’origine</button><button class="btn p" data-mc-ok>${IC.check} Enregistrer</button></div>
   </div>`;
   document.body.appendChild(v);
   v.onclick=e=>{
     if(e.target===v)v.remove();
-    if(e.target.closest('[data-mc-defaut]')){if(confirm('Revenir aux mots clés d’origine ?')){delete D.prefs.motsVoix;sauver();v.remove();toast('Mots clés d’origine remis')}}
+    if(e.target.closest('[data-mc-defaut]')){if(confirm('Revenir aux mots clés d’origine ?')){delete D.prefs.motsVoix;delete D.prefs.declencheur;sauver();v.remove();toast('Mots clés d’origine remis')}}
     if(e.target.closest('[data-mc-ok]')){
       const m={};v.querySelectorAll('[data-mc]').forEach(i=>{const l=i.value.split(',').map(x=>x.trim()).filter(Boolean);const d=MOTS_VOIX[i.dataset.mc].mots;if(l.length&&l.join(',')!==d.join(','))m[i.dataset.mc]=l});
-      if(Object.keys(m).length)D.prefs.motsVoix=m;else delete D.prefs.motsVoix;sauver();v.remove();toast('Mots clés enregistrés');
+      if(Object.keys(m).length)D.prefs.motsVoix=m;else delete D.prefs.motsVoix;
+      const dc=v.querySelector('[data-decl]').value.trim();if(dc&&normMot(dc)!=='regie')D.prefs.declencheur=dc;else delete D.prefs.declencheur;
+      sauver();v.remove();toast('Mots clés enregistrés');
     }
   };
 }
