@@ -40,6 +40,16 @@ form { display: flex; gap: 8px; margin-bottom: 6px; }
 .texte { flex: 1; min-width: 0; font-size: 16px; cursor: pointer; overflow-wrap: anywhere; }
 .pris .texte, .pris .qte { text-decoration: line-through; color: var(--discret); }
 .pris .qte { background: var(--bord); }
+.etoile { background: none; border: none; cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px; color: var(--discret); }
+.puces { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.puce { border: 1px solid var(--pastille-bord); background: #fff; color: var(--violet-fonce); border-radius: 20px; padding: 6px 12px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.puce.on { background: var(--pastille); }
+.puce.nouvelle { border-style: dashed; color: var(--violet); }
+.puce.gerer { cursor: default; }
+.puce.gerer button { background: none; border: none; padding: 0; cursor: pointer; font-size: 14px; color: var(--discret); }
+.hab-titre { display: flex; align-items: center; justify-content: space-between; margin: 2px 0 6px; }
+.hab-titre span { font-size: 11px; font-weight: 800; color: var(--discret); text-transform: uppercase; letter-spacing: 0.06em; }
+.hab-titre .btn { font-size: 11.5px; padding: 2px 9px; background: #fff; }
 .retirer { background: none; border: none; cursor: pointer; color: var(--discret); font-size: 20px; line-height: 1; padding: 0 2px; }
 .panier { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 6px; }
 .panier span { font-size: 11px; font-weight: 800; color: var(--discret); text-transform: uppercase; letter-spacing: 0.06em; }
@@ -118,8 +128,8 @@ form { display: flex; gap: 8px; margin-bottom: 6px; }
 </div>
 <script>
 'use strict';
-// Page « Nos courses » : la liste de courses partagée depuis Suivi de l'Être,
-// et rien d'autre. On y entre avec la clé du lien (?l=…), gardée ensuite sur
+// Page « Nos courses » : les listes de courses partagées depuis Suivi de l'Être
+// et l'agenda, rien d'autre. On y entre avec la clé du lien (?l=…), gardée ensuite sur
 // l'appareil. Les modifications en attente restent ici tant qu'elles ne sont
 // pas arrivées au serveur : rien ne se perd hors connexion.
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
@@ -130,7 +140,8 @@ const ecrire = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } c
 
 let cle = new URLSearchParams(location.search).get('l') || lire('nc_cle', '');
 if (cle) ecrire('nc_cle', cle);
-let liste = lire('nc_liste', []);
+let doc = lire('nc_liste', []);
+let listeCur = lire('nc_liste_cur', ''), habGerer = false;
 let agenda = lire('nc_agenda', null), agendaMaj = lire('nc_agenda_maj', '');
 let onglet = lire('nc_onglet', 'courses');
 let etat = '', majLe = 0;
@@ -158,14 +169,74 @@ function separerQuantite(texte) {
   if (unite === 'l') unite = 'L';
   return { texte: m[3].trim(), qte: unite ? `${m[1]} ${unite}` : m[1] };
 }
-function appliquerOpCourses(l, op) {
-  l = (l || []).map(a => ({ ...a }));
-  const meme = (a, id) => String(a.id) === String(id);
-  if (op.t === 'ajout') (op.articles || []).forEach(n => { if (!l.some(a => meme(a, n.id))) l.push({ ...n }); });
-  else if (op.t === 'cocher') l.forEach(a => { if (meme(a, op.id)) a.fait = !!op.fait; });
-  else if (op.t === 'qte') l.forEach(a => { if (meme(a, op.id)) a.qte = op.qte || ''; });
-  else if (op.t === 'retirer') l = l.filter(a => !(op.ids || []).some(id => meme(a, id)));
-  return l;
+// ─── Modèle des listes de courses (identique dans index.html et courses/) ───
+// Un « document » est une suite d'entrées : les listes { k:'liste', id, nom },
+// les articles { id, liste, texte, qte, fait } et les habituels
+// { k:'hab', liste, cle, texte, qte, n, epingle, vu } (appris à chaque ajout).
+// Chaque modification est une opération rejouable sur la version du serveur.
+const LISTE_PRINCIPALE = 'principale';
+const cleHab = t => String(t || '').trim().toLowerCase();
+const listeDeArticle = a => a.liste || LISTE_PRINCIPALE;
+function listesDoc(doc) {
+  const listes = (doc || []).filter(e => e.k === 'liste');
+  if (!listes.some(l => l.id === LISTE_PRINCIPALE) && (doc || []).some(e => !e.k && listeDeArticle(e) === LISTE_PRINCIPALE)) listes.push({ k: 'liste', id: LISTE_PRINCIPALE, nom: 'Courses' });
+  return listes.sort((a, b) => (a.id === LISTE_PRINCIPALE ? -1 : b.id === LISTE_PRINCIPALE ? 1 : String(a.id).localeCompare(String(b.id))));
+}
+function articlesDoc(doc, listeId) { return (doc || []).filter(e => !e.k && listeDeArticle(e) === listeId); }
+// Tout ce qui appartient à une liste (pour la déplacer d'un document à l'autre).
+function entreesListe(doc, listeId) {
+  const meta = listesDoc(doc).find(l => l.id === listeId) || { k: 'liste', id: listeId, nom: 'Courses' };
+  return [{ ...meta }, ...articlesDoc(doc, listeId).map(a => ({ ...a, liste: listeId })), ...(doc || []).filter(e => e.k === 'hab' && e.liste === listeId).map(h => ({ ...h }))];
+}
+function appliquerOpCourses(doc, op) {
+  doc = (doc || []).map(e => ({ ...e }));
+  const meme = (a, id) => !a.k && String(a.id) === String(id);
+  const hab = (liste, texte) => doc.find(e => e.k === 'hab' && e.liste === liste && e.cle === cleHab(texte));
+  const dansListe = (e, id) => (e.k === 'liste' && e.id === id) || (e.k === 'hab' && e.liste === id) || (!e.k && listeDeArticle(e) === id);
+  if (op.t === 'ajout') (op.articles || []).forEach(n => {
+    if (doc.some(a => meme(a, n.id))) return;
+    doc.push({ ...n });
+    const liste = listeDeArticle(n), h = hab(liste, n.texte);
+    if (h) { h.n = (h.n || 0) + 1; h.texte = n.texte; if (n.qte) h.qte = n.qte; h.vu = n.id; }
+    else doc.push({ k: 'hab', liste, cle: cleHab(n.texte), texte: n.texte, qte: n.qte || '', n: 1, vu: n.id });
+    // On garde les 40 habituels les plus utiles par liste (les épinglés en plus).
+    const habs = doc.filter(e => e.k === 'hab' && e.liste === liste && !e.epingle).sort((a, b) => (b.n || 0) - (a.n || 0) || (b.vu || 0) - (a.vu || 0));
+    if (habs.length > 40) { const trop = new Set(habs.slice(40)); doc = doc.filter(e => !trop.has(e)); }
+  });
+  else if (op.t === 'cocher') doc.forEach(a => { if (meme(a, op.id)) a.fait = !!op.fait; });
+  else if (op.t === 'qte') doc.forEach(a => { if (meme(a, op.id)) a.qte = op.qte || ''; });
+  else if (op.t === 'retirer') doc = doc.filter(a => !(op.ids || []).some(id => meme(a, id)));
+  else if (op.t === 'liste') { const l = doc.find(e => e.k === 'liste' && e.id === op.id); if (l) l.nom = op.nom; else doc.push({ k: 'liste', id: op.id, nom: op.nom }); }
+  else if (op.t === 'supprListe') doc = doc.filter(e => !dansListe(e, op.id));
+  else if (op.t === 'epingle') {
+    const h = hab(op.liste, op.texte);
+    if (h) h.epingle = !!op.oui;
+    else if (op.oui) doc.push({ k: 'hab', liste: op.liste, cle: cleHab(op.texte), texte: op.texte, qte: op.qte || '', n: 0, epingle: true, vu: 0 });
+  }
+  else if (op.t === 'oublier') doc = doc.filter(e => !(e.k === 'hab' && e.liste === op.liste && e.cle === op.cle));
+  else if (op.t === 'importer') (op.entrees || []).forEach(n => {
+    if (n.k === 'liste') { const l = doc.find(e => e.k === 'liste' && e.id === n.id); if (l) l.nom = n.nom; else doc.push({ ...n }); }
+    else if (n.k === 'hab') { const h = hab(n.liste, n.texte); if (h) Object.assign(h, n); else doc.push({ ...n }); }
+    else if (!n.k && !doc.some(a => meme(a, n.id))) doc.push({ ...n });
+  });
+  return doc;
+}
+// Les habituels proposés : épinglés et souvent ajoutés ; pendant la saisie,
+// ceux qui ressemblent à ce qu'on tape. Pas ceux déjà à prendre dans la liste.
+function habituelsDoc(doc, listeId, saisie) {
+  const enCours = new Set(articlesDoc(doc, listeId).filter(a => !a.fait).map(a => cleHab(a.texte)));
+  let habs = (doc || []).filter(e => e.k === 'hab' && e.liste === listeId && !enCours.has(e.cle));
+  const morceaux = decouperCourses(saisie || '');
+  const q = /[,.]\s*$/.test(saisie || '') || !morceaux.length ? '' : cleHab(separerQuantite(morceaux[morceaux.length - 1]).texte);
+  habs = q ? habs.filter(h => h.cle.includes(q)) : habs.filter(h => h.epingle || (h.n || 0) >= 2);
+  return habs.sort((a, b) => (b.epingle ? 1 : 0) - (a.epingle ? 1 : 0) || (b.n || 0) - (a.n || 0) || (b.vu || 0) - (a.vu || 0)).slice(0, q ? 8 : 15);
+}
+// Après avoir touché une suggestion : on retire de la saisie le mot commencé.
+function saisieSansDernier(saisie) {
+  const m = decouperCourses(saisie || '');
+  if (/[,.]\s*$/.test(saisie || '') || !m.length) return saisie || '';
+  m.pop();
+  return m.length ? m.join(', ') + ', ' : '';
 }
 
 async function rpc(fn, args) {
@@ -197,8 +268,8 @@ function synchroniser() {
       if (!r) { etat = 'invalide'; }
       else {
         etat = 'ok'; majLe = Date.now();
-        liste = lire('nc_attente', []).reduce(appliquerOpCourses, r.articles || []);
-        ecrire('nc_liste', liste);
+        doc = lire('nc_attente', []).reduce(appliquerOpCourses, r.articles || []);
+        ecrire('nc_liste', doc);
       }
     } catch (e) { etat = 'horsligne'; }
     enCours = null;
@@ -208,56 +279,122 @@ function synchroniser() {
   return enCours;
 }
 function operation(op) {
-  liste = appliquerOpCourses(liste, op);
-  ecrire('nc_liste', liste);
+  doc = appliquerOpCourses(doc, op);
+  ecrire('nc_liste', doc);
   ecrire('nc_attente', [...lire('nc_attente', []), op]);
   afficher();
   synchroniser();
+}
+function listeCourante() { const ls = listesDoc(doc); return ls.find(l => l.id === listeCur) || ls[0] || null; }
+function choisirListe(id) { listeCur = id; ecrire('nc_liste_cur', id); habGerer = false; afficher(); }
+function nouvelId(deja) { let id = newId(); while (doc.some(x => x.id === id) || deja.some(x => x.id === id)) id++; return id; }
+
+// Petites fenêtres : une question (texte à saisir) ou un choix de boutons.
+function fenetre(html, brancher) {
+  return new Promise(resolve => {
+    const fond = document.createElement('div');
+    fond.className = 'fond-modale';
+    fond.innerHTML = `<form class="modale">${html}</form>`;
+    document.body.appendChild(fond);
+    const fin = v => { fond.remove(); resolve(v); };
+    fond.onclick = e => { if (e.target === fond) fin(null); };
+    fond.querySelectorAll('[data-annuler]').forEach(b => b.onclick = () => fin(null));
+    brancher(fond, fin);
+  });
+}
+function demander(titre, texte, valeur, ok) {
+  return fenetre(`<h2>${escHtml(titre)}</h2><p>${escHtml(texte)}</p><input type="text" autocomplete="off" value="${escHtml(valeur || '')}">
+    <div class="actions"><button type="button" class="btn annuler" data-annuler>Annuler</button><button type="submit" class="btn">${escHtml(ok || 'OK')}</button></div>`,
+    (fond, fin) => { const champ = fond.querySelector('input'); fond.querySelector('form').onsubmit = e => { e.preventDefault(); fin(champ.value); }; champ.focus(); champ.select(); });
+}
+function choisir(titre, texte, choix) {
+  return fenetre(`<h2>${escHtml(titre)}</h2>${texte ? `<p>${escHtml(texte)}</p>` : ''}<div style="display:flex;flex-direction:column;gap:8px">${choix.map(c => `<button type="button" class="btn" data-choix="${escHtml(c.cle)}" style="${c.danger ? 'background:#fff;color:#c05070;border-color:#e8b4c4' : ''}">${escHtml(c.label)}</button>`).join('')}
+    <button type="button" class="btn annuler" data-annuler>Annuler</button></div>`,
+    (fond, fin) => fond.querySelectorAll('[data-choix]').forEach(b => b.onclick = () => fin(b.dataset.choix)));
 }
 
 function ajouter() {
   const champ = document.getElementById('ajout');
   const saisies = decouperCourses(champ.value || '');
-  if (!saisies.length) return;
+  const l = listeCourante();
+  if (!saisies.length || !l) return;
   const nouveaux = [];
   saisies.forEach(s => {
-    let id = newId();
-    while (liste.some(x => x.id === id) || nouveaux.some(x => x.id === id)) id++;
     const { texte, qte } = separerQuantite(s);
-    nouveaux.push({ id, texte, qte, fait: false });
+    nouveaux.push({ id: nouvelId(nouveaux), liste: l.id, texte, qte, fait: false });
   });
-  operation({ t: 'ajout', articles: nouveaux });
   champ.value = '';
-  champ.focus();
+  operation({ t: 'ajout', articles: nouveaux });
+  document.getElementById('ajout')?.focus();
 }
-function basculer(id) { const a = liste.find(x => String(x.id) === String(id)); if (a) operation({ t: 'cocher', id: a.id, fait: !a.fait }); }
+const article = id => doc.find(x => !x.k && String(x.id) === String(id));
+function basculer(id) { const a = article(id); if (a) operation({ t: 'cocher', id: a.id, fait: !a.fait }); }
 function retirer(id) { operation({ t: 'retirer', ids: [id] }); }
-function viderCoches() { const ids = liste.filter(x => x.fait).map(x => x.id); if (ids.length) operation({ t: 'retirer', ids }); }
-function changerQuantite(id) {
-  const a = liste.find(x => String(x.id) === String(id));
+function viderCoches() { const l = listeCourante(); const ids = l ? articlesDoc(doc, l.id).filter(x => x.fait).map(x => x.id) : []; if (ids.length) operation({ t: 'retirer', ids }); }
+async function changerQuantite(id) {
+  const a = article(id);
   if (!a) return;
-  const fond = document.createElement('div');
-  fond.className = 'fond-modale';
-  fond.innerHTML = `<form class="modale"><h2>Quantité</h2><p>Pour « ${escHtml(a.texte)} » (ex. : 2, 500 g, 1 kg). Laissez vide pour l'enlever.</p>
-    <input type="text" autocomplete="off" value="${escHtml(a.qte || '')}">
-    <div class="actions"><button type="button" class="btn annuler">Annuler</button><button type="submit" class="btn">OK</button></div></form>`;
-  document.body.appendChild(fond);
-  const champ = fond.querySelector('input');
-  const fermer = () => fond.remove();
-  fond.querySelector('.annuler').onclick = fermer;
-  fond.onclick = e => { if (e.target === fond) fermer(); };
-  fond.querySelector('form').onsubmit = e => { e.preventDefault(); fermer(); operation({ t: 'qte', id: a.id, qte: champ.value.trim() }); };
-  champ.focus(); champ.select();
+  const v = await demander('Quantité', `Pour « ${a.texte} » (ex. : 2, 500 g, 1 kg). Laissez vide pour l'enlever.`, a.qte || '');
+  if (v !== null) operation({ t: 'qte', id: a.id, qte: v.trim() });
+}
+function epingler(id) {
+  const a = article(id);
+  if (!a) return;
+  const l = listeDeArticle(a), h = doc.find(e => e.k === 'hab' && e.liste === l && e.cle === cleHab(a.texte));
+  operation({ t: 'epingle', liste: l, texte: a.texte, qte: a.qte || '', oui: !h?.epingle });
+}
+function ajouterHabituel(c) {
+  const l = listeCourante(), h = l && doc.find(e => e.k === 'hab' && e.liste === l.id && e.cle === c);
+  if (!h) return;
+  const champ = document.getElementById('ajout');
+  if (champ) champ.value = saisieSansDernier(champ.value);
+  operation({ t: 'ajout', articles: [{ id: nouvelId([]), liste: l.id, texte: h.texte, qte: h.qte || '', fait: false }] });
+}
+async function nouvelleListe() {
+  const nom = ((await demander('Nouvelle liste', 'Nom de la liste (ex. : Marché, Pharmacie, Bricolage) :', '', 'Créer')) || '').trim();
+  if (!nom) return;
+  const id = 'l' + newId();
+  operation({ t: 'liste', id, nom });
+  choisirListe(id);
+}
+async function menuListe() {
+  const l = listeCourante();
+  if (!l) return;
+  const c = await choisir(l.nom, '', [{ cle: 'renommer', label: '✏️ Renommer' }, { cle: 'supprimer', label: '🗑️ Supprimer la liste', danger: true }]);
+  if (c === 'renommer') {
+    const nom = ((await demander('Renommer la liste', 'Nouveau nom :', l.nom)) || '').trim();
+    if (nom) operation({ t: 'liste', id: l.id, nom });
+  } else if (c === 'supprimer') {
+    if ((await choisir('Supprimer la liste', `La liste « ${l.nom} » et ses articles seront supprimés, chez vous deux.`, [{ cle: 'oui', label: 'Supprimer', danger: true }])) !== 'oui') return;
+    operation({ t: 'supprListe', id: l.id });
+  }
 }
 
-function ligneHtml(a) {
+function ligneHtml(a, epingles) {
   const qte = a.qte ? `<button type="button" class="qte" data-qte="${a.id}">${escHtml(a.qte)}</button>`
     : a.fait ? '' : `<button type="button" class="qte vide" data-qte="${a.id}">+ qté</button>`;
+  const ep = epingles.has(cleHab(a.texte));
   return `<div class="ligne${a.fait ? ' pris' : ''}">
     <input type="checkbox" ${a.fait ? 'checked' : ''} data-cocher="${a.id}" aria-label="Pris">
     ${qte}<span class="texte" data-cocher="${a.id}">${escHtml(a.texte)}</span>
+    <button type="button" class="etoile${ep ? ' on' : ''}" data-epingle="${a.id}" aria-label="${ep ? 'Désépingler' : 'Épingler dans les habituels'}">${ep ? '⭐' : '☆'}</button>
     <button type="button" class="retirer" data-retirer="${a.id}" aria-label="Retirer">×</button></div>`;
 }
+function afficherHabituels() {
+  const el = document.getElementById('habituels'), l = listeCourante();
+  if (!el) return;
+  if (!l) { el.innerHTML = ''; return; }
+  const saisie = document.getElementById('ajout')?.value || '';
+  const enSaisie = !habGerer && decouperCourses(saisie).length > 0 && !/[,.]\s*$/.test(saisie);
+  const habs = habituelsDoc(doc, l.id, habGerer ? '' : saisie);
+  if (!habs.length && !habGerer) { el.innerHTML = ''; return; }
+  const chip = h => habGerer
+    ? `<span class="puce gerer"><button type="button" data-hab-epingle="${escHtml(h.cle)}" aria-label="${h.epingle ? 'Désépingler' : 'Épingler'}">${h.epingle ? '⭐' : '☆'}</button>${h.qte ? escHtml(h.qte) + ' ' : ''}${escHtml(h.texte)}<button type="button" data-hab-oublier="${escHtml(h.cle)}" aria-label="Retirer des habituels">×</button></span>`
+    : `<button type="button" class="puce" data-hab="${escHtml(h.cle)}">${h.epingle ? '⭐ ' : '+ '}${h.qte ? escHtml(h.qte) + ' ' : ''}${escHtml(h.texte)}</button>`;
+  el.innerHTML = `<div class="hab-titre"><span>${enSaisie ? 'Suggestions' : '⭐ Habituels'}</span>${enSaisie ? '' : `<button type="button" class="btn" data-hab-gerer>${habGerer ? 'Terminé' : 'Gérer'}</button>`}</div>
+    <div class="puces">${habs.map(chip).join('') || '<span class="aide">Rien pour le moment : les articles ajoutés souvent apparaîtront ici. ☆ sur un article pour l\'épingler.</span>'}</div>`;
+}
+
 // ─── Agenda : le même calendrier que dans l'appli (grille du mois, pastilles,
 // fériés, vacances scolaires) ; on touche un jour pour voir son détail dessous.
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -372,26 +509,56 @@ function afficher() {
   if (!document.getElementById('ajout')) {
     const autonome = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
     contenu.innerHTML = `${!autonome && !lire('nc_astuce_vue', false) ? `<div class="astuce" id="astuce"><span>📲</span><span>Astuce : ajoutez cette page à votre écran d'accueil (bouton Partager, puis « Sur l'écran d'accueil ») pour la retrouver comme une appli.</span><button type="button" id="astuce-fermer" aria-label="Fermer">×</button></div>` : ''}
-      <form id="form-ajout"><input type="text" id="ajout" placeholder="Ajouter… (ex. : 2 baguettes, lait)" autocomplete="off" enterkeyhint="done"><button type="submit" class="btn btn-plus" aria-label="Ajouter">+</button></form>
-      <div class="aide">Plusieurs d'un coup en les séparant par des virgules ou des points · la quantité devant : « 2 baguettes », « 500 g farine ».</div>
-      <div id="liste"></div>`;
+      <div class="puces" id="listes"></div>
+      <div id="zone-liste">
+        <form id="form-ajout"><input type="text" id="ajout" placeholder="Ajouter… (ex. : 2 baguettes, lait)" autocomplete="off" enterkeyhint="done"><button type="submit" class="btn btn-plus" aria-label="Ajouter">+</button></form>
+        <div class="aide">Plusieurs d'un coup en les séparant par des virgules ou des points · la quantité devant : « 2 baguettes », « 500 g farine ».</div>
+        <div id="habituels"></div>
+        <div id="liste"></div>
+      </div>`;
     document.getElementById('form-ajout').onsubmit = e => { e.preventDefault(); ajouter(); };
+    document.getElementById('ajout').addEventListener('input', afficherHabituels);
     document.getElementById('astuce-fermer')?.addEventListener('click', () => { ecrire('nc_astuce_vue', true); document.getElementById('astuce')?.remove(); });
-    document.getElementById('liste').addEventListener('click', e => {
-      const t = e.target.closest('[data-cocher],[data-qte],[data-retirer],[data-vider]');
-      if (!t) return;
-      if (t.dataset.cocher) { if (t.tagName === 'INPUT') e.preventDefault(); basculer(t.dataset.cocher); }
-      else if (t.dataset.qte) changerQuantite(t.dataset.qte);
-      else if (t.dataset.retirer) retirer(t.dataset.retirer);
-      else if (t.hasAttribute('data-vider')) viderCoches();
-    });
   }
-  const aPrendre = liste.filter(x => !x.fait), pris = liste.filter(x => x.fait);
-  document.getElementById('liste').innerHTML = (aPrendre.length ? aPrendre.map(ligneHtml).join('')
+  const l = listeCourante();
+  document.getElementById('listes').innerHTML = listesDoc(doc).map(x => {
+    const n = articlesDoc(doc, x.id).filter(a => !a.fait).length;
+    return `<button type="button" class="puce${l && x.id === l.id ? ' on' : ''}" ${l && x.id === l.id ? 'data-liste-menu' : `data-liste="${escHtml(x.id)}"`}>${escHtml(x.nom)}${n ? ` <span style="opacity:0.65">${n}</span>` : ''}${l && x.id === l.id ? ' ⋯' : ''}</button>`;
+  }).join('') + `<button type="button" class="puce nouvelle" data-liste-nouvelle>+ Liste</button>`;
+  document.getElementById('zone-liste').hidden = !l;
+  if (!l) {
+    document.getElementById('liste').innerHTML = '';
+    if (!document.getElementById('aucune-liste')) document.getElementById('listes').insertAdjacentHTML('afterend', `<div class="vide-liste" id="aucune-liste"><div>🛒</div>Aucune liste partagée pour le moment.<br>Créez-en une avec « + Liste ».</div>`);
+    return;
+  }
+  document.getElementById('aucune-liste')?.remove();
+  afficherHabituels();
+  const articles = articlesDoc(doc, l.id);
+  const epingles = new Set(doc.filter(e => e.k === 'hab' && e.liste === l.id && e.epingle).map(e => e.cle));
+  const aPrendre = articles.filter(x => !x.fait), pris = articles.filter(x => x.fait);
+  document.getElementById('liste').innerHTML = (aPrendre.length ? aPrendre.map(a => ligneHtml(a, epingles)).join('')
       : `<div class="vide-liste"><div>🛒</div>${pris.length ? 'Tout est dans le panier !' : 'La liste est vide.'}</div>`)
-    + (pris.length ? `<div class="panier"><span>Dans le panier (${pris.length})</span><button type="button" class="btn" data-vider>🧹 Effacer les cochés</button></div>${pris.map(ligneHtml).join('')}` : '');
+    + (pris.length ? `<div class="panier"><span>Dans le panier (${pris.length})</span><button type="button" class="btn" data-vider>🧹 Effacer les cochés</button></div>${pris.map(a => ligneHtml(a, epingles)).join('')}` : '');
 }
 
+// Un seul écouteur pour toute la partie Courses (posé une fois).
+document.getElementById('contenu').addEventListener('click', e => {
+  const t = e.target.closest('[data-cocher],[data-qte],[data-retirer],[data-vider],[data-epingle],[data-hab],[data-hab-epingle],[data-hab-oublier],[data-hab-gerer],[data-liste],[data-liste-menu],[data-liste-nouvelle]');
+  if (!t) return;
+  const l = listeCourante();
+  if (t.dataset.cocher) { if (t.tagName === 'INPUT') e.preventDefault(); basculer(t.dataset.cocher); }
+  else if (t.dataset.qte) changerQuantite(t.dataset.qte);
+  else if (t.dataset.retirer) retirer(t.dataset.retirer);
+  else if (t.dataset.epingle) epingler(t.dataset.epingle);
+  else if (t.hasAttribute('data-vider')) viderCoches();
+  else if (t.dataset.hab) ajouterHabituel(t.dataset.hab);
+  else if (t.dataset.habEpingle && l) { const h = doc.find(x => x.k === 'hab' && x.liste === l.id && x.cle === t.dataset.habEpingle); if (h) operation({ t: 'epingle', liste: l.id, texte: h.texte, qte: h.qte, oui: !h.epingle }); }
+  else if (t.dataset.habOublier && l) operation({ t: 'oublier', liste: l.id, cle: t.dataset.habOublier });
+  else if (t.hasAttribute('data-hab-gerer')) { habGerer = !habGerer; afficherHabituels(); }
+  else if (t.dataset.liste) choisirListe(t.dataset.liste);
+  else if (t.hasAttribute('data-liste-menu')) menuListe();
+  else if (t.hasAttribute('data-liste-nouvelle')) nouvelleListe();
+});
 document.getElementById('onglets').addEventListener('click', e => {
   const b = e.target.closest('[data-onglet]');
   if (!b) return;

@@ -20,7 +20,7 @@
 create table if not exists public.courses_partagees (
   proprietaire uuid primary key default auth.uid() references auth.users(id) on delete cascade,
   empreinte    text not null unique,                 -- sha256 de la clé du lien
-  articles     jsonb not null default '[]'::jsonb,   -- [{ id, texte, qte, fait }]
+  articles     jsonb not null default '[]'::jsonb,   -- listes, articles et habituels partagés
   version      bigint not null default 1,            -- +1 à chaque écriture (personne n'écrase l'autre)
   maj_le       timestamptz not null default now()
 );
@@ -52,7 +52,7 @@ returns jsonb language plpgsql security definer set search_path = '' as $$
 declare r public.courses_partagees;
 begin
   if p_articles is null or jsonb_typeof(p_articles) <> 'array'
-     or jsonb_array_length(p_articles) > 500 or length(p_articles::text) > 100000 then
+     or jsonb_array_length(p_articles) > 3000 or length(p_articles::text) > 1000000 then
     raise exception 'liste invalide';
   end if;
   update public.courses_partagees
@@ -75,7 +75,7 @@ declare v bigint;
 begin
   if auth.uid() is null then raise exception 'non connectée'; end if;
   if length(coalesce(p_cle, '')) < 32 then raise exception 'clé trop courte'; end if;
-  if p_articles is not null and (jsonb_typeof(p_articles) <> 'array' or length(p_articles::text) > 100000) then
+  if p_articles is not null and (jsonb_typeof(p_articles) <> 'array' or length(p_articles::text) > 1000000) then
     raise exception 'liste invalide';
   end if;
   insert into public.courses_partagees (proprietaire, empreinte, articles)
