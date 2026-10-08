@@ -31,5 +31,33 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ma liste de courses",
+      "short_name": "Courses",
+      "description": "Ouvrir directement mes listes de courses",
+      "url": "/?ouvrir=courses",
+      "icons": [
+        {
+          "src": "/raccourci-courses.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "J'ai une inspiration",
+      "short_name": "Inspiration",
+      "description": "Créer une séance à la voix, tout de suite",
+      "url": "/regie/#inspiration",
+      "icons": [
+        {
+          "src": "/regie/raccourci-inspiration.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
   ]
 }
