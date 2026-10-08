@@ -15,6 +15,7 @@
 <meta name="apple-mobile-web-app-title" content="Courses">
 <title>Nos courses</title>
 <link rel="stylesheet" href="../polices/polices.css">
+<link rel="stylesheet" href="../polices/tabler-icons.css">
 <style>
 :root {
   --violet: #7a6a9a; --violet-fonce: #4a3a6a; --violet-pale: #f0eaf8; --pastille: #e4daf2; --pastille-bord: #cdbfe3;
@@ -52,16 +53,52 @@ form { display: flex; gap: 8px; margin-bottom: 6px; }
 .onglets { display: flex; gap: 6px; background: #fff; border: 0.5px solid var(--bord); border-radius: 12px; padding: 4px; margin: 6px 0 8px; }
 .onglets button { flex: 1; border: none; background: none; border-radius: 9px; padding: 9px 6px; font-size: 14.5px; font-weight: 700; font-family: inherit; color: var(--doux); cursor: pointer; }
 .onglets button.actif { background: var(--pastille); color: var(--violet-fonce); }
-.jour { margin-bottom: 14px; }
-.jour h3 { font-size: 12px; font-weight: 800; color: var(--violet-fonce); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 6px; }
-.jour h3 span { color: var(--violet); }
-.creneau { display: flex; gap: 12px; align-items: baseline; background: var(--carte); border: 0.5px solid var(--bord); border-left: 4px solid #1a7a7a; border-radius: var(--rayon); padding: 9px 12px; margin-bottom: 6px; }
-.creneau.perso { border-left-color: var(--violet); }
-.creneau.passe { opacity: 0.45; }
-.creneau b { flex-shrink: 0; min-width: 104px; font-size: 14px; }
-.creneau .quoi { flex: 1; min-width: 0; font-size: 14.5px; overflow-wrap: anywhere; }
-.creneau .ou { display: block; font-size: 12.5px; color: var(--doux); margin-top: 1px; }
-.libre { background: #eef6ea; border: 0.5px solid #cfe3c6; color: #3c6a2e; border-radius: var(--rayon); padding: 9px 12px; font-size: 14px; margin-bottom: 14px; }
+/* Agenda : le même calendrier que dans l'appli (couleurs bleu canard du Calendrier). */
+#agenda { --teal: #1a7a7a; --teal-dark: #145f5f; --teal-light: #e8f5f5; --amber: #d4956a; --border-cal: rgba(26,122,122,0.12); --border-cal-md: rgba(26,122,122,0.22); }
+.cal-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.cal-nav button, .cal-actions button { border: 0.5px solid var(--border-cal-md); background: var(--carte); color: var(--texte); border-radius: 7px; padding: 8px 14px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.cal-nav button:disabled { opacity: 0.35; cursor: default; }
+.cal-nav button i { font-size: 16px; }
+.cal-month { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 18px; font-weight: 600; color: var(--teal); text-align: center; flex: 1; }
+.agenda-cases { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; }
+.agenda-cases label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 800; }
+.agenda-cases .case-cachee { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.case-coul { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; box-sizing: border-box; border: 2px solid; border-radius: 5px; background: white; flex-shrink: 0; }
+.case-coul i { font-size: 15px; color: white; visibility: hidden; }
+.case-cachee:checked + .case-coul { background: var(--coul); }
+.case-cachee:checked + .case-coul i { visibility: visible; color: var(--coche, white); }
+.cal-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+.cal-grid { background: var(--carte); border: 0.5px solid var(--border-cal); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(26,122,122,0.07); }
+.cal-days-header { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-bottom: 0.5px solid var(--border-cal); background: var(--teal-light); }
+.cal-day-name { text-align: center; padding: 0.65rem 0; font-size: 11px; color: var(--teal); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.cal-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-auto-rows: 50px; }
+.cal-cell { min-width: 0; overflow: hidden; padding: 4px 2px 6px; border-top: 0.5px solid var(--border-cal); border-right: 0.5px solid var(--border-cal); cursor: pointer; position: relative; display: flex; flex-direction: column; align-items: center; }
+.cal-cell.other-month { opacity: 0.3; cursor: default; }
+.cal-cell.vacances-sco { background: rgba(160,110,240,0.09); }
+.cal-cell.jour-ferie { background: rgba(255,165,50,0.16); }
+.cal-cell.jour-ferie.vacances-sco { background: rgba(255,165,50,0.2); }
+.vacances-stripe { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: rgba(160,110,240,0.45); }
+.cal-num { font-size: 12px; font-weight: 600; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; margin-bottom: 2px; color: var(--texte); }
+.cal-cell.today .cal-num { background: var(--teal); color: white; border-radius: 50%; }
+.cal-cell.cal-select { box-shadow: inset 0 0 0 2px var(--teal); border-radius: 6px; }
+.cal-dots { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; min-height: 6px; }
+.cal-dots i { width: 6px; height: 6px; border-radius: 50%; display: block; }
+.cal-legend { display: flex; gap: 6px 14px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--doux); }
+.cal-legend span { display: flex; align-items: center; gap: 5px; }
+.leg-dot { width: 10px; height: 10px; border-radius: 3px; }
+.cal-jour { margin-top: 14px; }
+.cal-jour-titre { font-size: 14px; font-weight: 800; color: var(--teal-dark); margin-bottom: 8px; }
+.cal-jour-titre::first-letter { text-transform: uppercase; }
+.cal-info { font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+.cal-rdv { background: var(--carte); border: 0.5px solid var(--border-cal); border-left: 3px solid var(--teal); border-radius: 7px; padding: 10px 12px; margin-bottom: 8px; }
+.cal-rdv.perso { border-left-color: #b8a8d0; }
+.cal-rdv .haut { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.cal-rdv .debut { font-size: 15px; font-weight: 800; color: var(--teal-dark); }
+.cal-rdv .fin { font-size: 12px; color: var(--doux); }
+.cal-rdv .quoi { font-size: 13px; font-weight: 700; color: var(--texte); }
+.cal-rdv .ou { font-size: 12px; color: var(--doux); font-style: italic; margin-top: 2px; }
+.cal-vide { text-align: center; padding: 1.5rem 1rem; color: var(--doux); font-size: 13px; }
+.cal-vide div { font-size: 32px; margin-bottom: 6px; }
 .fond-modale { position: fixed; inset: 0; background: rgba(74,58,106,0.35); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
 .modale { background: var(--carte); border-radius: 14px; width: 340px; max-width: 100%; padding: 18px; box-shadow: 0 8px 30px rgba(74,58,106,0.25); }
 .modale h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; margin: 0 0 4px; color: var(--violet-fonce); }
@@ -221,41 +258,93 @@ function ligneHtml(a) {
     ${qte}<span class="texte" data-cocher="${a.id}">${escHtml(a.texte)}</span>
     <button type="button" class="retirer" data-retirer="${a.id}" aria-label="Retirer">×</button></div>`;
 }
-// ─── Agenda : un bloc par jour ; les jours libres d'affilée sont regroupés. ───
+// ─── Agenda : le même calendrier que dans l'appli (grille du mois, pastilles,
+// fériés, vacances scolaires) ; on touche un jour pour voir son détail dessous.
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-const dateDe = s => new Date(s + 'T12:00:00');
-const heureLisible = h => h ? h.replace(/^0/, '').replace(':', 'h') : '';
-function nomJour(s, avecAnnee) {
-  return dateDe(s).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', ...(avecAnnee ? { year: 'numeric' } : {}) });
+const MOIS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+const ceMois = () => { const t = new Date(); return { y: t.getFullYear(), m: t.getMonth() }; };
+let calY = ceMois().y, calM = ceMois().m, jourChoisi = '';
+const filtreAgenda = k => lire('nc_voir_' + k, true);
+// Fin affichée comme dans l'appli : « → 10h00 ».
+const finLisible = f => f ? f.replace(':', 'h') : '';
+function rdvsDuJour(s) {
+  return (agenda || []).filter(x => !x.k && x.d === s && filtreAgenda(x.p ? 'perso' : 'pro'));
 }
 function afficherAgenda() {
   const el = document.getElementById('agenda');
   if (!agenda) { el.innerHTML = `<div class="message"><div>📅</div>L'agenda n'est pas encore partagé.<br>Il apparaîtra dès la prochaine ouverture de l'appli.</div>`; return; }
-  const maintenant = new Date(), auj = iso(maintenant), demain = iso(new Date(maintenant.getFullYear(), maintenant.getMonth(), maintenant.getDate() + 1, 12));
-  const heureNow = `${String(maintenant.getHours()).padStart(2, '0')}:${String(maintenant.getMinutes()).padStart(2, '0')}`;
-  const aVenir = agenda.filter(x => x.d >= auj);
-  const parJour = {};
-  aVenir.forEach(x => (parJour[x.d] = parJour[x.d] || []).push(x));
-  const annee = maintenant.getFullYear();
-  const titreJour = s => (s === auj ? "Aujourd'hui · " : s === demain ? 'Demain · ' : '') + nomJour(s, dateDe(s).getFullYear() !== annee);
-  const libre = (d1, d2) => {
-    if (d1 === d2) return `<div class="libre">🌿 Libre ${d1 === auj ? "aujourd'hui" : d1 === demain ? 'demain' : 'le ' + nomJour(d1, dateDe(d1).getFullYear() !== annee)}</div>`;
-    return `<div class="libre">🌿 Libre ${d1 === auj ? "jusqu'au" : 'du ' + nomJour(d1, false) + ' au'} ${nomJour(d2, dateDe(d2).getFullYear() !== annee)}</div>`;
-  };
-  let html = '', debutLibre = null, finLibre = null;
-  const dernier = aVenir.length ? aVenir[aVenir.length - 1].d : auj;
-  for (let d = dateDe(auj); iso(d) <= dernier; d.setDate(d.getDate() + 1)) {
-    const s = iso(d), du = parJour[s];
-    if (!du) { if (!debutLibre) debutLibre = s; finLibre = s; continue; }
-    if (debutLibre) { html += libre(debutLibre, finLibre); debutLibre = null; }
-    html += `<div class="jour"><h3>${escHtml(titreJour(s))}</h3>${du.map(x => `<div class="creneau${x.p ? ' perso' : ''}${s === auj && x.f && x.f <= heureNow ? ' passe' : ''}">
-        <b>${heureLisible(x.h)}${x.f ? ' – ' + heureLisible(x.f) : ''}</b>
-        <span class="quoi">${escHtml(x.t || 'Occupé')}${x.l ? `<span class="ou">📍 ${escHtml(x.l)}</span>` : ''}</span></div>`).join('')}</div>`;
+  const auj = iso(new Date()), moisCle = `${calY}-${String(calM + 1).padStart(2, '0')}`;
+  if (!jourChoisi || jourChoisi.slice(0, 7) !== moisCle) jourChoisi = auj.slice(0, 7) === moisCle ? auj : moisCle + '-01';
+  const feries = new Set(agenda.filter(x => x.k === 'ferie').map(x => x.d));
+  const vacances = agenda.filter(x => x.k === 'vac');
+  const vacanceDu = s => vacances.find(v => s >= v.d && s <= v.f);
+  const premier = new Date(calY, calM, 1, 12), decalage = (premier.getDay() + 6) % 7;
+  const nbJours = new Date(calY, calM + 1, 0).getDate(), avantNb = new Date(calY, calM, 0).getDate();
+  const total = Math.ceil((decalage + nbJours) / 7) * 7;
+  let cases = '';
+  for (let i = 0; i < total; i++) {
+    if (i < decalage || i >= decalage + nbJours) {
+      const n = i < decalage ? avantNb - decalage + 1 + i : i - decalage - nbJours + 1;
+      cases += `<div class="cal-cell other-month"><div class="cal-num">${n}</div><div class="cal-dots"></div></div>`;
+      continue;
+    }
+    const j = i - decalage + 1, s = `${moisCle}-${String(j).padStart(2, '0')}`;
+    const points = rdvsDuJour(s).map(x => x.p ? '#b8a8d0' : x.tr ? 'var(--amber)' : 'var(--teal)');
+    const vac = vacanceDu(s);
+    cases += `<div class="cal-cell${s === auj ? ' today' : ''}${feries.has(s) ? ' jour-ferie' : ''}${vac ? ' vacances-sco' : ''}${s === jourChoisi ? ' cal-select' : ''}" data-jour="${s}">
+      ${vac ? '<div class="vacances-stripe"></div>' : ''}<div class="cal-num">${j}</div>
+      <div class="cal-dots">${points.slice(0, 4).map(c => `<i style="background:${c}"></i>`).join('')}${points.length > 4 ? '<i style="background:var(--discret)"></i>' : ''}</div></div>`;
   }
-  if (debutLibre) html += libre(debutLibre, finLibre);
-  html += `<div class="libre" style="background:none;border-style:dashed;color:var(--doux)">${aVenir.length ? '🌿 Rien de prévu après le ' + nomJour(dernier, dateDe(dernier).getFullYear() !== annee) : '🌿 Aucun rendez-vous de prévu'}</div>`;
-  el.innerHTML = html;
+  const cm = ceMois(), auPremierMois = calY < cm.y || (calY === cm.y && calM <= cm.m);
+  const caseHtml = (k, l, coul, fond, coche, bord) => `<label style="color:${coul}"><input type="checkbox" class="case-cachee" data-voir="${k}" ${filtreAgenda(k) ? 'checked' : ''}><span class="case-coul" style="border-color:${bord};--coul:${fond};--coche:${coche}"><i class="ti ti-check"></i></span>${l}</label>`;
+  // Le jour choisi, comme sous le calendrier de l'appli sur téléphone.
+  const du = rdvsDuJour(jourChoisi).sort((a, b) => a.h.localeCompare(b.h));
+  const vacJ = vacanceDu(jourChoisi);
+  const titreJour = new Date(jourChoisi + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const infos = (feries.has(jourChoisi) ? '<div class="cal-info" style="color:#c07000">Jour férié</div>' : '')
+    + (vacJ ? `<div class="cal-info" style="color:#7a5ab8">Vacances scolaires${vacJ.t ? ' · ' + escHtml(vacJ.t) : ''}</div>` : '');
+  el.innerHTML = `<div class="cal-nav">
+      <button type="button" data-cal="prec" aria-label="Mois précédent" ${auPremierMois ? 'disabled' : ''}><i class="ti ti-chevron-left"></i></button>
+      <span class="cal-month">${MOIS[calM]} ${calY}</span>
+      <button type="button" data-cal="suiv" aria-label="Mois suivant"><i class="ti ti-chevron-right"></i></button>
+    </div>
+    <div class="agenda-cases">${caseHtml('pro', 'Pro', '#1a7a7a', '#1a7a7a', 'white', '#1a7a7a')}${caseHtml('perso', 'Perso', '#7a6a9a', '#e4daf2', '#4a3a6a', '#b8a8d0')}</div>
+    <div class="cal-actions"><button type="button" data-cal="auj">Aujourd'hui</button></div>
+    <div class="cal-grid">
+      <div class="cal-days-header">${['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map(n => `<div class="cal-day-name">${n}</div>`).join('')}</div>
+      <div class="cal-days">${cases}</div>
+    </div>
+    <div class="cal-legend">
+      <span><div class="leg-dot" style="background:var(--teal-light);border:1px solid var(--teal)"></div> Séance</span>
+      <span><div class="leg-dot" style="background:#fdf0e6;border:1px solid var(--amber)"></div> Déplacement inclus</span>
+      <span><div class="leg-dot" style="background:#f0eaf8;border:1px solid #b8a8d0"></div> Perso</span>
+      <span><div class="leg-dot" style="background:rgba(255,165,50,0.5)"></div> Jour férié</span>
+      <span><div class="leg-dot" style="background:rgba(160,110,240,0.35)"></div> Vac. scolaires (Aube)</span>
+    </div>
+    <div class="cal-jour">
+      <div class="cal-jour-titre">${escHtml(titreJour)}</div>${infos}
+      ${du.length ? du.map(x => `<div class="cal-rdv${x.p ? ' perso' : ''}">
+          <div class="haut"><span class="debut">${escHtml(x.h)}</span>${x.f ? `<span class="fin">→ ${escHtml(finLisible(x.f))}</span>` : ''}<span class="quoi">${escHtml(x.t || 'Occupé')}</span></div>
+          ${x.l ? `<div class="ou">📍 ${escHtml(x.l)}</div>` : ''}
+        </div>`).join('') : '<div class="cal-vide"><div>🌿</div>Aucun rendez-vous</div>'}
+    </div>`;
 }
+document.getElementById('agenda').addEventListener('click', e => {
+  const b = e.target.closest('[data-cal]');
+  if (b) {
+    if (b.dataset.cal === 'prec') { calM--; if (calM < 0) { calM = 11; calY--; } }
+    else if (b.dataset.cal === 'suiv') { calM++; if (calM > 11) { calM = 0; calY++; } }
+    else { const t = ceMois(); calY = t.y; calM = t.m; jourChoisi = iso(new Date()); }
+    afficherAgenda();
+    return;
+  }
+  const c = e.target.closest('[data-jour]');
+  if (c) { jourChoisi = c.dataset.jour; afficherAgenda(); }
+});
+document.getElementById('agenda').addEventListener('change', e => {
+  const c = e.target.closest('[data-voir]');
+  if (c) { ecrire('nc_voir_' + c.dataset.voir, c.checked); afficherAgenda(); }
+});
 
 function afficher() {
   const etatEl = document.getElementById('etat');
