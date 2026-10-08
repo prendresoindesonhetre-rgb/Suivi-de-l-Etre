@@ -1,8 +1,8 @@
 // Régie d'Hélène Laudijois — fonctionne sans internet (salle sans réseau).
 // Réseau d'abord (on a toujours la dernière version quand internet est là),
 // la copie gardée sinon. Ne touche qu'aux fichiers de /regie-helene/.
-const CACHE = 'regie-helene-v36';
-const FICHIERS = ['./', './index.html', './manifest.json', './logo.png', './icone-192.png', './icone-512.png', './lame.min.js'];
+const CACHE = 'regie-helene-v42';
+const FICHIERS = ['./', './index.html', './manifest.json', './inspiration.html', './inspiration.json', './logo.png', './icone-192.png', './icone-512.png', './lame.min.js'];
 
 self.addEventListener('install', e => e.waitUntil(
   caches.open(CACHE)
