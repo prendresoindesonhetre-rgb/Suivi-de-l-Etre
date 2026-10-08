@@ -3,7 +3,8 @@
 
 Copie à elle : son nom, son logo et ses couleurs, régie vierge, son propre compte chiffré, pas de visio,
 stockage sous d'autres noms (aucun mélange avec la régie de l'Être).
-Les images (logo.png, icone-*.png) et manifest.json de regie-helene/ ne sont pas touchés.
+Les images de regie-helene/ (logo.png, icone-*.png, raccourci-inspiration.png) ne sont pas touchées ;
+dans son manifest.json, seul le raccourci « J'ai une inspiration » est (re)mis.
 
 Usage, depuis la racine du dépôt : python3 outils/fabriquer-regie-helene.py
 """
@@ -102,4 +103,18 @@ w = w.replace("startsWith('/regie/')", "startsWith('/regie-helene/')")
 w = re.sub(r"^// Régie de l'Être — ", "// Régie d'Hélène Laudijois — ", w)
 w = w.replace("Ne touche qu'aux fichiers de /regie/ ; la\n// synchronisation (Supabase) passe directement, sans cache.", "Ne touche qu'aux fichiers de /regie-helene/.")
 (dst / 'sw.js').write_text(w)
+# Raccourci « J'ai une inspiration » : sa page d'icône (iPhone), son manifeste, et le raccourci de son appli (Android)
+import json
+(dst / 'inspiration.html').write_text((src / 'inspiration.html').read_text().replace('<meta name="theme-color" content="#f4f0fb">', '<meta name="theme-color" content="#fffaf2">').replace('background:#f4f0fb', 'background:#fffaf2'))
+(dst / 'inspiration.json').write_text(json.dumps({
+  "name": "Inspiration — Ma régie", "short_name": "Inspiration", "description": "Créer une séance à la voix, tout de suite",
+  "id": "/regie-helene/inspiration", "start_url": "/regie-helene/inspiration.html", "scope": "/regie-helene/", "display": "standalone",
+  "background_color": "#fffaf2", "theme_color": "#fffaf2",
+  "icons": [{"src": "icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"}, {"src": "icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}]
+}, ensure_ascii=False, indent=2) + '\n')
+man = json.loads((dst / 'manifest.json').read_text())
+man['shortcuts'] = [{"name": "J'ai une inspiration", "short_name": "Inspiration", "description": "Créer une séance à la voix", "url": "/regie-helene/#inspiration",
+                     "icons": [{"src": "raccourci-inspiration.png", "sizes": "192x192", "type": "image/png"}]}]
+(dst / 'manifest.json').write_text(json.dumps(man, ensure_ascii=False, indent=2) + '\n')
+
 print('regie-helene/ fabriquée (cache', 'regie-helene-' + v + ')')

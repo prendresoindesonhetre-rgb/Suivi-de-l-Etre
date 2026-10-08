@@ -910,6 +910,9 @@ async function cleGemini(demander){
   if(c){D.prefs.cleGemini=c;sauver()}
   return c;
 }
+// Une clé déjà connue sur cet appareil ? (sans appel au serveur)
+function cleGeminiConnue(){if(D.prefs.cleGemini)return true;if(COMPTE)return false;try{return !!JSON.parse(localStorage.getItem('mac_parametres')||'{}').geminiKey}catch(e){return false}}
+const MSG_SANS_CLE='Dictée gardée. Pour que l’IA la range, ajoutez une clé Gemini (Mes dictées → « Changer la clé Gemini »).';
 const GEMINI_MODELES=['gemini-flash-latest','gemini-flash-lite-latest','gemini-2.5-flash','gemini-2.5-flash-lite'];
 // Le palier gratuit répond souvent « surchargé » sur un modèle quand un autre marche : on passe au suivant.
 async function gemini(parts,cle,json){
@@ -1114,7 +1117,7 @@ function fenetreDictee(o={}){
     if(!blob||!blob.size){fermer();return toast('Rien n’a été enregistré')}
     if(pourTemps){
       const cle=navigator.onLine?await cleGemini(true):'';
-      if(!cle){garderDictees([...dictees(),{id,date:Date.now(),ms:cumul,etat:'attente',cible:{s:S.id,b:o.bloc.id}}]);fermer();return toast('Dictée gardée : elle sera ajoutée à ce temps dès que le réseau revient')}
+      if(!cle){garderDictees([...dictees(),{id,date:Date.now(),ms:cumul,etat:'attente',cible:{s:S.id,b:o.bloc.id}}]);fermer();return toast(navigator.onLine?'Dictée gardée. Pour l’écrire dans ce temps, ajoutez une clé Gemini (Mes dictées → « Changer la clé Gemini »).':'Dictée gardée : elle sera ajoutée à ce temps dès que le réseau revient')}
       $d('#d-mode').textContent='Transcription en cours…';$d('#d-actions').innerHTML='';
       try{const t=await transcrireAudio(blob,cle);await idbDel(id);o.surTexte(t);fermer()}
       catch(e){garderDictees([...dictees(),{id,date:Date.now(),ms:cumul,etat:'attente',cible:{s:S.id,b:o.bloc.id}}]);fermer();toast(esc(messageGemini(e)))}
@@ -1125,7 +1128,7 @@ function fenetreDictee(o={}){
   };
   const rangerPuisRelire=async(d,fen,fermerFen)=>{
     const cle=navigator.onLine?await cleGemini(true):'';
-    if(!cle){fermerFen();if(vue==='seances')vueSeances();return toast('Dictée gardée : elle sera rangée en séance dès que le réseau revient')}
+    if(!cle){fermerFen();if(vue==='seances')vueSeances();return toast(navigator.onLine?MSG_SANS_CLE:'Dictée gardée : elle sera rangée en séance dès que le réseau revient')}
     $d('#d-mode').textContent='✨ L’IA range votre séance…';$d('#d-actions').innerHTML='<div class="d-attente">Quelques secondes…</div>';
     majDictee(d.id,{etat:'encours',depuis:Date.now()});
     try{const r=await rangerDictee(dictees().find(x=>x.id===d.id)||d,cle);majDictee(d.id,{etat:'prete',transcription:r.transcription,seance:r.seance});fermerFen();relireDictee(d.id)}
@@ -1176,7 +1179,7 @@ function dicteesHTML(){
   if(!l.length)return '';
   const quand=x=>new Date(x.date).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' à '+heureTxt(new Date(x.date));
   return `<div class="dictees"><div class="kicker" style="margin-bottom:8px;display:flex;align-items:center;gap:6px">${IC.micro} Mes dictées</div>${l.map(x=>`<div class="dt">
-    <div class="dt-corps"><b>${x.etat==='prete'?esc(x.seance.titre):(x.inspiration?'✨ Inspiration du ':'Dictée du ')+quand(x)}</b><span>${x.etat==='prete'?'✨ Prête à relire':x.etat==='erreur'?'⚠️ '+esc(x.erreur||'À réessayer'):x.etat==='encours'?'✨ L’IA range la séance…':x.etat==='enregistrement'?'Enregistrement interrompu : à ranger':navigator.onLine?'En attente de l’IA…':'Sera rangée dès que le réseau revient'}${x.ms?' · '+mmss(x.ms):''}</span></div>
+    <div class="dt-corps"><b>${x.etat==='prete'?esc(x.seance.titre):(x.inspiration?'✨ Inspiration du ':'Dictée du ')+quand(x)}</b><span>${x.etat==='prete'?'✨ Prête à relire':x.etat==='erreur'?'⚠️ '+esc(x.erreur||'À réessayer'):x.etat==='encours'?'✨ L’IA range la séance…':x.etat==='enregistrement'?'Enregistrement interrompu : à ranger':!navigator.onLine?'Sera rangée dès que le réseau revient':cleGeminiConnue()?'En attente de l’IA…':'À ranger : il faut une clé Gemini'}${x.ms?' · '+mmss(x.ms):''}</span></div>
     ${x.etat==='prete'?`<button class="btn s p" data-dt-relire="${x.id}">Relire</button>`:`<button class="btn s" data-dt-ranger="${x.id}">Ranger</button>`}
     <button class="btn rond nu" data-dt-suppr="${x.id}" title="Supprimer">${IC.poubelle}</button></div>`).join('')}
     <button class="lien-cle" id="dt-cle">Changer la clé Gemini</button></div>`;
@@ -1196,7 +1199,7 @@ function brancherDictees(){
     catch(e){majDictee(d.id,e.reseau||[429,500,503].includes(e.status)?{etat:'attente'}:{etat:'erreur',erreur:messageGemini(e)});toast(esc(messageGemini(e)))}
     vueSeances();
   });
-  const c=$('#dt-cle');if(c)c.onclick=()=>{const k=(prompt('Clé Gemini (laisser vide pour reprendre celle de l’appli Suivi de l’Être) :',D.prefs.cleGemini||'')??null);if(k===null)return;if(k.trim())D.prefs.cleGemini=k.trim();else delete D.prefs.cleGemini;sauver();toast('Clé enregistrée')};
+  const c=$('#dt-cle');if(c)c.onclick=()=>{const k=(prompt(COMPTE?'Clé Gemini (gratuite, sur aistudio.google.com) :':'Clé Gemini (laisser vide pour reprendre celle de l’appli Suivi de l’Être) :',D.prefs.cleGemini||'')??null);if(k===null)return;if(k.trim())D.prefs.cleGemini=k.trim();else delete D.prefs.cleGemini;sauver();toast('Clé enregistrée')};
 }
 
 /* =============================== J'AI UNE INSPIRATION =============================== */
@@ -1474,7 +1477,9 @@ function fenetreInspiration(o={}){
     $i('#i-chrono').textContent='Inspiration gardée';
     $i('#i-ecoute').textContent=navigator.onLine?'✨ L’IA range votre séance…':'Elle sera rangée en séance dès que le réseau revient.';
     $i('#i-actions').innerHTML=`<button class="btn" data-i="fermer">Fermer</button>`;
-    if(navigator.onLine){await rangerEnAttente();const fait=!dictees().some(x=>x.id===id);$i('#i-ecoute').textContent=fait?'✨ Séance créée : retrouvez-la dans Mes séances, « à relire ».':'Elle sera rangée en séance dès que possible.'}
+    if(navigator.onLine){
+      if(!(await cleGemini(true))){$i('#i-ecoute').textContent=MSG_SANS_CLE.replace('Dictée gardée','Inspiration gardée');return}
+      await rangerEnAttente();const fait=!dictees().some(x=>x.id===id);$i('#i-ecoute').textContent=fait?'✨ Séance créée : retrouvez-la dans Mes séances, « à relire ».':'Elle sera rangée en séance dès que possible.'}
   };
   v.addEventListener('click',e=>{
     const b=e.target.closest('[data-i]');if(!b)return;
