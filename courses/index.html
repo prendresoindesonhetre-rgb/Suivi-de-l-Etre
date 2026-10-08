@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self' https://issedanlnadbhidlymnc.supabase.co">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f2eef8">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="../icon-192.png">
+<link rel="icon" type="image/png" href="../icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Courses">
+<title>Nos courses</title>
+<link rel="stylesheet" href="../polices/polices.css">
+<style>
+:root {
+  --violet: #7a6a9a; --violet-fonce: #4a3a6a; --violet-pale: #f0eaf8; --pastille: #e4daf2; --pastille-bord: #cdbfe3;
+  --fond: #f2eef8; --carte: #fdfcff; --texte: #1e3a3a; --doux: #5a7575; --discret: #9ab0b0;
+  --bord: rgba(122,106,154,0.18); --bord-md: rgba(122,106,154,0.32); --rayon: 10px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fond); color: var(--texte); font-family: 'Nunito', system-ui, sans-serif; -webkit-text-size-adjust: 100%; }
+.page { max-width: 560px; margin: 0 auto; padding: calc(14px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom)); }
+h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 28px; font-weight: 600; color: var(--violet-fonce); margin: 4px 0 2px; }
+.etat { font-size: 12px; color: var(--doux); margin-bottom: 14px; min-height: 16px; }
+form { display: flex; gap: 8px; margin-bottom: 6px; }
+#ajout { flex: 1; min-width: 0; padding: 11px 12px; font-size: 16px; border: 1px solid var(--bord-md); border-radius: var(--rayon); background: #fff; font-family: inherit; color: var(--texte); }
+#ajout:focus { outline: 2px solid var(--pastille-bord); outline-offset: 0; }
+.btn { border: 1px solid var(--pastille-bord); background: var(--pastille); color: var(--violet-fonce); border-radius: var(--rayon); padding: 8px 14px; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; }
+.btn-plus { font-size: 22px; line-height: 1; padding: 6px 16px; }
+.aide { font-size: 11.5px; color: var(--doux); margin-bottom: 14px; }
+.ligne { display: flex; align-items: center; gap: 10px; background: var(--carte); border: 0.5px solid var(--bord); border-radius: var(--rayon); padding: 10px 12px; margin-bottom: 6px; }
+.ligne input[type=checkbox] { width: 22px; height: 22px; flex-shrink: 0; accent-color: var(--violet); cursor: pointer; margin: 0; }
+.qte { flex-shrink: 0; border: none; border-radius: 20px; padding: 3px 10px; font-size: 13px; font-weight: 800; cursor: pointer; font-family: inherit; background: var(--pastille); color: var(--violet-fonce); }
+.qte.vide { border: 1px dashed var(--bord-md); background: none; padding: 2px 8px; font-size: 11.5px; font-weight: 600; color: var(--discret); }
+.texte { flex: 1; min-width: 0; font-size: 16px; cursor: pointer; overflow-wrap: anywhere; }
+.pris .texte, .pris .qte { text-decoration: line-through; color: var(--discret); }
+.pris .qte { background: var(--bord); }
+.retirer { background: none; border: none; cursor: pointer; color: var(--discret); font-size: 20px; line-height: 1; padding: 0 2px; }
+.panier { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 6px; }
+.panier span { font-size: 11px; font-weight: 800; color: var(--discret); text-transform: uppercase; letter-spacing: 0.06em; }
+.panier .btn { font-size: 12px; padding: 4px 10px; background: #fff; }
+.vide-liste { text-align: center; padding: 1.5rem 1rem; color: var(--doux); font-size: 14px; }
+.vide-liste div { font-size: 36px; margin-bottom: 6px; }
+.astuce { display: flex; gap: 10px; align-items: flex-start; background: var(--violet-pale); border: 1px solid var(--pastille-bord); border-radius: var(--rayon); padding: 10px 12px; font-size: 12.5px; color: var(--violet-fonce); margin-bottom: 14px; }
+.astuce button { margin-left: auto; background: none; border: none; font-size: 18px; color: var(--violet); cursor: pointer; line-height: 1; }
+.message { background: var(--carte); border: 0.5px solid var(--bord); border-radius: var(--rayon); padding: 22px 16px; text-align: center; color: var(--doux); font-size: 14.5px; line-height: 1.5; }
+.message div { font-size: 38px; margin-bottom: 8px; }
+.fond-modale { position: fixed; inset: 0; background: rgba(74,58,106,0.35); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+.modale { background: var(--carte); border-radius: 14px; width: 340px; max-width: 100%; padding: 18px; box-shadow: 0 8px 30px rgba(74,58,106,0.25); }
+.modale h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; margin: 0 0 4px; color: var(--violet-fonce); }
+.modale p { font-size: 13px; color: var(--doux); margin: 0 0 10px; }
+.modale input { width: 100%; padding: 10px 12px; font-size: 16px; border: 1px solid var(--bord-md); border-radius: var(--rayon); font-family: inherit; }
+.modale .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.modale .actions .annuler { background: #fff; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>🛒 Nos courses</h1>
+  <div class="etat" id="etat"></div>
+  <div id="contenu"></div>
+</div>
+<script>
+'use strict';
+// Page « Nos courses » : la liste de courses partagée depuis Suivi de l'Être,
+// et rien d'autre. On y entre avec la clé du lien (?l=…), gardée ensuite sur
+// l'appareil. Les modifications en attente restent ici tant qu'elles ne sont
+// pas arrivées au serveur : rien ne se perd hors connexion.
+const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
+
+const lire = (k, defaut) => { try { const v = localStorage.getItem(k); return v === null ? defaut : JSON.parse(v); } catch (e) { return defaut; } };
+const ecrire = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+
+let cle = new URLSearchParams(location.search).get('l') || lire('nc_cle', '');
+if (cle) ecrire('nc_cle', cle);
+let liste = lire('nc_liste', []);
+let etat = '', majLe = 0;
+
+function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function newId() { return Date.now() + Math.floor(Math.random() * 1000); }
+
+// Mêmes règles que dans l'appli (index.html) : à garder en phase.
+function decouperCourses(saisie) {
+  const morceaux = [];
+  let courant = '';
+  for (let i = 0; i < saisie.length; i++) {
+    const ch = saisie[i];
+    if ((ch === ',' || ch === '.') && !(/\d/.test(saisie[i - 1] || '') && /\d/.test(saisie[i + 1] || ''))) { morceaux.push(courant); courant = ''; }
+    else courant += ch;
+  }
+  morceaux.push(courant);
+  return morceaux.map(s => s.trim()).filter(Boolean);
+}
+function separerQuantite(texte) {
+  const m = texte.match(/^(\d+(?:[.,]\d+)?)\s*(kg|mg|g|cl|ml|dl|l|x|×|paquets?|boîtes?|boites?|bouteilles?|sachets?|pots?|packs?|tranches?|barquettes?|briques?|douzaines?|bottes?|filets?|rouleaux|rouleau|pièces?|pieces?)?\s+(?:de\s+|d['’]\s*)?(.+)$/i);
+  if (!m || !m[3].trim()) return { texte, qte: '' };
+  let unite = m[2] || '';
+  if (/^[x×]$/i.test(unite)) unite = '';
+  if (unite === 'l') unite = 'L';
+  return { texte: m[3].trim(), qte: unite ? `${m[1]} ${unite}` : m[1] };
+}
+function appliquerOpCourses(l, op) {
+  l = (l || []).map(a => ({ ...a }));
+  const meme = (a, id) => String(a.id) === String(id);
+  if (op.t === 'ajout') (op.articles || []).forEach(n => { if (!l.some(a => meme(a, n.id))) l.push({ ...n }); });
+  else if (op.t === 'cocher') l.forEach(a => { if (meme(a, op.id)) a.fait = !!op.fait; });
+  else if (op.t === 'qte') l.forEach(a => { if (meme(a, op.id)) a.qte = op.qte || ''; });
+  else if (op.t === 'retirer') l = l.filter(a => !(op.ids || []).some(id => meme(a, id)));
+  return l;
+}
+
+async function rpc(fn, args) {
+  const res = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(args),
+  });
+  if (!res.ok) throw new Error('rpc ' + res.status);
+  const txt = await res.text();
+  return txt ? JSON.parse(txt) : null;
+}
+
+let enCours = null, encore = false;
+function synchroniser() {
+  if (!cle) return Promise.resolve();
+  if (enCours) { encore = true; return enCours; }
+  enCours = (async () => {
+    try {
+      let r = await rpc('courses_lire', { p_cle: cle });
+      for (let essai = 0; r && essai < 5; essai++) {
+        const attente = lire('nc_attente', []);
+        if (!attente.length) break;
+        const w = await rpc('courses_ecrire', { p_cle: cle, p_articles: attente.reduce(appliquerOpCourses, r.articles || []), p_version: r.version });
+        if (w && w.ok) ecrire('nc_attente', lire('nc_attente', []).slice(attente.length));
+        r = w;
+      }
+      if (!r) { etat = 'invalide'; }
+      else {
+        etat = 'ok'; majLe = Date.now();
+        liste = lire('nc_attente', []).reduce(appliquerOpCourses, r.articles || []);
+        ecrire('nc_liste', liste);
+      }
+    } catch (e) { etat = 'horsligne'; }
+    enCours = null;
+    afficher();
+    if (encore) { encore = false; synchroniser(); }
+  })();
+  return enCours;
+}
+function operation(op) {
+  liste = appliquerOpCourses(liste, op);
+  ecrire('nc_liste', liste);
+  ecrire('nc_attente', [...lire('nc_attente', []), op]);
+  afficher();
+  synchroniser();
+}
+
+function ajouter() {
+  const champ = document.getElementById('ajout');
+  const saisies = decouperCourses(champ.value || '');
+  if (!saisies.length) return;
+  const nouveaux = [];
+  saisies.forEach(s => {
+    let id = newId();
+    while (liste.some(x => x.id === id) || nouveaux.some(x => x.id === id)) id++;
+    const { texte, qte } = separerQuantite(s);
+    nouveaux.push({ id, texte, qte, fait: false });
+  });
+  operation({ t: 'ajout', articles: nouveaux });
+  champ.value = '';
+  champ.focus();
+}
+function basculer(id) { const a = liste.find(x => String(x.id) === String(id)); if (a) operation({ t: 'cocher', id: a.id, fait: !a.fait }); }
+function retirer(id) { operation({ t: 'retirer', ids: [id] }); }
+function viderCoches() { const ids = liste.filter(x => x.fait).map(x => x.id); if (ids.length) operation({ t: 'retirer', ids }); }
+function changerQuantite(id) {
+  const a = liste.find(x => String(x.id) === String(id));
+  if (!a) return;
+  const fond = document.createElement('div');
+  fond.className = 'fond-modale';
+  fond.innerHTML = `<form class="modale"><h2>Quantité</h2><p>Pour « ${escHtml(a.texte)} » (ex. : 2, 500 g, 1 kg). Laissez vide pour l'enlever.</p>
+    <input type="text" autocomplete="off" value="${escHtml(a.qte || '')}">
+    <div class="actions"><button type="button" class="btn annuler">Annuler</button><button type="submit" class="btn">OK</button></div></form>`;
+  document.body.appendChild(fond);
+  const champ = fond.querySelector('input');
+  const fermer = () => fond.remove();
+  fond.querySelector('.annuler').onclick = fermer;
+  fond.onclick = e => { if (e.target === fond) fermer(); };
+  fond.querySelector('form').onsubmit = e => { e.preventDefault(); fermer(); operation({ t: 'qte', id: a.id, qte: champ.value.trim() }); };
+  champ.focus(); champ.select();
+}
+
+function ligneHtml(a) {
+  const qte = a.qte ? `<button type="button" class="qte" data-qte="${a.id}">${escHtml(a.qte)}</button>`
+    : a.fait ? '' : `<button type="button" class="qte vide" data-qte="${a.id}">+ qté</button>`;
+  return `<div class="ligne${a.fait ? ' pris' : ''}">
+    <input type="checkbox" ${a.fait ? 'checked' : ''} data-cocher="${a.id}" aria-label="Pris">
+    ${qte}<span class="texte" data-cocher="${a.id}">${escHtml(a.texte)}</span>
+    <button type="button" class="retirer" data-retirer="${a.id}" aria-label="Retirer">×</button></div>`;
+}
+function afficher() {
+  const etatEl = document.getElementById('etat');
+  const contenu = document.getElementById('contenu');
+  if (!cle || etat === 'invalide') {
+    etatEl.textContent = '';
+    contenu.innerHTML = `<div class="message"><div>🔗</div>${cle ? 'Ce lien ne marche plus.<br>Demandez le nouveau lien de la liste de courses.' : 'Ouvrez le lien de la liste de courses que vous avez reçu par message.'}</div>`;
+    if (cle) { try { localStorage.removeItem('nc_cle'); } catch (e) {} }
+    return;
+  }
+  const heure = majLe ? new Date(majLe).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+  etatEl.textContent = etat === 'horsligne' ? 'Hors connexion · vos changements partiront dès le retour du réseau' : heure ? `À jour à ${heure}` : 'Mise à jour…';
+  if (!document.getElementById('ajout')) {
+    const autonome = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    contenu.innerHTML = `${!autonome && !lire('nc_astuce_vue', false) ? `<div class="astuce" id="astuce"><span>📲</span><span>Astuce : ajoutez cette page à votre écran d'accueil (bouton Partager, puis « Sur l'écran d'accueil ») pour la retrouver comme une appli.</span><button type="button" id="astuce-fermer" aria-label="Fermer">×</button></div>` : ''}
+      <form id="form-ajout"><input type="text" id="ajout" placeholder="Ajouter… (ex. : 2 baguettes, lait)" autocomplete="off" enterkeyhint="done"><button type="submit" class="btn btn-plus" aria-label="Ajouter">+</button></form>
+      <div class="aide">Plusieurs d'un coup en les séparant par des virgules ou des points · la quantité devant : « 2 baguettes », « 500 g farine ».</div>
+      <div id="liste"></div>`;
+    document.getElementById('form-ajout').onsubmit = e => { e.preventDefault(); ajouter(); };
+    document.getElementById('astuce-fermer')?.addEventListener('click', () => { ecrire('nc_astuce_vue', true); document.getElementById('astuce')?.remove(); });
+    document.getElementById('liste').addEventListener('click', e => {
+      const t = e.target.closest('[data-cocher],[data-qte],[data-retirer],[data-vider]');
+      if (!t) return;
+      if (t.dataset.cocher) { if (t.tagName === 'INPUT') e.preventDefault(); basculer(t.dataset.cocher); }
+      else if (t.dataset.qte) changerQuantite(t.dataset.qte);
+      else if (t.dataset.retirer) retirer(t.dataset.retirer);
+      else if (t.hasAttribute('data-vider')) viderCoches();
+    });
+  }
+  const aPrendre = liste.filter(x => !x.fait), pris = liste.filter(x => x.fait);
+  document.getElementById('liste').innerHTML = (aPrendre.length ? aPrendre.map(ligneHtml).join('')
+      : `<div class="vide-liste"><div>🛒</div>${pris.length ? 'Tout est dans le panier !' : 'La liste est vide.'}</div>`)
+    + (pris.length ? `<div class="panier"><span>Dans le panier (${pris.length})</span><button type="button" class="btn" data-vider>🧹 Effacer les cochés</button></div>${pris.map(ligneHtml).join('')}` : '');
+}
+
+afficher();
+synchroniser();
+// Ce que l'autre ajoute arrive tout seul : toutes les 15 s à l'écran, et au retour sur la page.
+setInterval(() => { if (document.visibilityState === 'visible') synchroniser(); }, 15000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') synchroniser(); });
+</script>
+</body>
+</html>
