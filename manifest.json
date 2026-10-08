@@ -47,6 +47,19 @@
       ]
     },
     {
+      "name": "Ma liste de tâches",
+      "short_name": "À faire",
+      "description": "Ouvrir directement ma liste « À faire »",
+      "url": "/?ouvrir=taches",
+      "icons": [
+        {
+          "src": "/raccourci-taches.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
       "name": "J'ai une inspiration",
       "short_name": "Inspiration",
       "description": "Créer une séance à la voix, tout de suite",

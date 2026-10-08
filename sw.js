@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v254';
+const CACHE = 'suivi-etre-v255';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -684,8 +684,27 @@ self.addEventListener('periodicsync', event => {
   if (event.tag === 'check-rdv') event.waitUntil(checkAndNotify());
 });
 
+// La liste « À faire » dans le volet : l'ouvrir, la retirer, ou elle a été balayée.
+const avertirVoletFerme = () => self.clients.matchAll({ type: 'window' }).then(l => l.forEach(c => c.postMessage({ type: 'VOLET_TACHES_FERME' })));
+self.addEventListener('notificationclose', event => {
+  if (event.notification.tag === 'liste-taches') event.waitUntil(avertirVoletFerme());
+});
 self.addEventListener('notificationclick', event => {
   event.notification.close();
+  if (event.notification.tag === 'liste-taches') {
+    if (event.action === 'taches-retirer') { event.waitUntil(avertirVoletFerme()); return; }
+    event.waitUntil(
+      self.clients.matchAll({ type: 'window' }).then(list => {
+        if (list.length > 0) {
+          list[0].focus();
+          list[0].postMessage({ type: 'NOTIF_ACTION', action: 'taches' });
+          return;
+        }
+        return self.clients.openWindow('./?ouvrir=taches');
+      })
+    );
+    return;
+  }
   if (event.notification.data?.demande || event.notification.data?.action === 'rappels') {
     event.waitUntil(
       self.clients.matchAll({ type: 'window' }).then(list => {
