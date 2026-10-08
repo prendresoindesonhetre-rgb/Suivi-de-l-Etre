@@ -1,5 +1,5 @@
 // Service Worker — Suivi de l'Être
-const CACHE = 'suivi-etre-v256';
+const CACHE = 'suivi-etre-v257';
 const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
 const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
@@ -688,8 +688,23 @@ self.addEventListener('periodicsync', event => {
 const avertirVoletFerme = () => self.clients.matchAll({ type: 'window' }).then(l => l.forEach(c => c.postMessage({ type: 'VOLET_TACHES_FERME' })));
 self.addEventListener('notificationclose', event => {
   if (event.notification.tag === 'liste-taches') event.waitUntil(avertirVoletFerme());
+  if (event.notification.tag === 'raccourcis') event.waitUntil(self.clients.matchAll({ type: 'window' }).then(l => l.forEach(c => c.postMessage({ type: 'RACCOURCIS_FERMES' }))));
 });
 self.addEventListener('notificationclick', event => {
+  // Les raccourcis restent dans le volet : seuls leurs boutons agissent.
+  if (event.notification.tag === 'raccourcis') {
+    if (event.action === 'inspiration') { event.waitUntil(self.clients.openWindow('./regie/#inspiration')); return; }
+    event.waitUntil(self.clients.matchAll({ type: 'window' }).then(list => {
+      const app = list.find(c => { const p = new URL(c.url).pathname; return !p.startsWith('/regie/') && !p.startsWith('/courses/'); });
+      if (app) {
+        app.focus();
+        if (event.action === 'courses') app.postMessage({ type: 'NOTIF_ACTION', action: 'courses' });
+        return;
+      }
+      return self.clients.openWindow(event.action === 'courses' ? './?ouvrir=courses' : './');
+    }));
+    return;
+  }
   event.notification.close();
   if (event.notification.tag === 'liste-taches') {
     if (event.action === 'taches-retirer') { event.waitUntil(avertirVoletFerme()); return; }
