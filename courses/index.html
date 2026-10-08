@@ -49,6 +49,19 @@ form { display: flex; gap: 8px; margin-bottom: 6px; }
 .astuce button { margin-left: auto; background: none; border: none; font-size: 18px; color: var(--violet); cursor: pointer; line-height: 1; }
 .message { background: var(--carte); border: 0.5px solid var(--bord); border-radius: var(--rayon); padding: 22px 16px; text-align: center; color: var(--doux); font-size: 14.5px; line-height: 1.5; }
 .message div { font-size: 38px; margin-bottom: 8px; }
+.onglets { display: flex; gap: 6px; background: #fff; border: 0.5px solid var(--bord); border-radius: 12px; padding: 4px; margin: 6px 0 8px; }
+.onglets button { flex: 1; border: none; background: none; border-radius: 9px; padding: 9px 6px; font-size: 14.5px; font-weight: 700; font-family: inherit; color: var(--doux); cursor: pointer; }
+.onglets button.actif { background: var(--pastille); color: var(--violet-fonce); }
+.jour { margin-bottom: 14px; }
+.jour h3 { font-size: 12px; font-weight: 800; color: var(--violet-fonce); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 6px; }
+.jour h3 span { color: var(--violet); }
+.creneau { display: flex; gap: 12px; align-items: baseline; background: var(--carte); border: 0.5px solid var(--bord); border-left: 4px solid #1a7a7a; border-radius: var(--rayon); padding: 9px 12px; margin-bottom: 6px; }
+.creneau.perso { border-left-color: var(--violet); }
+.creneau.passe { opacity: 0.45; }
+.creneau b { flex-shrink: 0; min-width: 104px; font-size: 14px; }
+.creneau .quoi { flex: 1; min-width: 0; font-size: 14.5px; overflow-wrap: anywhere; }
+.creneau .ou { display: block; font-size: 12.5px; color: var(--doux); margin-top: 1px; }
+.libre { background: #eef6ea; border: 0.5px solid #cfe3c6; color: #3c6a2e; border-radius: var(--rayon); padding: 9px 12px; font-size: 14px; margin-bottom: 14px; }
 .fond-modale { position: fixed; inset: 0; background: rgba(74,58,106,0.35); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
 .modale { background: var(--carte); border-radius: 14px; width: 340px; max-width: 100%; padding: 18px; box-shadow: 0 8px 30px rgba(74,58,106,0.25); }
 .modale h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; margin: 0 0 4px; color: var(--violet-fonce); }
@@ -60,9 +73,11 @@ form { display: flex; gap: 8px; margin-bottom: 6px; }
 </head>
 <body>
 <div class="page">
-  <h1>🛒 Nos courses</h1>
+  <h1 id="titre">🛒 Nos courses</h1>
+  <div class="onglets" id="onglets" hidden><button type="button" data-onglet="courses">🛒 Courses</button><button type="button" data-onglet="agenda">📅 Agenda</button></div>
   <div class="etat" id="etat"></div>
   <div id="contenu"></div>
+  <div id="agenda" hidden></div>
 </div>
 <script>
 'use strict';
@@ -79,6 +94,8 @@ const ecrire = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } c
 let cle = new URLSearchParams(location.search).get('l') || lire('nc_cle', '');
 if (cle) ecrire('nc_cle', cle);
 let liste = lire('nc_liste', []);
+let agenda = lire('nc_agenda', null), agendaMaj = lire('nc_agenda_maj', '');
+let onglet = lire('nc_onglet', 'courses');
 let etat = '', majLe = 0;
 
 function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -132,6 +149,7 @@ function synchroniser() {
   enCours = (async () => {
     try {
       let r = await rpc('courses_lire', { p_cle: cle });
+      if (r && 'agenda' in r) { agenda = r.agenda; agendaMaj = r.agenda_maj || ''; ecrire('nc_agenda', agenda); ecrire('nc_agenda_maj', agendaMaj); }
       for (let essai = 0; r && essai < 5; essai++) {
         const attente = lire('nc_attente', []);
         if (!attente.length) break;
@@ -203,17 +221,65 @@ function ligneHtml(a) {
     ${qte}<span class="texte" data-cocher="${a.id}">${escHtml(a.texte)}</span>
     <button type="button" class="retirer" data-retirer="${a.id}" aria-label="Retirer">×</button></div>`;
 }
+// ─── Agenda : un bloc par jour ; les jours libres d'affilée sont regroupés. ───
+const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const dateDe = s => new Date(s + 'T12:00:00');
+const heureLisible = h => h ? h.replace(/^0/, '').replace(':', 'h') : '';
+function nomJour(s, avecAnnee) {
+  return dateDe(s).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', ...(avecAnnee ? { year: 'numeric' } : {}) });
+}
+function afficherAgenda() {
+  const el = document.getElementById('agenda');
+  if (!agenda) { el.innerHTML = `<div class="message"><div>📅</div>L'agenda n'est pas encore partagé.<br>Il apparaîtra dès la prochaine ouverture de l'appli.</div>`; return; }
+  const maintenant = new Date(), auj = iso(maintenant), demain = iso(new Date(maintenant.getFullYear(), maintenant.getMonth(), maintenant.getDate() + 1, 12));
+  const heureNow = `${String(maintenant.getHours()).padStart(2, '0')}:${String(maintenant.getMinutes()).padStart(2, '0')}`;
+  const aVenir = agenda.filter(x => x.d >= auj);
+  const parJour = {};
+  aVenir.forEach(x => (parJour[x.d] = parJour[x.d] || []).push(x));
+  const annee = maintenant.getFullYear();
+  const titreJour = s => (s === auj ? "Aujourd'hui · " : s === demain ? 'Demain · ' : '') + nomJour(s, dateDe(s).getFullYear() !== annee);
+  const libre = (d1, d2) => {
+    if (d1 === d2) return `<div class="libre">🌿 Libre ${d1 === auj ? "aujourd'hui" : d1 === demain ? 'demain' : 'le ' + nomJour(d1, dateDe(d1).getFullYear() !== annee)}</div>`;
+    return `<div class="libre">🌿 Libre ${d1 === auj ? "jusqu'au" : 'du ' + nomJour(d1, false) + ' au'} ${nomJour(d2, dateDe(d2).getFullYear() !== annee)}</div>`;
+  };
+  let html = '', debutLibre = null, finLibre = null;
+  const dernier = aVenir.length ? aVenir[aVenir.length - 1].d : auj;
+  for (let d = dateDe(auj); iso(d) <= dernier; d.setDate(d.getDate() + 1)) {
+    const s = iso(d), du = parJour[s];
+    if (!du) { if (!debutLibre) debutLibre = s; finLibre = s; continue; }
+    if (debutLibre) { html += libre(debutLibre, finLibre); debutLibre = null; }
+    html += `<div class="jour"><h3>${escHtml(titreJour(s))}</h3>${du.map(x => `<div class="creneau${x.p ? ' perso' : ''}${s === auj && x.f && x.f <= heureNow ? ' passe' : ''}">
+        <b>${heureLisible(x.h)}${x.f ? ' – ' + heureLisible(x.f) : ''}</b>
+        <span class="quoi">${escHtml(x.t || 'Occupé')}${x.l ? `<span class="ou">📍 ${escHtml(x.l)}</span>` : ''}</span></div>`).join('')}</div>`;
+  }
+  if (debutLibre) html += libre(debutLibre, finLibre);
+  html += `<div class="libre" style="background:none;border-style:dashed;color:var(--doux)">${aVenir.length ? '🌿 Rien de prévu après le ' + nomJour(dernier, dateDe(dernier).getFullYear() !== annee) : '🌿 Aucun rendez-vous de prévu'}</div>`;
+  el.innerHTML = html;
+}
+
 function afficher() {
   const etatEl = document.getElementById('etat');
   const contenu = document.getElementById('contenu');
+  const ongletsEl = document.getElementById('onglets'), agendaEl = document.getElementById('agenda');
   if (!cle || etat === 'invalide') {
+    ongletsEl.hidden = true; agendaEl.hidden = true; contenu.hidden = false;
     etatEl.textContent = '';
     contenu.innerHTML = `<div class="message"><div>🔗</div>${cle ? 'Ce lien ne marche plus.<br>Demandez le nouveau lien de la liste de courses.' : 'Ouvrez le lien de la liste de courses que vous avez reçu par message.'}</div>`;
     if (cle) { try { localStorage.removeItem('nc_cle'); } catch (e) {} }
     return;
   }
+  ongletsEl.hidden = false;
+  ongletsEl.querySelectorAll('button').forEach(b => b.classList.toggle('actif', b.dataset.onglet === onglet));
+  document.getElementById('titre').textContent = onglet === 'agenda' ? '📅 Agenda' : '🛒 Nos courses';
+  contenu.hidden = onglet === 'agenda'; agendaEl.hidden = onglet !== 'agenda';
   const heure = majLe ? new Date(majLe).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
-  etatEl.textContent = etat === 'horsligne' ? 'Hors connexion · vos changements partiront dès le retour du réseau' : heure ? `À jour à ${heure}` : 'Mise à jour…';
+  if (onglet === 'agenda') {
+    const m = agendaMaj ? new Date(agendaMaj) : null;
+    etatEl.textContent = etat === 'horsligne' ? 'Hors connexion · dernier agenda reçu' : m ? `Agenda mis à jour le ${m.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} à ${m.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : '';
+    afficherAgenda();
+  } else {
+    etatEl.textContent = etat === 'horsligne' ? 'Hors connexion · vos changements partiront dès le retour du réseau' : heure ? `À jour à ${heure}` : 'Mise à jour…';
+  }
   if (!document.getElementById('ajout')) {
     const autonome = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
     contenu.innerHTML = `${!autonome && !lire('nc_astuce_vue', false) ? `<div class="astuce" id="astuce"><span>📲</span><span>Astuce : ajoutez cette page à votre écran d'accueil (bouton Partager, puis « Sur l'écran d'accueil ») pour la retrouver comme une appli.</span><button type="button" id="astuce-fermer" aria-label="Fermer">×</button></div>` : ''}
@@ -237,6 +303,13 @@ function afficher() {
     + (pris.length ? `<div class="panier"><span>Dans le panier (${pris.length})</span><button type="button" class="btn" data-vider>🧹 Effacer les cochés</button></div>${pris.map(ligneHtml).join('')}` : '');
 }
 
+document.getElementById('onglets').addEventListener('click', e => {
+  const b = e.target.closest('[data-onglet]');
+  if (!b) return;
+  onglet = b.dataset.onglet; ecrire('nc_onglet', onglet);
+  afficher();
+  window.scrollTo(0, 0);
+});
 afficher();
 synchroniser();
 // Ce que l'autre ajoute arrive tout seul : toutes les 15 s à l'écran, et au retour sur la page.

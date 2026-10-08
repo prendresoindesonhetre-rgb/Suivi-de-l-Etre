@@ -2,8 +2,13 @@
 -- Liste de courses partagée (mode Perso) : une page « Nos courses » à part,
 -- ouverte avec un lien secret, qui ne montre QUE la liste de courses.
 -- À coller dans Supabase → SQL Editor → Run. Sans danger pour vos données :
--- ce script crée une table nouvelle et quatre fonctions, et ne touche à rien
+-- ce script crée une table nouvelle et ses fonctions, et ne touche à rien
 -- d'autre (ni la table sync, ni les clients, ni les rendez-vous).
+-- Il est fait pour être relancé : après une mise à jour, recollez-le en entier.
+--
+-- La page montre aussi l'agenda : l'appli de la propriétaire y publie ses
+-- créneaux (horaires, type, lieu), sans aucun nom de client ni de contact ;
+-- pour un rendez-vous au domicile d'un client, seulement la ville.
 --
 -- Le lien contient une clé secrète tirée au hasard par l'appli. Le serveur
 -- n'en garde que l'empreinte : la clé elle-même n'est écrite nulle part ici.
@@ -20,11 +25,15 @@ create table if not exists public.courses_partagees (
   maj_le       timestamptz not null default now()
 );
 
+-- L'agenda publié par l'appli : [{ d, h, f, t, l, p }] (date, début, fin, type, lieu, perso).
+alter table public.courses_partagees add column if not exists agenda jsonb;
+alter table public.courses_partagees add column if not exists agenda_maj timestamptz;
+
 -- La table est fermée : on n'y passe que par les fonctions ci-dessous.
 alter table public.courses_partagees enable row level security;
 revoke all on public.courses_partagees from anon, authenticated;
 
--- Lire la liste avec la clé du lien. Rien (null) si la clé n'est pas bonne.
+-- Lire la liste (et l'agenda) avec la clé du lien. Rien (null) si la clé n'est pas bonne.
 create or replace function public.courses_lire(p_cle text)
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare r public.courses_partagees;
@@ -32,7 +41,7 @@ begin
   select * into r from public.courses_partagees
    where empreinte = encode(sha256(convert_to(coalesce(p_cle, ''), 'UTF8')), 'hex');
   if not found then return null; end if;
-  return jsonb_build_object('version', r.version, 'articles', r.articles);
+  return jsonb_build_object('version', r.version, 'articles', r.articles, 'agenda', r.agenda, 'agenda_maj', r.agenda_maj);
 end $$;
 
 -- Écrire la liste, seulement si personne ne l'a changée entre-temps (même
@@ -76,6 +85,18 @@ begin
   return v;
 end $$;
 
+-- Publier l'agenda : réservé à la propriétaire connectée, sur sa propre ligne.
+create or replace function public.courses_publier_agenda(p_agenda jsonb)
+returns boolean language plpgsql security definer set search_path = '' as $$
+begin
+  if auth.uid() is null then raise exception 'non connectée'; end if;
+  if p_agenda is null or jsonb_typeof(p_agenda) <> 'array' or length(p_agenda::text) > 1000000 then
+    raise exception 'agenda invalide';
+  end if;
+  update public.courses_partagees set agenda = p_agenda, agenda_maj = now() where proprietaire = auth.uid();
+  return found;
+end $$;
+
 -- Arrêter le partage : efface la liste partagée (l'appli garde sa copie).
 create or replace function public.courses_arreter()
 returns void language plpgsql security definer set search_path = '' as $$
@@ -90,7 +111,9 @@ revoke all on function public.courses_lire(text) from public, anon, authenticate
 revoke all on function public.courses_ecrire(text, jsonb, bigint) from public, anon, authenticated;
 revoke all on function public.courses_creer(text, jsonb) from public, anon, authenticated;
 revoke all on function public.courses_arreter() from public, anon, authenticated;
+revoke all on function public.courses_publier_agenda(jsonb) from public, anon, authenticated;
 grant execute on function public.courses_lire(text) to anon, authenticated;
 grant execute on function public.courses_ecrire(text, jsonb, bigint) to anon, authenticated;
 grant execute on function public.courses_creer(text, jsonb) to authenticated;
 grant execute on function public.courses_arreter() to authenticated;
+grant execute on function public.courses_publier_agenda(jsonb) to authenticated;
