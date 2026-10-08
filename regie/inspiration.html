@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f4f0fb">
+<link rel="manifest" href="inspiration.json">
+<link rel="apple-touch-icon" href="icone-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Inspiration">
+<title>Inspiration</title>
+<style>
+body{margin:0;background:#f4f0fb;color:#383650;font-family:system-ui,-apple-system,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}
+.carte{background:#fff;border-radius:22px;padding:24px;max-width:380px;box-shadow:0 18px 46px -30px rgba(56,54,80,.42);text-align:center;line-height:1.5}
+h1{font-family:Georgia,serif;font-weight:400;color:#3a3173;margin:0 0 10px;font-size:26px}
+ol{text-align:left;padding-left:20px;margin:14px 0}
+a{color:#2c7a87;font-weight:700}
+</style>
+</head>
+<body>
+<!-- Icône « Inspiration » de l'écran d'accueil (iPhone) : ouverte depuis l'icône, elle lance
+     tout de suite l'écoute dans la régie. Ouverte dans le navigateur, elle explique comment l'ajouter. -->
+<div class="carte" id="carte">
+  <h1>✨ Inspiration</h1>
+  <p>Ajoutez cette page à votre écran d'accueil : en la touchant, la régie s'ouvrira directement sur « J'ai une inspiration ».</p>
+  <ol><li>Touchez le bouton Partager (le carré avec la flèche).</li><li>Choisissez « Sur l'écran d'accueil ».</li><li>Validez : l'icône « Inspiration » apparaît.</li></ol>
+  <p><a href="./#inspiration">Ou l'ouvrir maintenant</a></p>
+</div>
+<script>
+if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+  document.getElementById('carte').innerHTML = '<h1>✨ Inspiration</h1><p>Ouverture de la régie…</p>';
+  location.replace('./#inspiration');
+}
+</script>
+</body>
+</html>

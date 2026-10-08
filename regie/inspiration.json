@@ -1,0 +1,15 @@
+{
+  "name": "Inspiration — Régie de l'Être",
+  "short_name": "Inspiration",
+  "description": "Créer une séance à la voix, tout de suite",
+  "id": "/regie/inspiration",
+  "start_url": "/regie/inspiration.html",
+  "scope": "/regie/",
+  "display": "standalone",
+  "background_color": "#f4f0fb",
+  "theme_color": "#f4f0fb",
+  "icons": [
+    { "src": "icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
