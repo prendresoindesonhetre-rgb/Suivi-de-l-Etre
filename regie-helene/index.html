@@ -695,6 +695,126 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .i-ecoute{min-height:20px;font-size:13px;color:var(--muted);font-style:italic;text-align:left}
 .i-ecoute .i-ok{color:var(--ok);font-style:normal;font-weight:700}.i-ecoute .i-ko{color:var(--alerte);font-style:normal;font-weight:700}
 .chip.a-relire{background:var(--attente-pale);color:var(--attente)}
+/* ——— Relire ——— */
+.relire{max-width:820px}
+.rl-haut{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.rl-titre{flex:1 1 220px;min-width:0;font-family:var(--serif);font-size:26px !important;color:var(--peri-darker) !important;border-color:transparent !important;background:transparent !important;padding:6px 8px !important}
+.rl-titre:focus,.rl-p-nom:focus,.rl-t-nom:focus{border-color:var(--line) !important;background:var(--plein) !important}
+.rl-act{display:flex;gap:4px;align-items:center;margin-left:auto}
+.rl-act .btn.rond:disabled{opacity:.3}
+.rl-etat{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:4px 0 12px 46px}
+.rl-prog{flex:0 0 90px;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.rl-prog i{display:block;height:100%;background:var(--ok);border-radius:3px}
+.chip.rl-ok{background:var(--ok-pale);color:var(--ok)}
+.rl-parties{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 10px;margin:0 -2px 6px;scrollbar-width:none}
+.rl-parties::-webkit-scrollbar{display:none}
+.rl-pt{flex:none;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--plein);border-radius:999px;padding:6px 14px 6px 6px;font-weight:700;font-size:13px;color:var(--ink);max-width:230px;cursor:pointer}
+.rl-pt .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rl-pt .n{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--violet-soft);color:var(--peri-darker);font-size:11.5px;font-weight:800}
+.rl-pt.on{border-color:var(--peri-deep);background:var(--violet-soft);color:var(--peri-darker)}
+.rl-pt.on .n{background:var(--peri-deep);color:#fff}
+.rl-pt.relue .n{background:var(--ok);color:#fff}
+.rl-pt.plus,.rl-pt[data-pt=ensemble]{padding:6px 12px}
+.rl-partie{background:var(--carte);border:1px solid var(--line);border-radius:24px;padding:18px;box-shadow:var(--ombre)}
+.rl-p-tete{display:flex;align-items:center;gap:8px}
+.rl-num{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--peri-deep);color:#fff;font-weight:800}
+.rl-p-nom{flex:1;min-width:0;font-family:var(--serif);font-size:23px !important;color:var(--peri-darker) !important;border-color:transparent !important;background:transparent !important;padding:4px 8px !important}
+.rl-p-infos{font-size:12.5px;color:var(--muted);margin:2px 0 10px 42px}
+.rl-note{font-size:13.5px;background:var(--aqua-pale) !important;border-color:transparent !important;resize:none;overflow:hidden}
+.rl-p-outils{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:10px 0 6px}
+.rl-vitesse{width:auto !important;padding:7px 10px !important;font-size:12.5px !important;border-radius:999px !important}
+.btn.lit{background:var(--peri-deep);border-color:var(--peri-deep);color:#fff}
+.rl-temps{display:flex;flex-direction:column}
+.rl-t{background:var(--plein);border:1px solid var(--line);border-left:5px solid var(--t-parole-f);border-radius:18px;padding:12px 14px}
+.rl-t[data-type=instrument]{border-left-color:var(--t-instrument-f)}.rl-t[data-type=musique]{border-left-color:var(--t-musique-f)}.rl-t[data-type=silence]{border-left-color:var(--t-silence-f)}
+.rl-t[data-type=transition]{border-left-color:var(--t-transition-f)}.rl-t[data-type=partage]{border-left-color:var(--t-partage-f)}
+.rl-t-tete{display:flex;align-items:center;gap:6px}
+.rl-t-nom{flex:1;min-width:0;font-weight:700 !important;border-color:transparent !important;background:transparent !important;padding:6px 8px !important}
+.rl-reg{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0 8px}
+.rl-reg select{width:auto;max-width:100%;padding:6px 10px;font-size:13px;border-radius:999px}
+.rl-duree{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;padding:0 2px;background:var(--plein)}
+.rl-duree .btn.rond{width:30px;height:30px;font-size:17px}
+.rl-duree b{min-width:50px;text-align:center;font-size:13px}
+.rl-libre{font-size:12.5px;color:var(--muted);display:inline-flex;align-items:center;gap:4px}
+.rl-libre input{width:auto;margin:0}
+.rl-rythme{font-size:12.5px;color:var(--muted)}
+.rl-rythme input{width:58px;padding:5px 6px;display:inline-block;text-align:center;border-radius:999px}
+.rl-texte{font-family:var(--serif);font-size:17px;line-height:1.7;resize:none;overflow:hidden;min-height:60px}
+.rl-outils{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.rl-outils:empty{display:none}
+.rl-outils .btn.s{padding:6px 11px;font-size:12.5px}
+.btn.rl-rep{border-color:var(--attente);color:var(--attente)}
+.rl-lecture{font-size:12px;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.rl-lecture:empty{display:none}
+.rl-lecture .btn{padding:3px 10px;font-size:12px}
+.rl-mots{opacity:.8}
+.rl-incompris{background:var(--attente-pale);border-radius:12px;padding:8px 10px;margin:2px 0 8px;display:flex;flex-direction:column;gap:6px}
+.rl-ic{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px;color:var(--attente);font-weight:800}
+.rl-ic input{flex:1 1 160px;min-width:0;padding:6px 10px;font-size:13px}
+.rl-ic .btn{padding:5px 11px;font-size:12px}
+.rl-prop{border:1.5px solid var(--peri-deep);border-radius:14px;padding:10px 12px;margin-top:8px;background:var(--violet-soft)}
+.rl-prop-t{font-size:12.5px;font-weight:800;color:var(--peri-darker);margin-bottom:6px}
+.rl-prop-x{font-family:var(--serif);font-size:16px;line-height:1.75;white-space:pre-wrap;color:var(--ink)}
+.rl-prop del{background:rgba(200,86,110,.16);color:var(--alerte);border-radius:4px;padding:0 2px}
+.rl-prop del[data-run]{cursor:pointer}
+.rl-prop del.garde{background:none;color:inherit;text-decoration:none;outline:1px dashed var(--muted)}
+.rl-prop ins{background:var(--ok-pale);color:var(--ok);text-decoration:none;border-radius:4px;padding:0 2px}
+.rl-prop .d-actions{margin-top:8px}
+.rl-ins{display:flex;justify-content:center;padding:5px 0}
+.rl-ins .btn{padding:3px 12px;font-size:12px;color:var(--muted);border-style:dashed;background:transparent}
+.rl-ins .menu-liste{left:50%;right:auto;transform:translateX(-50%)}
+.rl-suite{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:16px}
+.rl-suite .btn{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.rl-ens{display:flex;flex-direction:column;gap:10px}
+.rl-frise{display:flex;gap:5px;align-items:flex-start;margin-bottom:4px}
+.rl-fp{min-width:16px;border:none;background:none;padding:0;cursor:pointer;text-align:center;display:flex;flex-direction:column;gap:3px}
+.rl-fp small{font-size:11px;color:var(--muted);font-weight:700}
+.rl-ens-p{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;align-items:start;text-align:left;background:var(--carte);border:1px solid var(--line);border-radius:18px;padding:12px 14px;color:var(--ink);cursor:pointer}
+.rl-ens-p .n{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--violet-soft);color:var(--peri-darker);font-weight:800}
+.rl-ens-p.relue .n{background:var(--ok);color:#fff}
+.rl-ens-p .c b{display:block;font-family:var(--serif);font-weight:400;font-size:19px;color:var(--peri-darker)}
+.rl-ens-p .c small{display:block;font-size:12.5px;color:var(--muted)}
+.rl-ens-p .c em{display:block;font-size:12.5px;color:var(--muted);font-style:normal;margin-top:3px;white-space:pre-wrap}
+.rl-ens-p>.frise,.rl-vide-p{grid-column:1/-1}
+.rl-vide-p{font-size:12px;color:var(--muted);font-style:italic}
+.rl-total{text-align:right;font-size:14px;color:var(--muted)}
+.btn.relire.a-faire{border-color:var(--attente);color:var(--attente)}
+.chip.a-relire[data-relire]{cursor:pointer}
+/* ——— Égaliseur de son ——— */
+.egal-carte{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;border:1.5px dashed var(--line-bleu);background:transparent;border-radius:16px;padding:10px 12px;text-align:left;color:var(--ink);cursor:pointer}
+.egal-carte:hover{background:var(--aqua-pale)}
+.eg-ic{font-size:20px;line-height:1}
+.eg-c b{display:block;font-size:13.5px;color:var(--canard-dark)}
+.eg-c small{display:block;font-size:12px;color:var(--muted)}
+.fenetre.egal-fen{text-align:left;max-width:520px}
+.egal-fen h2{justify-content:flex-start}
+.eg-liste{display:flex;flex-direction:column;gap:10px;margin:12px 0 4px}
+.eg-son{border:1px solid var(--line);border-radius:16px;padding:10px 12px;background:var(--carte)}
+.eg-t{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.eg-t b{font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.eg-t small{flex-basis:100%;font-size:12px;color:var(--muted)}
+.eg-barre{display:grid;grid-template-columns:58px minmax(0,1fr) 50px;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin:4px 0}
+.eg-barre i{position:relative;height:10px;border-radius:5px;background:var(--line)}
+.eg-barre u{display:block;height:100%;border-radius:5px;background:var(--muted);opacity:.5}
+.eg-barre.apres u{background:var(--canard);opacity:1}
+.eg-barre s,.eg-legende s{position:absolute;top:-3px;bottom:-3px;left:50%;width:2px;background:var(--peri-deep);border-radius:1px}
+.eg-barre em{font-style:normal;text-align:right;font-weight:800;color:var(--ink)}
+.eg-reg{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px;font-size:12.5px;color:var(--muted)}
+.eg-reg b{min-width:44px;text-align:center;color:var(--ink)}
+.eg-reg .btn.rond{width:30px;height:30px;font-size:17px;border:1px solid var(--line)}
+.eg-reg .btn.s{margin-left:auto}
+.eg-info{font-size:12.5px;color:var(--muted);font-style:italic}
+.eg-legende{position:relative;font-size:11.5px;color:var(--muted);padding-left:12px}
+.eg-legende s{left:2px;top:2px;bottom:2px}
+@media(max-width:480px){
+  .ls-actions>.btn.relire{grid-column:1/-1}
+  .rl-partie{padding:14px;border-radius:20px}
+  .rl-etat{margin-left:0}
+  .rl-titre{font-size:21px !important;flex-basis:160px}
+  .rl-p-nom{font-size:20px !important}
+  .rl-t{padding:10px 11px}
+  .rl-texte{font-size:16px}
+}
 .champ.mc{display:block;font-size:12.5px;font-weight:700;color:var(--peri-darker);margin-bottom:8px}
 .nouvelle.dicter{width:100%;border-style:solid;background:var(--canard-light);font-size:16px;padding:16px;margin:0 0 14px}
 .dictee-fen{max-width:460px;text-align:center;max-height:calc(100vh - 36px);overflow-y:auto}
@@ -810,7 +930,10 @@ const IC={
   ciseaux:I('<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.1 8.1L20 20M8.1 15.9L20 4"/>',16),
   micro:I('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>',17),
   check:I('<path d="M5 12l5 5 9-10"/>',15),partager:I('<path d="M12 15V4M7 9l5-5 5 5M5 14v5h14v-5"/>',15),
-  pause:I('<path d="M8 5v14M16 5v14"/>',15,2.4),recaler:I('<path d="M4 12a8 8 0 0114-5.3L20 9"/><path d="M20 4v5h-5"/>',15)
+  pause:I('<path d="M8 5v14M16 5v14"/>',15,2.4),recaler:I('<path d="M4 12a8 8 0 0114-5.3L20 9"/><path d="M20 4v5h-5"/>',15),
+  relire:I('<path d="M3 6a2 2 0 012-2h5a2 2 0 012 2v14a2 2 0 00-2-2H3zM21 6a2 2 0 00-2-2h-5a2 2 0 00-2 2v14a2 2 0 012-2h7z"/>',15),
+  son:I('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 010 7"/>',15),
+  defaire:I('<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/>',17),refaire:I('<path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 000 12h3"/>',17)
 };
 const TYPES={
   parole:{nom:'Parole',visio:'ecoute'},instrument:{nom:'Instrument',visio:'musique'},musique:{nom:'Musique',visio:'musique'},
@@ -878,12 +1001,13 @@ document.addEventListener('click',e=>{if(!e.target.closest('.menu-liste'))$$('.m
 let vue='seances';
 function aller(v,p){
   if(vue==='guider'&&v!=='guider')quitterGuide();
+  if(vue==='relire'&&v!=='relire')arreterLecture();
   vue=v;
   $('#haut').classList.toggle('cache',v==='guider');
-  $('#onglets').classList.toggle('cache',v==='editer');
+  $('#onglets').classList.toggle('cache',v==='editer'||v==='relire');
   $$('#onglets button').forEach(b=>b.classList.toggle('on',b.dataset.v===(v==='montage'?'musiques':v)));
   if(v!=='montage')arreterEcoute();
-  ({seances:vueSeances,blocs:vueBlocs,musiques:vueMusiques,bilans:vueBilans,editer:vueEditer,guider:vueGuider,bilan:vueBilan,montage:vueMontage})[v](p);
+  ({seances:vueSeances,blocs:vueBlocs,musiques:vueMusiques,bilans:vueBilans,editer:vueEditer,relire:vueRelire,guider:vueGuider,bilan:vueBilan,montage:vueMontage})[v](p);
   window.scrollTo(0,0);
   if(SYN.differe&&!occupe()){SYN.differe=false;setTimeout(synchroniser,300)}
 }
@@ -903,10 +1027,11 @@ function vueSeances(){
     <div class="liste-seances">
       ${D.seances.map(s=>`<div class="ls">
         <div><h3 data-editer="${s.id}">${esc(s.titre)}</h3>
-          <div class="meta">${s.aRelire?'<span class="chip a-relire">✨ À relire</span>':''}<span>${KIND[s.genre]||'Séance'}</span><span>·</span><span>${s.blocs.length} temps · ${totalTxt(s)}</span>${s.debut?`<span>·</span><span>${s.debut.replace(':',' h ')} – ${s.finH.replace(':',' h ')}</span>`:''}</div>
+          <div class="meta">${s.aRelire?`<span class="chip a-relire"${estInspiration(s)?` data-relire="${s.id}" role="button"`:''}>✨ À relire</span>`:''}<span>${KIND[s.genre]||'Séance'}</span><span>·</span><span>${s.blocs.length} temps · ${totalTxt(s)}</span>${s.debut?`<span>·</span><span>${s.debut.replace(':',' h ')} – ${s.finH.replace(':',' h ')}</span>`:''}</div>
           ${frise(s.blocs,{large:true})}</div>
         <div class="ls-actions">
           <button class="btn p" data-guider="${s.id}">${IC.play} Guider</button>
+          ${estInspiration(s)?`<button class="btn relire${s.aRelire?' a-faire':''}" data-relire="${s.id}">${IC.relire} Relire</button>`:''}
           <button class="btn" data-editer="${s.id}">${IC.edit} Préparer</button>
           <div class="menu"><button class="btn rond nu" title="Plus">${IC.points}</button><div class="menu-liste">
             <button data-dupliquer="${s.id}">${IC.copie} Dupliquer</button><button data-supprimer="${s.id}" style="color:var(--alerte)">${IC.poubelle} Supprimer</button></div></div>
@@ -920,6 +1045,7 @@ function vueSeances(){
   $('#b-inspi').onclick=()=>fenetreInspiration({auto:true});$('#b-mots').onclick=fenetreMotsCles;
   $('#b-enr-libre').onclick=()=>fenetreEnregistreur({titre:'Enregistrement libre',fond:true,nom:`Séance – ${new Date().toLocaleDateString('fr-FR')}`});
   $$('[data-editer]').forEach(b=>b.onclick=()=>aller('editer',b.dataset.editer));
+  $$('[data-relire]').forEach(b=>b.onclick=()=>aller('relire',b.dataset.relire));
   $$('[data-visio]').forEach(b=>b.onclick=()=>fenetreSalle(b.dataset.visio));
   $$('[data-dupliquer]').forEach(b=>b.onclick=()=>{const s=clone(trouverSeance(b.dataset.dupliquer));s.id=uid();s.titre+=' (copie)';s.blocs.forEach(x=>x.id=uid());D.seances.push(s);sauver();vueSeances();toast('Séance dupliquée')});
   $$('[data-supprimer]').forEach(b=>b.onclick=()=>{const s=trouverSeance(b.dataset.supprimer);if(confirm(`Supprimer « ${s.titre} » ?`)){D.seances=D.seances.filter(x=>x!==s);sauver();vueSeances();toast('Séance supprimée')}});
@@ -1476,10 +1602,14 @@ function nouvelleInspiration(){
     // La séance finale. Les temps de parole sans nom de partie prennent leurs premiers mots pour nom.
     seance(){
       if(st.partieNom)nommerPartie(st.partieNom);
-      const blocs=st.blocs.map(b=>{const x=Object.assign({},b);delete x.nomPartie;if(x.texte)x.texte=majuscule(x.texte);
-        if(x.type==='parole'&&!b.nomPartie&&x.nom==='Parole'&&x.texte){const m=x.texte.split(/\s+/).slice(0,5).join(' ').replace(/[,.;:!?]+$/,'');x.nom=m.length>40?m.slice(0,40)+'…':m}return x});
+      // Les parties restent dans la séance (pour « Relire ») ; une partie sans temps disparaît.
+      const P=st.parties.map((p,i)=>({id:uid(),nom:p.nom||'',note:'',relue:false,debut:p.debut,fin:i+1<st.parties.length?st.parties[i+1].debut:st.blocs.length})).filter(p=>p.fin>p.debut);
+      const partieDe=j=>(P.find(p=>j>=p.debut&&j<p.fin)||P[P.length-1]||{}).id;
+      const blocs=st.blocs.map((b,j)=>{const x=Object.assign({},b);delete x.nomPartie;if(x.texte)x.texte=majuscule(x.texte);
+        if(x.type==='parole'&&!b.nomPartie&&x.nom==='Parole'&&x.texte){const m=x.texte.split(/\s+/).slice(0,5).join(' ').replace(/[,.;:!?]+$/,'');x.nom=m.length>40?m.slice(0,40)+'…':m}
+        x.partie=partieDe(j);if(x.texte)x.texteDicte=x.texte;return x});
       const quand=new Date();
-      return {id:uid(),titre:st.titre||`Inspiration du ${quand.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} à ${heureTxt(quand)}`,genre:'atelier',debut:'',finH:'',blocs,aRelire:true};
+      return {id:uid(),titre:st.titre||`Inspiration du ${quand.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} à ${heureTxt(quand)}`,genre:'atelier',debut:'',finH:'',blocs,parties:P.map(({id,nom,note,relue})=>({id,nom,note,relue})),inspiration:true,aRelire:true};
     }
   };
 }
@@ -1494,17 +1624,18 @@ function consigneMotsCles(){
   const mv=D.prefs.motsVoix||{},decl=String(D.prefs.declencheur||DECLENCHEUR_DEFAUT);
   return `\n\nIl donne ses consignes à la régie avec le mot « ${decl} » (le téléphone peut l'avoir écrit « Régis » ou « régi ») : tout ce qui suit ce mot jusqu'à la fin de la phrase est une consigne, pas du texte à dire ; tout le reste est le texte du temps en cours. Exemples : « ${decl}, crée un silence d'une minute » (nouveau temps silence d'1 min) ; « ${decl}, ajoute un temps de bâton de pluie en 5 s 5 s » (instrument pluie, inspire 5 s, expire 5 s) ; « ${decl}, là c'était la partie induction, passe à une autre partie » (les temps de parole de ce passage s'appellent « Induction », la suite commence un nouveau temps) ; « ${decl}, annule » (retire le temps précédent) ; « ${decl}, pause » / « reprends » (ignore ce qui est dit entre les deux) ; « ${decl}, fin de l'inspiration », « ${decl}, terminé » ou « ${decl}, j'ai fini » (fin). Son vocabulaire : `+Object.entries(MOTS_VOIX).filter(([k])=>k!=='aide').map(([k,v])=>`${(Array.isArray(mv[k])&&mv[k].length?mv[k]:v.mots).map(m=>'« '+m+' »').join(' ou ')} = ${v.nom}`).join(' ; ')+'. Respecte ses consignes dans l’ordre. Pour un bâton de pluie, mets le rythme dans "repere" (ex. « inspire 5 s · expire 5 s »).';
 }
-function creerSeanceInspiration(s){D.seances.push(s);sauver();return s}
+function creerSeanceInspiration(s){s.inspiration=true;s.blocs.forEach(b=>{if(b.texte&&b.texteDicte==null)b.texteDicte=b.texte});D.seances.push(s);sauver();return s}
 
 // La fenêtre de l'inspiration. o.auto : ouverte par le raccourci (on tente de démarrer seul).
 const majuscule1=s=>s.charAt(0).toUpperCase()+s.slice(1);
 function fenetreInspiration(o={}){
   if($('.dictee'))return;
+  if(o.surSeance&&!(RECO&&navigator.onLine))return toast('Pour refaire une partie à la voix, il faut la dictée en direct (avec internet).');
   const id='dictee-'+uid(),ins=nouvelleInspiration();
   let mode=RECO&&navigator.onLine?'direct':'enr',etat='pret',reco=null,dicta=null,t0=0,tick=null,silenceDepuis=0,interim='';
   const v=document.createElement('div');v.className='voile dictee';
   v.innerHTML=`<div class="fenetre dictee-fen inspi-fen">
-    <h2>✨ J’ai une inspiration</h2>
+    <h2>${o.refaire?`${IC.micro} Refaire « ${esc(o.refaire)} »`:'✨ J’ai une inspiration'}</h2>
     <p class="sous" id="i-mode"></p>
     <button class="d-micro" id="i-micro" aria-label="Commencer">${IC.micro}</button>
     <div class="d-chrono" id="i-chrono">Touchez pour commencer</div>
@@ -1576,16 +1707,17 @@ function fenetreInspiration(o={}){
       if(dicta){if(n>.06)silenceDepuis=Date.now();if(Date.now()-silenceDepuis>60000||Date.now()-t0>1800000)terminer()}
     },250);
   };
-  const fermer=()=>{clearInterval(tick);garderEcran(false);if(reco){const r=reco;reco=null;r.abandonner()}v.remove();commandes(false);if(vue==='seances')vueSeances()};
+  const fermer=()=>{clearInterval(tick);garderEcran(false);if(reco){const r=reco;reco=null;r.abandonner()}v.remove();commandes(false);if(vue==='seances')vueSeances();if(o.surFermer)o.surFermer()};
   const terminer=async()=>{
     if(etat==='fini')return;
     etat='fini';clearInterval(tick);garderEcran(false);$i('#i-niveau').style.width='0';majActions();
     if(reco){const r=reco;reco=null;await r.arreter();interim=''}
     if(mode==='direct'){
       if(!ins.st.blocs.length){$i('#i-chrono').textContent='Rien n’a été entendu';$i('#i-actions').innerHTML=`<button class="btn" data-i="fermer">Fermer</button>`;return}
+      if(o.surSeance){o.surSeance(ins.seance());sonVoix('fin');$i('#i-chrono').textContent='✨ Partie refaite';$i('#i-ecoute').textContent='';$i('#i-actions').innerHTML=`<button class="btn p" data-i="fermer">${IC.check} Revenir à la relecture</button>`;return}
       const s=creerSeanceInspiration(ins.seance());sonVoix('fin');
       $i('#i-chrono').textContent='✨ Séance créée';$i('#i-ecoute').textContent='';
-      $i('#i-actions').innerHTML=`<button class="btn" data-i="fermer">Fermer</button><button class="btn p" data-i="voir" data-s="${s.id}">${IC.edit} Voir la séance</button>`;
+      $i('#i-actions').innerHTML=`<button class="btn" data-i="fermer">Fermer</button><button class="btn p" data-i="relire" data-s="${s.id}">${IC.relire} Relire</button>`;
       return;
     }
     const blob=dicta?await dicta.arreter():null;
@@ -1605,6 +1737,7 @@ function fenetreInspiration(o={}){
     else if(q==='annuler'){if(confirm('Abandonner cette inspiration ?')){etat='fini';if(dicta)dicta.annuler();oublierDictee(id);fermer()}}
     else if(q==='fin')terminer();
     else if(q==='voir'){const sid=b.dataset.s;fermer();aller('editer',sid)}
+    else if(q==='relire'){const sid=b.dataset.s;fermer();aller('relire',sid)}
   });
   $i('#i-cmd-b').onclick=()=>commandes(true);
   $i('#i-micro').onclick=()=>{if(etat==='pret')demarrer();else if(etat==='enr'){ins.st.enPause=!ins.st.enPause;sonVoix(ins.st.enPause?'pause':'reprise');dessiner();majActions()}};
@@ -1652,11 +1785,521 @@ function fenetreMotsCles(){
   };
 }
 
+/* =============================== RELIRE =============================== */
+// Relire une séance de « J'ai une inspiration », partie par partie : le texte (répétitions, IA,
+// écoute, texte dicté), l'ordre des parties et des temps, les réglages, les notes, et le suivi.
+// Chaque temps porte l'identifiant de sa partie (b.partie) ; les temps d'une partie se suivent.
+const estInspiration=s=>!!(s.inspiration||s.aRelire||Array.isArray(s.parties)||/^Inspiration du /.test(s.titre||''));
+function preparerParties(s){
+  if(!Array.isArray(s.parties)||!s.parties.length)s.parties=[{id:uid(),nom:'',note:'',relue:false}];
+  const ids=new Set(s.parties.map(p=>p.id));let cour=s.parties[0].id;
+  s.blocs.forEach(b=>{if(!ids.has(b.partie))b.partie=cour;cour=b.partie});
+  rangerParties(s);
+}
+// Remet les temps dans l'ordre des parties (l'ordre des temps d'une même partie ne bouge pas).
+function rangerParties(s){const rang=new Map(s.parties.map((p,i)=>[p.id,i]));s.blocs=s.blocs.map((b,i)=>[b,i]).sort((x,y)=>(rang.get(x[0].partie)??0)-(rang.get(y[0].partie)??0)||x[1]-y[1]).map(x=>x[0])}
+const blocsDe=(s,pid)=>s.blocs.filter(b=>b.partie===pid);
+const dureeBlocs=l=>l.reduce((t,b)=>t+(b.libre?0:+b.min||0),0);
+const nomPartie=(p,i)=>p.nom||'Partie '+(i+1);
+const motsTexte=t=>(String(t||'').match(/[\p{L}\p{N}'’-]+/gu)||[]).length;
+const lectureMin=t=>motsTexte(t)/(D.prefs.wpm||90);
+const minSec=m=>{const s=Math.round(m*60);return s<60?`${s} s`:`${Math.floor(s/60)} min${s%60?' '+String(s%60).padStart(2,'0'):''}`};
+
+// Les mots redits par la dictée (« bonjour bonjour je bonjour je m'appelle ») : quand les mots qui
+// arrivent redisent la fin de ce qui précède, ils sont proposés à l'effacement, par paquets.
+function repetitions(texte){
+  const re=/(\s*)(\S+)/g,toks=[];let m;
+  while((m=re.exec(String(texte||''))))toks.push({esp:m[1],mot:m[2],n:normReco(m[2])});
+  const garde=[],runs=[];
+  for(let i=0;i<toks.length;){
+    let saut=0;
+    if(toks[i].n)for(let k=Math.min(15,garde.length,toks.length-i);k>=1;k--){
+      let ok=true;for(let j=0;j<k;j++)if(toks[garde[garde.length-k+j]].n!==toks[i+j].n){ok=false;break}
+      if(ok){saut=k;break}
+    }
+    if(saut){runs.push([i,i+saut]);i+=saut}else{garde.push(i);i++}
+  }
+  return {toks,runs,mots:runs.reduce((t,[a,b])=>t+b-a,0)};
+}
+// Le texte sans les paquets effacés (ceux que la personne a choisi de garder restent).
+function texteSans(r,gardes){
+  const out=new Set();r.runs.forEach(([a,b],k)=>{if(!gardes.has(k))for(let i=a;i<b;i++)out.add(i)});
+  let t='',saut='';
+  r.toks.forEach((x,i)=>{if(out.has(i)){if(/\n/.test(x.esp)&&!saut)saut=x.esp;return}t+=(t?(saut&&!/\n/.test(x.esp)?saut:x.esp||' '):'')+x.mot;saut=''});
+  return t;
+}
+// Différence mot à mot entre deux textes (pour montrer la correction proposée).
+function diffMots(a,b){
+  const A=String(a).split(/\s+/).filter(Boolean),B=String(b).split(/\s+/).filter(Boolean),n=A.length,m=B.length;
+  if(n*m>4e6)return [{t:'del',m:A.join(' ')},{t:'ins',m:B.join(' ')}];
+  const L=Array.from({length:n+1},()=>new Uint16Array(m+1));
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)L[i][j]=A[i]===B[j]?L[i+1][j+1]+1:Math.max(L[i+1][j],L[i][j+1]);
+  const r=[];let i=0,j=0;
+  const pousser=(t,mot)=>{const d=r[r.length-1];if(d&&d.t===t)d.m+=' '+mot;else r.push({t,m:mot})};
+  while(i<n&&j<m){if(A[i]===B[j]){pousser('eq',B[j]);i++;j++}else if(L[i+1][j]>=L[i][j+1])pousser('del',A[i++]);else pousser('ins',B[j++])}
+  while(i<n)pousser('del',A[i++]);while(j<m)pousser('ins',B[j++]);
+  return r;
+}
+// Les consignes « Régie, … » que l'inspiration n'a pas comprises (gardées dans le repère du temps).
+const LIGNE_INCOMPRISE=/^🎙️ Consigne non comprise : « (.*) »$/;
+const incomprises=b=>String(b.repere||'').split('\n').map(l=>(l.match(LIGNE_INCOMPRISE)||[])[1]).filter(x=>x!=null);
+function sansIncomprise(b,j){let k=-1;b.repere=String(b.repere||'').split('\n').filter(l=>!(LIGNE_INCOMPRISE.test(l)&&++k===j)).join('\n')}
+
+// ——— Lecture à voix haute (la voix du téléphone) ———
+let LIT=null;
+function arreterLecture(){LIT=null;try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}majBoutonsLecture()}
+function lireTexte(cle,texte){
+  if(!window.speechSynthesis||!window.SpeechSynthesisUtterance)return toast('La lecture à voix haute n’est pas disponible sur cet appareil');
+  if(LIT===cle)return arreterLecture();
+  speechSynthesis.cancel();LIT=cle;
+  const v=speechSynthesis.getVoices(),voix=v.find(x=>/^fr[-_]FR/i.test(x.lang))||v.find(x=>/^fr/i.test(x.lang));
+  const morceaux=String(texte||'').split(/(?<=[.!?…])\s+|\n+/).map(x=>x.trim()).filter(Boolean).flatMap(x=>x.length>220?(x.match(/.{1,220}(\s|$)/g)||[x]):[x]);
+  if(!morceaux.length){LIT=null;return}
+  morceaux.forEach((m,i)=>{const u=new SpeechSynthesisUtterance(m);u.lang='fr-FR';if(voix)u.voice=voix;u.rate=D.prefs.relireVitesse||.9;
+    if(i===morceaux.length-1)u.onend=u.onerror=()=>{if(LIT===cle){LIT=null;majBoutonsLecture()}};speechSynthesis.speak(u)});
+  majBoutonsLecture();
+}
+function majBoutonsLecture(){
+  $$('[data-tt="ecouter"]').forEach(x=>{const on=LIT==='b:'+x.closest('[data-b]').dataset.b;x.innerHTML=on?`${IC.stop} Arrêter`:`${IC.son} Écouter`;x.classList.toggle('lit',on)});
+  const pb=$('[data-pa="ecouter"]');if(pb){const on=!!(LIT&&LIT.startsWith('p:'));pb.innerHTML=on?`${IC.stop} Arrêter`:`${IC.son} Écouter la partie`;pb.classList.toggle('lit',on)}
+}
+
+// Un petit choix en fenêtre : renvoie la clé du bouton touché (ou null).
+function choisir(titre,texte,boutons){return new Promise(ok=>{
+  const v=document.createElement('div');v.className='voile';v.style.zIndex='90';
+  v.innerHTML=`<div class="fenetre"><h2>${titre}</h2><p class="sous" style="margin:0 0 14px">${texte}</p><div class="actions" style="flex-wrap:wrap">${boutons.map(([k,t,p])=>`<button class="btn${p?' p':''}" data-c="${k}">${t}</button>`).join('')}</div></div>`;
+  v.onclick=e=>{const b=e.target.closest('[data-c]');if(e.target===v||b){v.remove();ok(b?b.dataset.c:null)}};
+  document.body.appendChild(v);
+})}
+
+// ——— L'écran ———
+let R=null;
+function vueRelire(p){
+  const id=p&&typeof p==='object'?p.id:p,s=trouverSeance(id);if(!s)return aller('seances');
+  preparerParties(s);sauverBientot();
+  R={s,partie:p&&p.partie||(s.parties.find(x=>!x.relue)||s.parties[0]).id,annuler:[],retablir:[],saisie:false,prop:{}};
+  arreterLecture();dessinerRelire();
+}
+const photoRelire=()=>JSON.stringify({titre:R.s.titre,blocs:R.s.blocs,parties:R.s.parties,aRelire:!!R.s.aRelire});
+function retenirRelire(){R.annuler.push(photoRelire());if(R.annuler.length>80)R.annuler.shift();R.retablir=[];majAnnuler()}
+function remettreRelire(x){
+  const o=JSON.parse(x);Object.assign(R.s,{titre:o.titre,blocs:o.blocs,parties:o.parties});if(o.aRelire)R.s.aRelire=true;else delete R.s.aRelire;
+  if(R.partie!=='ensemble'&&!R.s.parties.some(p=>p.id===R.partie))R.partie=R.s.parties[0].id;
+  R.prop={};sauver();dessinerRelire();
+}
+function annulerRelire(){if(!R.annuler.length)return;R.retablir.push(photoRelire());remettreRelire(R.annuler.pop());toast('Modification annulée')}
+function retablirRelire(){if(!R.retablir.length)return;R.annuler.push(photoRelire());remettreRelire(R.retablir.pop());toast('Modification rétablie')}
+function majAnnuler(){const a=$('#rl-annuler'),r=$('#rl-retablir');if(a)a.disabled=!R.annuler.length;if(r)r.disabled=!R.retablir.length}
+// Une modification : retenue pour « Annuler », temps remis dans l'ordre, enregistrée, écran redessiné.
+function modifierRelire(fn,redessiner=true){retenirRelire();fn(R.s);rangerParties(R.s);sauver();if(redessiner)dessinerRelire()}
+const partieCourante=()=>R.s.parties.find(p=>p.id===R.partie);
+const blocRelire=id=>R.s.blocs.find(b=>b.id===id);
+
+function dessinerRelire(o={}){
+  if(vue!=='relire'||!R)return;
+  const s=R.s,P=s.parties,ens=R.partie==='ensemble',p=ens?null:(partieCourante()||P[0]),relues=P.filter(x=>x.relue).length,y=window.scrollY;
+  if(p)R.partie=p.id;
+  $('#vue').innerHTML=`<div class="filigrane" aria-hidden="true"></div><div class="page relire" id="relire">
+    <div class="rl-haut">
+      <button class="btn rond nu" id="rl-retour" title="Mes séances">${IC.retour}</button>
+      <input type="text" class="rl-titre" id="rl-titre" value="${esc(s.titre)}" aria-label="Titre de la séance">
+      <div class="rl-act">
+        <button class="btn rond nu" id="rl-annuler" title="Annuler" ${R.annuler.length?'':'disabled'}>${IC.defaire}</button>
+        <button class="btn rond nu" id="rl-retablir" title="Rétablir" ${R.retablir.length?'':'disabled'}>${IC.refaire}</button>
+        <button class="btn p s" id="rl-guider">${IC.play} Guider</button>
+      </div>
+    </div>
+    <div class="rl-etat"><span>${P.length} partie${P.length>1?'s':''} · ${s.blocs.length} temps · ${totalTxt(s)}</span>
+      <span class="rl-prog" title="${relues} partie${relues>1?'s':''} relue${relues>1?'s':''} sur ${P.length}"><i style="width:${Math.round(relues/P.length*100)}%"></i></span><span>${relues}/${P.length} relue${relues>1?'s':''}</span>
+      ${s.aRelire?`<button class="btn s" id="rl-tout">${IC.check} Tout est relu</button>`:'<span class="chip rl-ok">✓ Séance relue</span>'}</div>
+    <nav class="rl-parties" id="rl-parties">
+      <button class="rl-pt${ens?' on':''}" data-pt="ensemble">${IC.liste} Vue d’ensemble</button>
+      ${P.map((x,i)=>`<button class="rl-pt${x.id===R.partie&&!ens?' on':''}${x.relue?' relue':''}" data-pt="${x.id}"><span class="n">${x.relue?'✓':i+1}</span><span class="t">${esc(nomPartie(x,i))}</span></button>`).join('')}
+      <button class="rl-pt plus" id="rl-ajout-partie" title="Ajouter une partie">${IC.plus}</button>
+    </nav>
+    <div id="rl-corps">${ens?ensembleHtml():partieHtml(p)}</div>
+  </div>`;
+  menus();
+  $$('#relire textarea').forEach(hauteurAuto);
+  $('#rl-parties .on')?.scrollIntoView({block:'nearest',inline:'center'});
+  window.scrollTo(0,o.haut?0:y);
+  if(o.focus){const f=$(o.focus);if(f){f.focus();if(f.select)f.select()}}
+  majBoutonsLecture();
+  brancherRelire();
+}
+function hauteurAuto(t){t.style.height='auto';t.style.height=(t.scrollHeight+2)+'px'}
+
+function ensembleHtml(){
+  const s=R.s;
+  return `<div class="rl-ens">
+    <div class="rl-frise">${s.parties.map((p,i)=>{const l=blocsDe(s,p.id);return `<button class="rl-fp" style="flex:${Math.max(dureeBlocs(l),1)}" data-pt="${p.id}" title="${esc(nomPartie(p,i))}">${frise(l)}<small>${i+1}</small></button>`}).join('')}</div>
+    ${s.parties.map((p,i)=>{const l=blocsDe(s,p.id),lect=l.reduce((t,b)=>t+(b.texte?lectureMin(b.texte):0),0);return `<button class="rl-ens-p${p.relue?' relue':''}" data-pt="${p.id}">
+      <span class="n">${p.relue?'✓':i+1}</span>
+      <span class="c"><b>${esc(nomPartie(p,i))}</b><small>${l.length} temps · ${dureeTxt(dureeBlocs(l))}${l.some(b=>b.libre)?' + libre':''}${lect?` · lecture ≈ ${minSec(lect)}`:''}</small>${p.note?`<em>📝 ${esc(p.note)}</em>`:''}</span>
+      ${l.length?frise(l):'<span class="rl-vide-p">Partie vide</span>'}</button>`}).join('')}
+    <div class="rl-total">Total : <b>${totalTxt(s)}</b></div>
+  </div>`;
+}
+
+const CHOIX_TEMPS=[['parole','Parole'],['silence','Silence'],['pluie','Bâton de pluie'],['ocean','Tambour océan'],['flute','Flûte'],['carillon','Carillon'],['tambour','Tambour'],['musique','Musique'],['transition','Transition'],['partage','Partage']];
+function nouveauTempsRelire(c){
+  if(INSTR[c])return nb('instrument',INSTR[c],5,{instrument:c,rythme:{pluie:5,ocean:8,tambour:60}[c]||null,expire:c==='pluie'?5:null});
+  return nb(c,TYPES[c].nom,c==='transition'?3:c==='partage'?10:5,optionsType(c));
+}
+const insererHtml=(pid,k)=>`<div class="rl-ins"><div class="menu"><button class="btn s">${IC.plus} Insérer un temps</button><div class="menu-liste">${CHOIX_TEMPS.map(([c,t])=>`<button data-ins="${c}" data-pid="${pid}" data-k="${k}">${IC[INSTR[c]?'instrument':c]||''} ${t}</button>`).join('')}</div></div></div>`;
+
+function partieHtml(p){
+  const s=R.s,P=s.parties,i=P.indexOf(p),l=blocsDe(s,p.id),lect=l.reduce((t,b)=>t+(b.texte?lectureMin(b.texte):0),0),v=D.prefs.relireVitesse||.9;
+  return `<section class="rl-partie">
+    <div class="rl-p-tete">
+      <span class="rl-num">${i+1}</span>
+      <input type="text" class="rl-p-nom" data-pnom value="${esc(p.nom||'')}" placeholder="Partie ${i+1}" aria-label="Nom de la partie">
+      <div class="menu"><button class="btn rond nu" title="La partie">${IC.points}</button><div class="menu-liste">
+        <button data-pa="haut" ${i?'':'disabled'}>${IC.haut} Monter la partie</button>
+        <button data-pa="bas" ${i<P.length-1?'':'disabled'}>${IC.bas} Descendre la partie</button>
+        <div class="sep"></div>
+        <button data-pa="fusion-prec" ${i?'':'disabled'}>${IC.haut} Réunir avec la partie d’avant</button>
+        <button data-pa="fusion-suiv" ${i<P.length-1?'':'disabled'}>${IC.bas} Réunir avec la partie d’après</button>
+        <div class="sep"></div>
+        <button data-pa="suppr" style="color:var(--alerte)">${IC.poubelle} Supprimer la partie</button>
+      </div></div>
+    </div>
+    <div class="rl-p-infos">${l.length} temps · ${dureeTxt(dureeBlocs(l))}${l.some(b=>b.libre)?' + libre':''}${lect?` · lecture ≈ ${minSec(lect)}`:''}</div>
+    <textarea class="rl-note" data-pnote rows="1" placeholder="📝 Note pour cette partie : intention, repère pour le jour J… (visible quand vous guidez)">${esc(p.note||'')}</textarea>
+    <div class="rl-p-outils">
+      <button class="btn s" data-pa="voix">${IC.micro} Refaire à la voix</button>
+      <button class="btn s" data-pa="ecouter" ${l.some(b=>b.texte)?'':'disabled'}>${IC.son} Écouter la partie</button>
+      <select class="rl-vitesse" data-vitesse aria-label="Vitesse de la voix"><option value=".75" ${v<.85?'selected':''}>Voix lente</option><option value=".9" ${v>=.85&&v<1?'selected':''}>Voix normale</option><option value="1.1" ${v>=1?'selected':''}>Voix rapide</option></select>
+      <button class="btn s" data-pa="tester" ${l.length?'':'disabled'}>${IC.play} Tester la partie</button>
+    </div>
+    <div class="rl-temps">
+      ${insererHtml(p.id,-1)}
+      ${l.map((b,k)=>tempsHtml(b,k,l)+insererHtml(p.id,k)).join('')}
+      ${l.length?'':'<div class="vide">Aucun temps dans cette partie : insérez-en un, ou refaites-la à la voix.</div>'}
+    </div>
+    <div class="rl-suite">
+      ${i?`<button class="btn" data-pt="${P[i-1].id}">${IC.retour} ${esc(nomPartie(P[i-1],i-1))}</button>`:'<span></span>'}
+      <button class="btn p" data-pa="relue">${IC.check} ${p.relue?'Relue':'Partie relue'}${i<P.length-1?' → suivante':''}</button>
+    </div>
+  </section>`;
+}
+
+const optsRelire=(o,v)=>Object.entries(o).map(([x,t])=>`<option value="${x}" ${x===(v||'')?'selected':''}>${esc(t)}</option>`).join('');
+function lectureHtml(b){
+  if(!b.texte)return '';
+  const lect=lectureMin(b.texte),cible=Math.max(1,Math.ceil(lect));
+  const ajuster=['parole','transition'].includes(b.type)&&!b.libre&&cible!==(+b.min||0);
+  return `Lecture ≈ ${minSec(lect)} <span class="rl-mots">(${motsTexte(b.texte)} mots à ${D.prefs.wpm||90} mots/min)</span> · temps : ${b.libre?'libre':b.min+' min'}${ajuster?` <button class="btn s" data-tt="ajuster" data-v="${cible}">Mettre ${cible} min</button>`:''}`;
+}
+function outilsHtml(b){
+  const r=b.texte?repetitions(b.texte):{mots:0};
+  return `${b.texte?`<button class="btn s" data-tt="ecouter">${IC.son} Écouter</button>`:''}
+    ${r.mots?`<button class="btn s rl-rep" data-tt="repetitions">🧹 ${r.mots} mot${r.mots>1?'s':''} en double</button>`:''}
+    ${b.texte?`<button class="btn s" data-tt="ia">✨ Corriger</button><button class="btn s" data-tt="couper" title="Couper le texte en deux temps, là où est le curseur">${IC.ciseaux} Couper ici</button>`:''}
+    ${b.texteDicte!=null&&b.texteDicte!==b.texte?`<button class="btn s nu" data-tt="dicte">↩ Texte dicté</button>`:''}`;
+}
+function propositionHtml(b,pr){
+  if(pr.type==='attente')return `<div class="rl-prop"><div class="rl-prop-t">✨ L’IA relit votre texte…</div></div>`;
+  if(pr.type==='rep'){
+    const r=pr.r,dans=new Map();r.runs.forEach(([a],k)=>dans.set(a,k));
+    let h='',i=0;
+    while(i<r.toks.length){const k=dans.get(i);
+      if(k!=null){const [a,z]=r.runs[k];h+=(h?' ':'')+`<del class="${pr.gardes.has(k)?'garde':''}" data-run="${k}" title="Toucher pour garder ces mots">${esc(r.toks.slice(a,z).map(x=>x.mot).join(' '))}</del>`;i=z}
+      else{h+=(h?(r.toks[i].esp.includes('\n')?'\n':' '):'')+esc(r.toks[i].mot);i++}}
+    const n=r.runs.reduce((t,[a,z],k)=>t+(pr.gardes.has(k)?0:z-a),0);
+    return `<div class="rl-prop"><div class="rl-prop-t">🧹 Mots dits en double : touchez-en un pour le garder.</div><div class="rl-prop-x">${h}</div>
+      <div class="d-actions"><button class="btn s" data-prop="non">Garder mon texte</button><button class="btn p s" data-prop="oui" ${n?'':'disabled'}>Effacer ${n} mot${n>1?'s':''}</button></div></div>`;
+  }
+  const d=diffMots(pr.avant,pr.apres),chg=d.some(x=>x.t!=='eq');
+  return `<div class="rl-prop"><div class="rl-prop-t">✨ Correction proposée${chg?'':' : rien à changer'}</div>
+    <div class="rl-prop-x">${d.map(x=>x.t==='eq'?esc(x.m):x.t==='del'?`<del>${esc(x.m)}</del>`:`<ins>${esc(x.m)}</ins>`).join(' ')}</div>
+    <div class="d-actions"><button class="btn s" data-prop="non">Garder mon texte</button>${chg?`<button class="btn p s" data-prop="oui">${IC.check} Prendre la correction</button>`:''}</div></div>`;
+}
+function tempsHtml(b,k,l){
+  const s=R.s,P=s.parties,inc=incomprises(b),pr=R.prop[b.id];
+  return `<article class="rl-t" data-b="${b.id}" data-type="${b.type}">
+    <div class="rl-t-tete">
+      <span class="chip t-${b.type}">${IC[b.type]||''} ${esc(b.type==='instrument'?INSTR[b.instrument]||'Instrument':TYPES[b.type].nom)}</span>
+      <input type="text" class="rl-t-nom" data-k="nom" value="${esc(b.nom)}" aria-label="Nom du temps">
+      <div class="menu"><button class="btn rond nu" title="Ce temps">${IC.points}</button><div class="menu-liste">
+        <button data-ta="haut" ${k?'':'disabled'}>${IC.haut} Monter</button>
+        <button data-ta="bas" ${k<l.length-1?'':'disabled'}>${IC.bas} Descendre</button>
+        ${P.length>1?`<div class="sep"></div>${P.map((x,j)=>x.id===b.partie?'':`<button data-ta="vers" data-vers="${x.id}">→ Vers « ${esc(nomPartie(x,j))} »</button>`).join('')}`:''}
+        <div class="sep"></div>
+        ${k?`<button data-ta="nouvelle-partie">${IC.ciseaux} Commencer une partie ici</button>`:''}
+        ${k<l.length-1?`<button data-ta="reunir">${IC.bas} Réunir avec le temps suivant</button>`:''}
+        <button data-ta="dup">${IC.copie} Dupliquer</button>
+        <button data-ta="suppr" style="color:var(--alerte)">${IC.poubelle} Supprimer</button>
+      </div></div>
+    </div>
+    <div class="rl-reg">
+      <select data-k="type" aria-label="Type">${optsRelire(Object.fromEntries(Object.entries(TYPES).map(([x,t])=>[x,t.nom])),b.type)}</select>
+      ${b.type==='instrument'?`<select data-k="instrument" aria-label="Instrument">${optsRelire(INSTR,b.instrument)}</select>`:''}
+      <span class="rl-duree"><button class="btn rond nu" data-min="-1" ${b.libre?'disabled':''} aria-label="Moins une minute">−</button><b>${b.libre?'libre':b.min+' min'}</b><button class="btn rond nu" data-min="1" ${b.libre?'disabled':''} aria-label="Plus une minute">+</button></span>
+      <label class="rl-libre"><input type="checkbox" data-k="libre" ${b.libre?'checked':''}> durée libre</label>
+      <select data-k="position" aria-label="Position"><option value="">Position…</option>${optsRelire(POS,b.position)}</select>
+      ${b.type==='silence'?`<select data-k="fin" aria-label="Fin du silence">${optsRelire(FINS,b.fin)}</select>`:''}
+      ${b.type==='instrument'&&b.instrument==='pluie'?`<span class="rl-rythme">inspire <input type="number" min="2" max="20" data-k="rythme" value="${b.rythme||5}"> s · expire <input type="number" min="2" max="20" data-k="expire" value="${b.expire||b.rythme||5}"> s</span>`:''}
+      ${b.type==='instrument'&&b.instrument==='ocean'?`<span class="rl-rythme">une vague toutes les <input type="number" min="3" max="20" data-k="rythme" value="${b.rythme||8}"> s</span>`:''}
+      ${b.type==='instrument'&&b.instrument==='tambour'?`<span class="rl-rythme"><input type="number" min="30" max="120" data-k="rythme" value="${b.rythme||60}"> battements/min</span>`:''}
+      ${b.type==='musique'?`<select data-k="musiqueId" aria-label="Morceau"><option value="">Choisir un morceau…</option>${(D.musiques||[]).map(m=>`<option value="${m.id}" ${m.id===b.musiqueId?'selected':''}>${esc(m.nom)}</option>`).join('')}</select>`:''}
+    </div>
+    ${inc.length?`<div class="rl-incompris">${inc.map((c,j)=>`<div class="rl-ic"><span>🎙️ Consigne pas comprise</span><input type="text" data-icv="${j}" value="${esc(c)}" aria-label="Consigne"><button class="btn s" data-ica="appliquer" data-j="${j}">Appliquer</button><button class="btn s nu" data-ica="effacer" data-j="${j}">Effacer</button></div>`).join('')}</div>`:''}
+    <textarea class="rl-texte" data-k="texte" rows="2" placeholder="Le texte de ce temps (affiché en grand pendant la séance)…">${esc(b.texte||'')}</textarea>
+    ${pr?propositionHtml(b,pr):''}
+    <div class="rl-outils">${outilsHtml(b)}</div>
+    <div class="rl-lecture">${lectureHtml(b)}</div>
+  </article>`;
+}
+// Après la frappe : les outils (mots en double, texte dicté) et la durée de lecture se mettent à jour.
+let majOutilsT=null;
+function majOutils(b){
+  const a=$(`#relire [data-b="${b.id}"]`);if(!a)return;
+  const o=a.querySelector('.rl-outils'),l=a.querySelector('.rl-lecture'),ho=outilsHtml(b),hl=lectureHtml(b);
+  if(o&&o.dataset.h!==ho){o.innerHTML=ho;o.dataset.h=ho}if(l&&l.dataset.h!==hl){l.innerHTML=hl;l.dataset.h=hl}
+  majBoutonsLecture();
+}
+
+// Une consigne pas comprise, réessayée telle quelle ou corrigée : la même « oreille » que l'inspiration.
+function appliquerConsigne(b,texte){
+  const decl=String(D.prefs.declencheur||DECLENCHEUR_DEFAUT).split(',')[0].trim();
+  const ins=nouvelleInspiration(),avant={nom:b.nom,repere:b.repere};ins.st.blocs=[b];
+  const acts=ins.phrase(`${decl}, ${texte}`);
+  b.repere=avant.repere;if(acts.includes('partie'))b.nom=avant.nom;
+  return {acts,nouveaux:ins.st.blocs.filter(x=>x!==b),titre:ins.st.titre,partie:ins.st.parties[0].nom||''};
+}
+async function corrigerIA(b){
+  const cle=await cleGemini(true);if(!cle)return;
+  R.prop[b.id]={type:'attente'};dessinerRelire();
+  try{
+    const t=await gemini([{text:`Voici un texte dicté à la voix pour une séance de relaxation, de méditation ou d’hypnose. Corrige uniquement : la ponctuation, les majuscules, les mots mal reconnus par la dictée et les répétitions involontaires dues à la dictée. Ne reformule pas, ne raccourcis pas, n’ajoute rien, garde le tutoiement ou le vouvoiement et le style de l’auteur. Va à la ligne entre les phrases, et laisse une ligne vide entre deux idées, pour une lecture lente à voix haute. Réponds uniquement par le texte corrigé, sans guillemets ni commentaire.\n\nTexte :\n${b.texte}`}],cle);
+    R.prop[b.id]={type:'ia',avant:b.texte,apres:t.trim().replace(/^["«»]\s*|\s*["«»]$/g,'')};
+  }catch(e){delete R.prop[b.id];toast(e&&e.reseau?'Pas de connexion internet pour l’instant.':[429,500,503].includes(e&&e.status)?'L’IA est très demandée en ce moment : réessayez dans un instant.':esc(messageGemini(e)))}
+  dessinerRelire();
+}
+// Refaire une partie à la voix : la fenêtre de l'inspiration, dont le résultat remplace la partie (ou la complète).
+async function refairePartie(p){
+  if(!RECO)return toast('La dictée en direct n’est pas disponible sur cet appareil');
+  if(!navigator.onLine)return toast('Pour refaire une partie à la voix, il faut internet (dictée en direct).');
+  const l=blocsDe(R.s,p.id),nom=nomPartie(p,R.s.parties.indexOf(p));
+  const mode=l.length?await choisir(`${IC.micro} Refaire « ${esc(nom)} »`,`Ce que vous allez dicter remplace les ${l.length} temps de cette partie, ou s’ajoute à la suite. Les mêmes commandes « Régie, … » fonctionnent.`,[['annuler','Annuler'],['ajouter','Ajouter à la suite'],['remplacer','Remplacer la partie',true]]):'ajouter';
+  if(!mode||mode==='annuler')return;
+  arreterLecture();
+  fenetreInspiration({refaire:nom,surSeance:s2=>{
+    modifierRelire(s=>{
+      const map=new Map();let at=s.parties.indexOf(p)+1;
+      (s2.parties||[]).forEach((sp,i)=>{if(!i){map.set(sp.id,p.id);if(sp.nom)p.nom=sp.nom}else{const np={id:uid(),nom:sp.nom||'',note:'',relue:false};s.parties.splice(at++,0,np);map.set(sp.id,np.id)}});
+      if(mode==='remplacer')s.blocs=s.blocs.filter(b=>b.partie!==p.id);
+      s2.blocs.forEach(b=>{b.partie=map.get(b.partie)||p.id;s.blocs.push(b)});
+      p.relue=false;s.aRelire=true;
+    },false);
+  },surFermer:()=>dessinerRelire()});
+}
+function marquerRelue(p){
+  modifierRelire(s=>{p.relue=true;if(s.parties.every(x=>x.relue))delete s.aRelire},false);
+  const P=R.s.parties,i=P.indexOf(p);
+  if(!R.s.aRelire)toast('✨ Toute la séance est relue');
+  R.partie=i<P.length-1?P[i+1].id:'ensemble';dessinerRelire({haut:true});
+}
+
+function brancherRelire(){
+  const racine=$('#relire'),s=R.s;
+  $('#rl-retour').onclick=()=>aller('seances');
+  $('#rl-annuler').onclick=annulerRelire;$('#rl-retablir').onclick=retablirRelire;
+  $('#rl-guider').onclick=()=>aller('guider',s.id);
+  const tout=$('#rl-tout');if(tout)tout.onclick=()=>{modifierRelire(x=>{x.parties.forEach(p=>p.relue=true);delete x.aRelire});toast('✨ Séance marquée comme relue')};
+  $('#rl-ajout-partie').onclick=()=>{const np={id:uid(),nom:'',note:'',relue:false};modifierRelire(x=>x.parties.push(np),false);R.partie=np.id;dessinerRelire({haut:true,focus:'[data-pnom]'})};
+  // La saisie : une seule étape d'« Annuler » par champ modifié.
+  racine.addEventListener('focusin',e=>{if(e.target.matches('input,textarea'))R.saisie=false});
+  racine.addEventListener('input',e=>{
+    const t=e.target;
+    if(t.matches('textarea'))hauteurAuto(t);
+    if(t.matches('[data-icv],[type=number],[type=checkbox]'))return;
+    if(!R.saisie&&(t.id==='rl-titre'||t.matches('[data-pnom],[data-pnote],[data-k=texte],[data-k=nom]'))){retenirRelire();R.saisie=true}
+    if(t.id==='rl-titre'){s.titre=t.value;sauverBientot();return}
+    const p=partieCourante();
+    if(t.matches('[data-pnom]')&&p){p.nom=t.value;sauverBientot();const c=$(`#rl-parties [data-pt="${p.id}"] .t`);if(c)c.textContent=nomPartie(p,s.parties.indexOf(p));return}
+    if(t.matches('[data-pnote]')&&p){p.note=t.value;sauverBientot();return}
+    const a=t.closest('[data-b]'),b=a&&blocRelire(a.dataset.b);if(!b)return;
+    if(t.matches('[data-k=texte]')){b.texte=t.value;if(R.prop[b.id]){delete R.prop[b.id];a.querySelector('.rl-prop')?.remove()}sauverBientot();clearTimeout(majOutilsT);majOutilsT=setTimeout(()=>majOutils(b),450);return}
+    if(t.matches('[data-k=nom]')){b.nom=t.value;sauverBientot()}
+  });
+  racine.addEventListener('change',e=>{
+    const t=e.target;
+    if(t.matches('[data-vitesse]')){D.prefs.relireVitesse=+t.value;sauverBientot();if(LIT){const l=LIT;arreterLecture();toast('Vitesse changée : relancez l’écoute')}return}
+    const a=t.closest('[data-b]'),b=a&&blocRelire(a.dataset.b);if(!b||!t.dataset.k||['texte','nom'].includes(t.dataset.k))return;
+    const k=t.dataset.k,v=t.type==='checkbox'?t.checked:t.type==='number'?clamp(+t.value||0,+t.min||0,+t.max||999):t.value;
+    modifierRelire(()=>{
+      if(k==='type'){b.type=v;if(v==='instrument'&&!b.instrument){b.instrument='pluie';b.rythme=5;b.expire=5}if(v==='silence'&&!b.fin)b.fin='carillon'}
+      else if(k==='instrument'){b.instrument=v;b.rythme={pluie:5,ocean:8,tambour:60}[v]||null;b.expire=v==='pluie'?5:null}
+      else if(k==='position')b.position=v||null;
+      else if(k==='musiqueId')b.musiqueId=v||null;
+      else b[k]=v;
+    });
+  });
+  racine.addEventListener('click',async e=>{
+    const t=e.target.closest('button,del');if(!t||t.disabled)return;
+    const a=t.closest('[data-b]'),b=a&&blocRelire(a.dataset.b),p=partieCourante();
+    // Naviguer
+    if(t.dataset.pt){R.partie=t.dataset.pt;arreterLecture();return dessinerRelire({haut:true})}
+    // Proposition (répétitions, IA)
+    if(t.dataset.run!=null&&b){const pr=R.prop[b.id],k=+t.dataset.run;pr.gardes.has(k)?pr.gardes.delete(k):pr.gardes.add(k);return dessinerRelire()}
+    if(t.dataset.prop&&b){const pr=R.prop[b.id];delete R.prop[b.id];
+      if(t.dataset.prop==='oui')modifierRelire(()=>{b.texte=pr.type==='rep'?texteSans(pr.r,pr.gardes):pr.apres});else dessinerRelire();return}
+    // Insérer un temps
+    if(t.dataset.ins){const pid=t.dataset.pid,k=+t.dataset.k,x=nouveauTempsRelire(t.dataset.ins);x.partie=pid;
+      modifierRelire(s2=>{const l=blocsDe(s2,pid);const at=k<0?(l.length?s2.blocs.indexOf(l[0]):s2.blocs.length):s2.blocs.indexOf(l[k])+1;s2.blocs.splice(at,0,x)},false);
+      return dessinerRelire({focus:`[data-b="${x.id}"] .rl-texte`})}
+    // La partie
+    if(t.dataset.pa&&p){
+      const P=s.parties,i=P.indexOf(p),q=t.dataset.pa;
+      if(q==='haut'||q==='bas'){const j=q==='haut'?i-1:i+1;modifierRelire(()=>{[P[i],P[j]]=[P[j],P[i]]});return}
+      if(q==='fusion-prec'||q==='fusion-suiv'){const autre=P[q==='fusion-prec'?i-1:i+1],garde=q==='fusion-prec'?autre:p,part=q==='fusion-prec'?p:autre;
+        modifierRelire(()=>{s.blocs.forEach(x=>{if(x.partie===part.id)x.partie=garde.id});if(part.note)garde.note=[garde.note,part.note].filter(Boolean).join('\n');garde.relue=false;P.splice(P.indexOf(part),1)},false);
+        R.partie=garde.id;dessinerRelire();return toast('Parties réunies')}
+      if(q==='suppr'){if(P.length===1)return toast('Une séance garde au moins une partie');const n=blocsDe(s,p.id).length;
+        if(n&&!confirm(`Supprimer la partie « ${nomPartie(p,i)} » et ses ${n} temps ?`))return;
+        modifierRelire(()=>{s.blocs=s.blocs.filter(x=>x.partie!==p.id);P.splice(i,1)},false);R.partie=P[Math.max(0,i-1)].id;dessinerRelire({haut:true});return toast('Partie supprimée · « Annuler » pour revenir en arrière')}
+      if(q==='voix')return refairePartie(p);
+      if(q==='ecouter')return lireTexte('p:'+p.id,blocsDe(s,p.id).map(x=>x.texte).filter(Boolean).join('\n'));
+      if(q==='tester'){const l=blocsDe(s,p.id),j=s.blocs.indexOf(l[0]);aller('guider',s.id);if(j>0)allerTemps(j);return}
+      if(q==='relue')return marquerRelue(p);
+    }
+    // Le temps
+    if(t.dataset.ta&&b){
+      const l=blocsDe(s,b.partie),k=l.indexOf(b),q=t.dataset.ta;
+      if(q==='haut'||q==='bas'){const autre=l[q==='haut'?k-1:k+1],x=s.blocs.indexOf(b),y=s.blocs.indexOf(autre);modifierRelire(()=>{[s.blocs[x],s.blocs[y]]=[s.blocs[y],s.blocs[x]]});return}
+      if(q==='vers'){const pt=s.parties.find(x=>x.id===t.dataset.vers);modifierRelire(()=>{b.partie=pt.id;pt.relue=false});return toast(`Temps envoyé vers « ${esc(nomPartie(pt,s.parties.indexOf(pt)))} »`)}
+      if(q==='nouvelle-partie'){const np={id:uid(),nom:'',note:'',relue:false};modifierRelire(()=>{s.parties.splice(s.parties.indexOf(p)+1,0,np);l.slice(k).forEach(x=>x.partie=np.id)},false);R.partie=np.id;dessinerRelire({haut:true,focus:'[data-pnom]'});return toast('Nouvelle partie : donnez-lui un nom')}
+      if(q==='reunir'){const n=l[k+1];modifierRelire(()=>{b.texte=[b.texte,n.texte].filter(Boolean).join('\n\n');if(b.texteDicte!=null||n.texteDicte!=null)b.texteDicte=[b.texteDicte??b.texte,n.texteDicte??n.texte].filter(Boolean).join('\n\n');if(!b.libre)b.min=clamp((+b.min||0)+(n.libre?0:+n.min||0),1,180);b.repere=[b.repere,n.repere].filter(Boolean).join('\n');s.blocs.splice(s.blocs.indexOf(n),1)});return toast('Temps réunis')}
+      if(q==='dup'){const c=Object.assign(clone(b),{id:uid()});modifierRelire(()=>s.blocs.splice(s.blocs.indexOf(b)+1,0,c));return}
+      if(q==='suppr'){modifierRelire(()=>s.blocs.splice(s.blocs.indexOf(b),1));return toast(`« ${esc(b.nom)} » supprimé · « Annuler » pour revenir en arrière`)}
+    }
+    if(t.dataset.min&&b){modifierRelire(()=>{b.min=clamp((+b.min||0)+ +t.dataset.min,1,180)});return}
+    // Les outils du texte
+    if(t.dataset.tt&&b){
+      const q=t.dataset.tt,zone=a.querySelector('.rl-texte');
+      if(q==='ecouter')return lireTexte('b:'+b.id,b.texte);
+      if(q==='repetitions'){R.prop[b.id]={type:'rep',r:repetitions(b.texte),gardes:new Set()};return dessinerRelire()}
+      if(q==='ia')return corrigerIA(b);
+      if(q==='dicte'){modifierRelire(()=>{b.texte=b.texteDicte});return toast('Texte dicté remis · « Annuler » pour revenir en arrière')}
+      if(q==='ajuster'){modifierRelire(()=>{b.min=clamp(+t.dataset.v,1,180)});return}
+      if(q==='couper'){
+        const c=zone?zone.selectionStart:0,av=b.texte.slice(0,c).trim(),ap=b.texte.slice(c).trim();
+        if(!av||!ap)return toast('Touchez le texte à l’endroit où couper, puis « Couper ici »');
+        const r=motsTexte(av)/Math.max(1,motsTexte(b.texte)),m1=clamp(Math.round((+b.min||2)*r),1,180),m2=clamp((+b.min||2)-m1,1,180);
+        const n=nb(b.type==='parole'?'parole':b.type,b.type==='parole'?ap.split(/\s+/).slice(0,5).join(' ').replace(/[,.;:!?]+$/,''):b.nom,m2,{position:b.position,partie:b.partie});
+        n.texte=ap;
+        modifierRelire(()=>{b.texte=av;if(!b.libre)b.min=m1;s.blocs.splice(s.blocs.indexOf(b)+1,0,n)});return toast('Texte coupé en deux temps')}
+    }
+    // Les consignes pas comprises
+    if(t.dataset.ica&&b){
+      const j=+t.dataset.j;
+      if(t.dataset.ica==='effacer'){modifierRelire(()=>sansIncomprise(b,j));return}
+      const texte=a.querySelector(`[data-icv="${j}"]`).value.trim();if(!texte)return;
+      retenirRelire();
+      const r=appliquerConsigne(b,texte),fait=r.acts.filter(x=>!['incompris','fin','pause','reprise','annule','aide'].includes(x));
+      if(!fait.length){R.annuler.pop();majAnnuler();return toast('Toujours pas comprise : reformulez-la, ou effacez-la')}
+      sansIncomprise(b,j);
+      r.nouveaux.forEach((x,i)=>{x.partie=b.partie;s.blocs.splice(s.blocs.indexOf(b)+1+i,0,x)});
+      if(r.titre)s.titre=r.titre;if(r.partie&&p)p.nom=r.partie;
+      rangerParties(s);sauver();dessinerRelire();return toast('✓ '+esc((r.nouveaux[0]&&r.nouveaux[0].nom)||'Consigne appliquée'));
+    }
+  });
+}
+
+/* ——— Égaliseur de son ———
+   Chaque son de la séance (musique, voix enregistrée) est mesuré une fois, puis ramené au même niveau
+   (≈ −20 dB) pendant Guider, sans jamais saturer. Un réglage fin par temps (en dB) s'ajoute au besoin.
+   Le niveau mesuré est gardé sur le morceau (m.niveau) ; S.egaliser=false coupe l'égaliseur. */
+const NIVEAU_CIBLE=.1;
+const sonsSeance=s=>s.blocs.map((b,i)=>({b,i,id:audioDe(b)})).filter(x=>x.id);
+function gainEgal(s,id,b){
+  if(!s||s.egaliser===false)return 1;
+  const n=(morceau(id)||{}).niveau;
+  const g=n&&n.rms?clamp(NIVEAU_CIBLE/n.rms,.2,Math.min(4,.98/(n.pic||1))):1;
+  return g*(b&&b.egalFin?Math.pow(10,b.egalFin/20):1);
+}
+function regleEgal(v,s=.3){if(!A.egal||!A.ctx)return;const g=A.egal.gain,t=A.ctx.currentTime;g.cancelScheduledValues(t);if(s<=.05){g.value=v;return}g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(v,t+s)}
+// Mesure d'un son : décodé en 12 kHz (assez pour le niveau, léger en mémoire), moyenne des tranches de
+// 50 ms qui ne sont pas du silence, et le pic le plus fort.
+async function mesurerNiveau(id){
+  const m=morceau(id);if(!m)return null;
+  if(m.niveau)return m.niveau;
+  const blob=await idbGet(id);if(!blob)return null;
+  const Ctx=window.OfflineAudioContext||window.webkitOfflineAudioContext;if(!Ctx)return null;
+  const buf=await new Ctx(1,1,12000).decodeAudioData(await blob.arrayBuffer());
+  const ch=[...Array(buf.numberOfChannels)].map((_,c)=>buf.getChannelData(c)),d=ch[0].length,w=Math.max(1,Math.floor(buf.sampleRate*.05));
+  let q=0,n=0,pic=0;
+  for(let k=0;k+w<=d;k+=w){let e=0;for(let x=k;x<k+w;x++){let v=0;for(const c of ch){v+=c[x];const a=Math.abs(c[x]);if(a>pic)pic=a}v/=ch.length;e+=v*v}e=Math.sqrt(e/w);if(e>.006){q+=e*e;n++}}
+  m.niveau={rms:n?Math.sqrt(q/n):0,pic:pic||1};sauverBientot();
+  return m.niveau;
+}
+function majEgalCarte(){
+  const c=$('#e-egal');if(!c||!S)return;
+  const l=sonsSeance(S),mes=l.filter(x=>(morceau(x.id)||{}).niveau).length;
+  c.innerHTML=`<span class="eg-ic">🎚️</span><span class="eg-c"><b>Égaliseur de son</b><small>${!l.length?'Aucun son dans cette séance':S.egaliser===false?'Désactivé':mes<l.length?`${l.length} son${l.length>1?'s':''} · à mesurer`:`${l.length} son${l.length>1?'s':''} · au même niveau`}</small></span>`;
+}
+const dbTxt=v=>`${v>0?'+':v<0?'−':''}${Math.abs(Math.round(v))} dB`;
+const enDb=x=>20*Math.log10(Math.max(x,1e-5));
+function fenetreEgaliseur(){
+  const v=document.createElement('div');v.className='voile';let ecoute=null,arretT=null;
+  v.innerHTML=`<div class="fenetre dictee-fen egal-fen">
+    <h2>🎚️ Égaliseur de son</h2>
+    <p class="sous" style="margin:0 0 12px">Tous les sons de la séance au même niveau : ni trop faibles, ni trop forts.</p>
+    <label class="bascule"><input type="checkbox" id="eg-on" ${S.egaliser!==false?'checked':''}> Égaliser les sons de cette séance</label>
+    <div class="eg-liste" id="eg-liste"></div>
+    <div class="d-actions"><button class="btn p" id="eg-ok">${IC.check} Terminé</button></div>
+  </div>`;
+  document.body.appendChild(v);
+  const $e=s=>v.querySelector(s);
+  const dessiner=()=>{
+    const l=sonsSeance(S),on=S.egaliser!==false;
+    $e('#eg-liste').innerHTML=l.length?l.map(({b,i,id})=>{
+      const m=morceau(id),n=m&&m.niveau,vol=b.type==='musique'?(b.volume??70)/100:1;
+      const ligne=(t,x,cls)=>{const db=enDb(x);return `<div class="eg-barre ${cls}"><span>${t}</span><i><u style="width:${clamp((db+40)/40*100,2,100)}%"></u><s></s></i><em>${dbTxt(db)}</em></div>`};
+      return `<div class="eg-son" data-eg-b="${b.id}">
+        <div class="eg-t"><span class="chip t-${b.type}">${IC[b.type]||''} ${TYPES[b.type].nom}</span><b>${i+1}. ${esc(b.nom)}</b><small>${m?esc(m.nom):'Son introuvable'}${b.type==='musique'?` · volume ${b.volume??70} %`:''}</small></div>
+        ${!m?'<div class="eg-info">Ce son n’est plus dans « Musiques ».</div>':n?`${ligne('Avant',n.rms*vol,'')}${ligne(on?'Après':'Après (coupé)',n.rms*vol*(on?gainEgal(S,id,b):1),'apres')}
+          <div class="eg-reg"><span>Réglage fin</span><button class="btn rond nu" data-fin="-1" aria-label="Un peu moins fort">−</button><b>${dbTxt(b.egalFin||0)}</b><button class="btn rond nu" data-fin="1" aria-label="Un peu plus fort">+</button>
+            <button class="btn s" data-eg-ecoute="${id}">${ecoute===b.id?IC.stop+' Arrêter':IC.play+' Écouter'}</button></div>`
+          :`<div class="eg-info" data-mesure="${id}">Mesure du son…</div>`}
+      </div>`}).join('')+`<div class="eg-legende"><s></s> niveau visé · le même pour tous les sons</div>`
+      :'<div class="vide">Aucun son dans cette séance : ajoutez un temps « Musique » ou une voix enregistrée.</div>';
+  };
+  const mesurer=async()=>{
+    for(const {id} of sonsSeance(S)){const m=morceau(id);if(!m||m.niveau)continue;
+      try{if(!(await mesurerNiveau(id))){const el=$e(`[data-mesure="${id}"]`);if(el)el.textContent='Ce son n’est pas sur cet appareil : ouvrez la séance là où il a été ajouté.';continue}}
+      catch(e){const el=$e(`[data-mesure="${id}"]`);if(el)el.textContent='Ce son n’a pas pu être mesuré.';continue}
+      dessiner()}
+    majEgalCarte();
+  };
+  const arreter=()=>{clearTimeout(arretT);if(ecoute){ecoute=null;sortie(.4)}};
+  const fermer=()=>{arreter();v.remove();majEgalCarte()};
+  v.onclick=async e=>{
+    if(e.target===v)return fermer();
+    const t=e.target.closest('button');if(!t)return;
+    if(t.id==='eg-ok')return fermer();
+    const a=t.closest('[data-eg-b]'),b=a&&S.blocs.find(x=>x.id===a.dataset.egB);if(!b)return;
+    if(t.dataset.fin){b.egalFin=clamp((b.egalFin||0)+ +t.dataset.fin,-9,9);sauverBientot();if(ecoute===b.id)regleEgal(gainEgal(S,audioDe(b),b),0);return dessiner()}
+    if(t.dataset.egEcoute){
+      if(ecoute===b.id){arreter();return dessiner()}
+      arreter();ecoute=b.id;dessiner();
+      await jouer(t.dataset.egEcoute,b.type==='musique'?(b.volume??70)/100:1,.4);
+      regleEgal(gainEgal(S,t.dataset.egEcoute,b),0);
+      if(A.el&&isFinite(A.el.duration))A.el.currentTime=A.el.duration*.3;
+      arretT=setTimeout(()=>{arreter();dessiner()},10000);
+    }
+  };
+  $e('#eg-on').onchange=e=>{S.egaliser=e.target.checked?undefined:false;if(S.egaliser===undefined)delete S.egaliser;sauverBientot();dessiner();majEgalCarte()};
+  dessiner();mesurer();
+}
+
 /* =============================== PRÉPARER =============================== */
 let S=null,selId=null,dragI=null;
 function vueEditer(id){
   S=trouverSeance(id);if(!S)return aller('seances');
-  if(S.aRelire){delete S.aRelire;sauverBientot()}
+  if(S.aRelire&&!Array.isArray(S.parties)){delete S.aRelire;sauverBientot()}
   selId=S.blocs[0]?.id||null;
   $('#vue').innerHTML=`
     <div class="edit-haut">
@@ -1673,6 +2316,7 @@ function vueEditer(id){
       <aside class="col col-temps">
         <div class="titre-col"><span class="kicker">Les temps</span><span style="font-size:12px;color:var(--muted)" id="e-total"></span></div>
         <div class="tl" id="e-liste"></div>
+        <button class="egal-carte" id="e-egal" title="Mettre tous les sons de la séance au même niveau"></button>
         <div class="titre-col repli-tete" style="margin-top:18px"><button class="repli" data-repli="bt"><i class="fl">▾</i><span class="kicker">Ajouter un temps</span></button><button class="lien-gerer" id="e-gerer"></button></div>
         <div id="e-boutons" class="repli-corps" data-corps="bt"></div>
         <div class="titre-col repli-tete" style="margin-top:18px"><button class="repli" data-repli="mb"><i class="fl">▾</i><span class="kicker" style="display:flex;align-items:center;gap:5px">${IC.etoile} Mes blocs</span></button><button class="lien-gerer" id="e-gerer-mb"></button></div>
@@ -1683,6 +2327,7 @@ function vueEditer(id){
     </div>`;
   $('#e-retour').onclick=()=>aller('seances');
   $('#e-guider').onclick=()=>aller('guider',S.id);
+  $('#e-egal').onclick=fenetreEgaliseur;
   $('#e-titre').oninput=e=>{S.titre=e.target.value;sauverBientot()};
   $('#e-genre').onchange=e=>{S.genre=e.target.value;sauverBientot()};
   $('#e-debut').oninput=e=>{S.debut=e.target.value;majJauge();sauverBientot()};
@@ -1789,6 +2434,7 @@ function rendreMesBlocsCol(){
   $('#e-mb-nouveau').onclick=()=>{const b=nb('parole','Nouveau bloc',5);D.mesBlocs.push(b);sauver();aller('blocs',{ouvrir:b.id,retour:S&&S.id})};
 }
 function majJauge(){
+  majEgalCarte();
   const t=total(S),c=creneauMin(S),j=$('#e-jauge');
   $('#e-total').textContent=totalTxt(S);
   if(!c){j.className='jauge-chip';j.style.cssText='background:var(--violet-soft);color:var(--peri-darker)';j.textContent=totalTxt(S);return}
@@ -2059,7 +2705,7 @@ const A={ctx:null,el:null,gain:null,url:null,id:null,joue:false,stopT:null};
 function audioInit(){
   if(A.ctx)return true;
   try{A.ctx=new (window.AudioContext||window.webkitAudioContext)();A.el=new Audio();A.el.preload='auto';
-    const src=A.ctx.createMediaElementSource(A.el);A.gain=A.ctx.createGain();A.gain.gain.value=0;src.connect(A.gain).connect(A.ctx.destination);
+    const src=A.ctx.createMediaElementSource(A.el);A.gain=A.ctx.createGain();A.gain.gain.value=0;A.egal=A.ctx.createGain();src.connect(A.gain).connect(A.egal).connect(A.ctx.destination);
     A.el.onended=()=>{A.joue=false;majMusique()};appliquerSortie();return true}catch(e){return false}
 }
 async function charger(id){if(A.id===id&&A.el.src)return true;const blob=await idbGet(id);if(!blob)return false;if(A.url)URL.revokeObjectURL(A.url);A.url=URL.createObjectURL(blob);A.el.src=A.url;A.id=id;return true}
@@ -2068,6 +2714,8 @@ async function jouer(id,vol,entree,depuisDebut=true){
   if(!audioInit())return toast('Le son n’est pas disponible sur cet appareil');
   await A.ctx.resume();clearTimeout(A.stopT);
   if(!(await charger(id)))return toast('Morceau introuvable sur cet appareil : ajoute-le dans « Musiques »');
+  // L'égaliseur ne joue qu'en séance (Guider) ; ailleurs, le son tel quel.
+  if(A.egal)A.egal.gain.value=vue==='guider'&&G?gainEgal(G.s,id,G.blocs[G.i]&&audioDe(G.blocs[G.i])===id?G.blocs[G.i]:null):1;
   if(depuisDebut)A.el.currentTime=0;
   try{await A.el.play()}catch(e){return toast('Touche « Démarrer » pour autoriser le son')}
   A.joue=true;fondu(vol,entree);majMusique();
@@ -3055,7 +3703,7 @@ function calculerObjectif(s){
 const audioDe=b=>b?(b.type==='musique'?b.musiqueId:b.voixId)||null:null;
 function lancerAudioTemps(b,reprise){
   const au=audioDe(b);if(!au)return;
-  if(b.type==='musique'){if(A.joue&&A.id===au)fondu(b.volume/100,reprise?1.5:Math.max(2,b.entree));else jouer(au,b.volume/100,b.entree)}
+  if(b.type==='musique'){if(A.joue&&A.id===au){fondu(b.volume/100,reprise?1.5:Math.max(2,b.entree));regleEgal(gainEgal(G.s,au,b),1)}else jouer(au,b.volume/100,b.entree)}
   else jouer(au,1,.15,!(reprise&&A.id===au));   // une voix part tout de suite, et reprend là où elle était
 }
 function basculerRun(){
@@ -3097,7 +3745,8 @@ function afficherTemps(){
   const visio=b.visio==='auto'?TYPES[b.type].visio:b.visio;
   $('#g-infos').innerHTML=[b.position?`<span class="chip">${POS[b.position]}</span>`:'',b.libre?'<span class="chip">durée libre</span>':b.souple?'<span class="chip">souple</span>':'',`<span class="chip" title="Mode de la salle de visio">Visio : ${VISIO[visio]}</span>`].join('');
   const t=$('#g-texte');t.textContent=b.texte||(b.type==='musique'?'Pas de parole pendant ce temps.\nLaisse la musique faire.':b.type==='silence'?'Silence.':'');t.classList.toggle('vide',!b.texte);t.scrollTop=0;
-  $('#g-repere').innerHTML=b.repere?`<div class="o-carte"><span class="kicker">Repère</span><div class="o-repere">${esc(b.repere)}</div></div>`:'';
+  const pt=(G.s.parties||[]).find(p=>p.id===b.partie&&p.note);
+  $('#g-repere').innerHTML=(pt?`<div class="o-carte"><span class="kicker">📝 ${esc(pt.nom||'Partie')}</span><div class="o-repere">${esc(pt.note)}</div></div>`:'')+(b.repere?`<div class="o-carte"><span class="kicker">Repère</span><div class="o-repere">${esc(b.repere)}</div></div>`:'');
   const nx=G.blocs[G.i+1];
   $('#g-suivant').innerHTML=nx?`<span class="p f-${nx.type}"></span><span>Ensuite : <b>${esc(nx.nom)}</b> · ${nx.libre?'durée libre':dureeTxt(nx.min)}${nx.position&&nx.position!==b.position?` · ${POS[nx.position].toLowerCase()}`:''}</span>`:'<span>C’est le dernier temps de la séance.</span>';
   rendreAide(b);majMusique();rendreListeGuide();
@@ -3361,7 +4010,7 @@ const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 const COLL=['seances','mesBlocs','bilans','musiques','boutons'];
 const CLE_BASE='regieHelene.base';
 const SYN={etat:'',enCours:false,encore:false,differe:false,t:null,derniere:null};
-const occupe=()=>vue==='guider'||vue==='editer';
+const occupe=()=>vue==='guider'||vue==='editer'||vue==='relire';
 
 /* ——— Compte chiffré (régie offerte) ———
    COMPTE=null : la régie de l'Être (table « regie », réservée à la propriétaire).
