@@ -655,9 +655,45 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .nouvelle.dicter.inspi{background:var(--peri-deep);color:#fff;border-color:var(--peri-deep);font-size:17px}
 .voix-aide{text-align:right;margin:4px 2px 12px}
 .inspi-fen .d-micro{background:var(--peri-deep)}
+.inspi-fen{position:relative}
+.inspi-fen.ecoute .sous{display:none}
+.inspi-fen.ecoute .d-micro{width:64px;height:64px;margin:6px auto 6px}
+.inspi-fen.ecoute .d-micro svg{width:28px;height:28px}
+.inspi-fen.cmd-ouvert{overflow:hidden}
 .i-temps{text-align:left;margin:4px 0 8px}
-.i-temps ol{margin:10px 0 0;padding:0 0 0 20px;max-height:30vh;overflow-y:auto;font-size:13.5px}
-.i-temps li{margin-bottom:6px}
+.i-parties{display:flex;flex-direction:column;gap:8px;margin-top:10px;max-height:44vh;overflow-y:auto;padding:2px}
+.i-partie{border:1px solid var(--line);border-radius:14px;padding:8px 10px;background:var(--carte)}
+.i-partie.courante{border-color:var(--peri-deep);box-shadow:0 0 0 3px var(--violet-soft)}
+.i-partie header{display:flex;align-items:center;gap:8px}
+.i-partie header b{flex:1;min-width:0;font-family:var(--serif);font-weight:400;font-size:16px;color:var(--peri-darker);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.i-num{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--violet-soft);color:var(--peri-darker);font-size:12px;font-weight:800}
+.i-partie.courante .i-num{background:var(--peri-deep);color:#fff}
+.i-encours{font-size:11.5px;font-weight:800;color:var(--alerte);white-space:nowrap}
+.i-duree{font-size:12px;color:var(--muted);white-space:nowrap}
+.i-partie ol,.i-seul{list-style:none;margin:6px 0 0;padding:0;font-size:13.5px}
+.i-seul{max-height:44vh;overflow-y:auto;margin-top:10px}
+.i-t{position:relative;padding:4px 0 4px 18px}
+.i-partie .i-t{padding-left:30px}
+.i-t .chip{padding:2px 9px;font-size:11.5px}
+.i-det{font-size:12.5px;color:var(--muted);margin-left:6px}
+.i-t.courant::before{content:'';position:absolute;left:4px;top:11px;width:8px;height:8px;border-radius:50%;background:var(--alerte);animation:i-clignote 1.4s ease-in-out infinite}
+.i-partie .i-t.courant::before{left:7px}
+@keyframes i-clignote{50%{opacity:.25}}
+.i-bas{display:flex;justify-content:center;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px}
+.i-bas .d-bascule{margin-top:0}
+.i-bas .btn{padding:7px 14px;font-size:13px}
+.i-cmd{position:absolute;inset:0;z-index:3;background:var(--plein);border-radius:22px;padding:20px 22px;overflow-y:auto;text-align:left}
+.i-cmd.cache{display:none}
+.i-cmd h3{font-family:var(--serif);font-weight:400;font-size:21px;color:var(--peri-darker);margin:0 0 2px}
+.i-cmd-intro{font-size:13px;color:var(--muted);margin:0 0 10px}
+.i-cmd-g{border-top:1px solid var(--line);padding:8px 0 4px}
+.i-cmd-g b{display:block;font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--peri-deep);margin-bottom:4px}
+.i-cmd-g ul{list-style:none;margin:0;padding:0;font-size:14px}
+.i-cmd-g li{padding:3px 0}
+.i-cmd-g li small{display:block;font-size:12px;color:var(--muted)}
+.i-cmd-g .i-puces{display:flex;flex-wrap:wrap;gap:5px;padding-top:5px}
+.i-cmd-g .i-puces span{background:var(--violet-soft);color:var(--peri-darker);border-radius:999px;padding:3px 10px;font-size:12.5px;font-weight:700}
+.i-cmd .d-actions{position:sticky;bottom:-20px;background:var(--plein);padding:10px 0 6px;margin-top:6px}
 .i-titre{font-family:var(--serif);font-size:19px;color:var(--peri-darker);margin-bottom:6px}
 .i-txt{font-size:12.5px;color:var(--muted);margin-top:2px}
 .i-ecoute{min-height:20px;font-size:13px;color:var(--muted);font-style:italic;text-align:left}
@@ -1236,7 +1272,8 @@ const MOTS_VOIX={
   annule:{nom:'Annuler le dernier temps',mots:['annule','annuler'],commande:true},
   pause:{nom:'Pause',mots:['pause'],commande:true},
   reprends:{nom:'Reprendre après la pause',mots:['reprends','reprendre'],commande:true},
-  fin:{nom:'Terminer et créer la séance',mots:["fin de l'inspiration",'fin inspiration'],commande:true}
+  fin:{nom:'Terminer et créer la séance',mots:["fin de l'inspiration",'fin inspiration'],commande:true},
+  aide:{nom:'Afficher mes commandes',mots:['aide','commandes'],commande:true}
 };
 const normMot=m=>m.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[’`]/g,"'").replace(/[^a-z0-9'.,]/g,'').replace(/^[.,]+|[.,]+$/g,'');
 const motsDe=t=>String(t||'').replace(/[’`]/g,"'").replace(/'/g,"' ").split(/\s+/).map(m=>m.trim()).filter(Boolean);
@@ -1276,7 +1313,7 @@ const ARRETS_NOM=['passe','passer','passons','on','et','puis','nouvelle','autre'
 // Seul ce qui suit le mot déclencheur est une consigne ; tout le reste est le texte du temps en cours.
 function nouvelleInspiration(){
   const mv=motsVoix(),decl=declencheurs();
-  const st={titre:'',blocs:[],enPause:false,position:null,partieDebut:0,partieNom:'',nouveauTemps:false,dernier:null};
+  const st={titre:'',blocs:[],enPause:false,position:null,partieDebut:0,partieNom:'',nouveauTemps:false,dernier:null,parties:[{debut:0,nom:''}]};
   const courant=()=>st.blocs[st.blocs.length-1];
   const propre=o=>o.join(' ').replace(/' /g,"'").trim();
   const majuscule=s=>s.charAt(0).toUpperCase()+s.slice(1);
@@ -1290,9 +1327,14 @@ function nouvelleInspiration(){
     if(paroles.length)paroles.forEach((b,i)=>{b.nom=i?nom+' (suite)':nom;b.nomPartie=true});
     else if(l[0]){l[0].nom=nom+' · '+l[0].nom;l[0].nomPartie=true}
     else return false;
+    st.parties[st.parties.length-1].nom=nom;
     return true;
   };
-  const nouvellePartie=nom=>{if(st.partieNom)nommerPartie(st.partieNom);st.partieDebut=st.blocs.length;st.partieNom=nom?majuscule(nom):'';st.nouveauTemps=true};
+  const nouvellePartie=nom=>{
+    if(st.partieNom)nommerPartie(st.partieNom);st.partieDebut=st.blocs.length;st.partieNom=nom?majuscule(nom):'';st.nouveauTemps=true;
+    const der=st.parties[st.parties.length-1];
+    if(der.debut>=st.blocs.length)der.nom=st.partieNom;else st.parties.push({debut:st.blocs.length,nom:st.partieNom});
+  };
   const reglerInstrument=(b,m)=>{
     if(b.type!=='instrument')return false;
     const s=m.secondes.length?m.secondes:m.seuls;if(!s.length)return false;
@@ -1310,9 +1352,11 @@ function nouvelleInspiration(){
     if(mv.fin.some(s=>chercher(t,s)>-1)||contient(t,'termine','terminé','c\'est fini','enregistre la séance')||(t.length===1&&t[0]==='fin'))return {r:'fin',dit:'Fin de l’inspiration'};
     if(mv.pause.some(s=>chercher(t,s)>-1)){st.enPause=true;return {r:'pause',dit:'Pause'}}
     if(mv.reprends.some(s=>chercher(t,s)>-1)||contient(t,'continue','on reprend')){st.enPause=false;return {r:'reprise',dit:'On reprend'}}
+    if(mv.aide.some(s=>chercher(t,s)>-1)&&t.length<=4)return {r:'aide',dit:'Mes commandes'};
     if(st.enPause)return null;
     if(mv.annule.some(s=>chercher(t,s)>-1)||contient(t,'efface','supprime le dernier','retire le dernier')){
       const b=st.blocs.pop();if(st.partieDebut>st.blocs.length)st.partieDebut=st.blocs.length;
+      st.parties.forEach(p=>{if(p.debut>st.blocs.length)p.debut=st.blocs.length});
       return {r:'annule',dit:b?`« ${b.nom} » retiré`:'Rien à retirer'};
     }
     // Titre de la séance
@@ -1367,6 +1411,8 @@ function nouvelleInspiration(){
   };
   return {
     st,
+    // Les parties et leurs temps, pour l'écran pendant l'écoute.
+    parties(){const P=st.parties,b=st.blocs;return P.map((p,i)=>({nom:p.nom,blocs:b.slice(p.debut,i+1<P.length?P[i+1].debut:b.length)}))},
     // Une phrase reconnue : le texte va au temps en cours, chaque « Régie … » est une consigne.
     phrase(texte){
       const actions=[];
@@ -1400,13 +1446,13 @@ function nouvelleInspiration(){
 // Les petits sons : un « ding » par temps, plus grave pour « annule », deux notes pour la fin.
 function sonVoix(q){
   if(!audioInit())return;A.ctx.resume();const t=A.ctx.currentTime;
-  const notes={ajout:[[880,0]],reglage:[[1046.5,0]],partie:[[659.3,0],[987.8,.15]],incompris:[[233.1,0],[196,.2]],annule:[[523.3,0],[392,.16]],pause:[[659.3,0],[523.3,.16]],reprise:[[523.3,0],[659.3,.16]],fin:[[659.3,0],[880,.18],[1318.5,.36]],cree:[[880,0],[1318.5,.2]]}[q]||[[880,0]];
+  const notes={ajout:[[880,0]],reglage:[[1046.5,0]],partie:[[659.3,0],[987.8,.15]],incompris:[[233.1,0],[196,.2]],annule:[[523.3,0],[392,.16]],pause:[[659.3,0],[523.3,.16]],reprise:[[523.3,0],[659.3,.16]],fin:[[659.3,0],[880,.18],[1318.5,.36]],aide:[[784,0],[1046.5,.12]],cree:[[880,0],[1318.5,.2]]}[q]||[[880,0]];
   notes.forEach(([f,d])=>{const o=A.ctx.createOscillator(),g=A.ctx.createGain();o.type='sine';o.frequency.value=f;
     g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.22,t+d+.02);g.gain.exponentialRampToValueAtTime(.001,t+d+.9);o.connect(g).connect(A.ctx.destination);o.start(t+d);o.stop(t+d+1)});
 }
 function consigneMotsCles(){
   const mv=D.prefs.motsVoix||{},decl=String(D.prefs.declencheur||DECLENCHEUR_DEFAUT);
-  return `\n\nIl donne ses consignes à la régie avec le mot « ${decl} » (le téléphone peut l'avoir écrit « Régis » ou « régi ») : tout ce qui suit ce mot jusqu'à la fin de la phrase est une consigne, pas du texte à dire ; tout le reste est le texte du temps en cours. Exemples : « ${decl}, crée un silence d'une minute » (nouveau temps silence d'1 min) ; « ${decl}, ajoute un temps de bâton de pluie en 5 s 5 s » (instrument pluie, inspire 5 s, expire 5 s) ; « ${decl}, là c'était la partie induction, passe à une autre partie » (les temps de parole de ce passage s'appellent « Induction », la suite commence un nouveau temps) ; « ${decl}, annule » (retire le temps précédent) ; « ${decl}, pause » / « reprends » (ignore ce qui est dit entre les deux) ; « ${decl}, fin de l'inspiration » (fin). Son vocabulaire : `+Object.entries(MOTS_VOIX).map(([k,v])=>`${(Array.isArray(mv[k])&&mv[k].length?mv[k]:v.mots).map(m=>'« '+m+' »').join(' ou ')} = ${v.nom}`).join(' ; ')+'. Respecte ses consignes dans l’ordre. Pour un bâton de pluie, mets le rythme dans "repere" (ex. « inspire 5 s · expire 5 s »).';
+  return `\n\nIl donne ses consignes à la régie avec le mot « ${decl} » (le téléphone peut l'avoir écrit « Régis » ou « régi ») : tout ce qui suit ce mot jusqu'à la fin de la phrase est une consigne, pas du texte à dire ; tout le reste est le texte du temps en cours. Exemples : « ${decl}, crée un silence d'une minute » (nouveau temps silence d'1 min) ; « ${decl}, ajoute un temps de bâton de pluie en 5 s 5 s » (instrument pluie, inspire 5 s, expire 5 s) ; « ${decl}, là c'était la partie induction, passe à une autre partie » (les temps de parole de ce passage s'appellent « Induction », la suite commence un nouveau temps) ; « ${decl}, annule » (retire le temps précédent) ; « ${decl}, pause » / « reprends » (ignore ce qui est dit entre les deux) ; « ${decl}, fin de l'inspiration » (fin). Son vocabulaire : `+Object.entries(MOTS_VOIX).filter(([k])=>k!=='aide').map(([k,v])=>`${(Array.isArray(mv[k])&&mv[k].length?mv[k]:v.mots).map(m=>'« '+m+' »').join(' ou ')} = ${v.nom}`).join(' ; ')+'. Respecte ses consignes dans l’ordre. Pour un bâton de pluie, mets le rythme dans "repere" (ex. « inspire 5 s · expire 5 s »).';
 }
 function creerSeanceInspiration(s){D.seances.push(s);sauver();return s}
 
@@ -1426,16 +1472,29 @@ function fenetreInspiration(o={}){
     <div class="i-temps" id="i-temps"></div>
     <div class="i-ecoute" id="i-ecoute"></div>
     <div class="d-actions" id="i-actions"></div>
-    <button class="d-bascule" id="i-mots">Mots clés</button>
+    <div class="i-bas"><button class="btn" id="i-cmd-b">🎙️ Commandes</button><button class="d-bascule" id="i-mots">Mots clés</button></div>
+    <div class="i-cmd cache" id="i-cmd"></div>
   </div>`;
   document.body.appendChild(v);
   const $i=s=>v.querySelector(s);
+  // L'écran pendant l'écoute : les parties numérotées et leurs temps, la partie en cours mise en avant.
   const dessiner=()=>{
-    const b=ins.st.blocs;
-    $i('#i-temps').innerHTML=(ins.st.titre?`<div class="i-titre">${esc(ins.st.titre)}</div>`:'')+(b.length?frise(b,{large:true})+`<ol>${b.map(x=>`<li><span class="chip t-${x.type}">${IC[x.type]||''} ${esc(x.type==='parole'?'Parole':x.nom)}</span> ${x.libre?'':x.min+' min'}${x.position?' · '+POS[x.position]:''}${x.fin?' · fin : '+esc(FINS[x.fin]||x.fin):''}${x.texte?`<div class="i-txt">${esc(x.texte.length>140?'…'+x.texte.slice(-140):x.texte)}</div>`:''}</li>`).join('')}</ol>`:'');
+    const b=ins.st.blocs,ecoute=etat==='enr',P=ins.parties().filter((p,i,l)=>p.blocs.length||ecoute&&i===l.length-1);
+    const avecParties=P.length>1||P.some(p=>p.nom);
+    const temps=x=>`<li class="i-t${ecoute&&x===b[b.length-1]?' courant':''}"><span class="chip t-${x.type}">${IC[x.type]||''} ${esc(x.type==='instrument'?INSTR[x.instrument]||x.nom:TYPES[x.type]?.nom||x.nom)}</span><span class="i-det">${esc([x.libre?'durée libre':x.min+' min',x.type==='instrument'&&x.instrument==='pluie'&&x.rythme?`${x.rythme} s / ${x.expire||x.rythme} s`:'',x.position?POS[x.position]:'',x.fin?'fin : '+(FINS[x.fin]||x.fin):''].filter(Boolean).join(' · '))}</span>${x.texte?`<div class="i-txt">« ${esc(x.texte.length>110?'…'+x.texte.slice(-110):x.texte)} »</div>`:''}</li>`;
+    const duree=l=>l.reduce((t,x)=>t+(x.libre?0:x.min||0),0);
+    $i('#i-temps').innerHTML=(ins.st.titre?`<div class="i-titre">${esc(ins.st.titre)}</div>`:'')+(b.length?frise(b,{large:true}):'')
+      +(avecParties?`<div class="i-parties">${P.map((p,i)=>{const cour=i===P.length-1;return `<section class="i-partie${cour?' courante':''}"><header><span class="i-num">${i+1}</span><b>${esc(p.nom||'Partie '+(i+1))}</b>${cour&&ecoute?'<span class="i-encours">● en cours</span>':p.blocs.length?`<span class="i-duree">${duree(p.blocs)} min</span>`:''}</header>${p.blocs.length?`<ol>${p.blocs.map(temps).join('')}</ol>`:''}</section>`}).join('')}</div>`
+      :b.length?`<ol class="i-seul">${b.map(temps).join('')}</ol>`:'');
     const der=ins.st.dernier;
     $i('#i-ecoute').innerHTML=ins.st.enPause?`⏸ En pause : dites « ${esc(decl)}, reprends » pour continuer.`:interim?esc(interim):der?`<span class="${der.r==='incompris'?'i-ko':'i-ok'}">${der.r==='incompris'?'✗':'✓'} ${esc(der.dit)}</span>`:'';
-    const l=$i('#i-temps ol');if(l)l.lastElementChild?.scrollIntoView({block:'nearest'});
+    const l=$i('.i-partie.courante')||$i('.i-seul');if(l)(l.querySelector('.i-t:last-child')||l).scrollIntoView({block:'nearest'});
+  };
+  // L'aide-mémoire des commandes (bouton, ou « Régie, aide ») : l'écoute continue derrière.
+  const commandes=ouvrir=>{
+    const c=$i('#i-cmd'),f=$i('.inspi-fen');
+    if(ouvrir){c.innerHTML=commandesVoixHtml()+`<div class="d-actions"><button class="btn p" data-i="cmd-fermer">Fermer</button></div>`;f.scrollTop=0}
+    c.classList.toggle('cache',!ouvrir);f.classList.toggle('cmd-ouvert',ouvrir);
   };
   const decl=majuscule1(String(D.prefs.declencheur||DECLENCHEUR_DEFAUT).split(',')[0].trim());
   const majMode=()=>{$i('#i-mode').textContent=mode==='direct'?`Parlez librement : c’est le texte. Pour une consigne, dites « ${decl} » puis ce que vous voulez (« ${decl}, crée un silence d’une minute »). « ${decl}, fin de l’inspiration » pour terminer.`:`Enregistrement (pas de reconnaissance en direct ici) : parlez avec vos consignes « ${decl}, … », l’IA rangera la séance. Elle s’arrête seule après une minute de silence.`};
@@ -1443,8 +1502,13 @@ function fenetreInspiration(o={}){
     const a=$i('#i-actions');
     a.innerHTML=etat==='pret'?`<button class="btn" data-i="fermer">Fermer</button>`:etat==='fini'?'':`<button class="btn" data-i="annuler">Annuler</button><button class="btn p" data-i="fin">${IC.check} Terminer</button>`;
     $i('#i-micro').classList.toggle('on',etat==='enr'&&!ins.st.enPause);$i('#i-micro').classList.toggle('cache',etat==='fini');
+    $i('.inspi-fen').classList.toggle('ecoute',etat==='enr'&&mode==='direct');dessiner();
   };
-  const reagir=actions=>{actions.forEach(r=>{if(r!=='fin')sonVoix(r)});dessiner();majActions();if(actions.includes('fin'))terminer()};
+  const reagir=actions=>{
+    actions.forEach(r=>{if(r!=='fin')sonVoix(r)});
+    if(actions.includes('aide'))commandes(true);else if(actions.some(r=>r!=='incompris'))commandes(false);
+    dessiner();majActions();if(actions.includes('fin'))terminer();
+  };
   const demarrerDirect=()=>{
     reco=new RECO();reco.lang='fr-FR';reco.continuous=true;reco.interimResults=true;
     reco.onresult=e=>{interim='';const acts=[];for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)acts.push(...ins.phrase(t));else interim+=t}reagir(acts)};
@@ -1495,12 +1559,26 @@ function fenetreInspiration(o={}){
     if(q==='fermer')fermer();
     else if(q==='annuler'){if(confirm('Abandonner cette inspiration ?')){etat='fini';if(dicta)dicta.annuler();oublierDictee(id);fermer()}}
     else if(q==='fin')terminer();
+    else if(q==='cmd-fermer')commandes(false);
     else if(q==='voir'){const sid=b.dataset.s;fermer();aller('editer',sid)}
   });
+  $i('#i-cmd-b').onclick=()=>commandes(true);
   $i('#i-micro').onclick=()=>{if(etat==='pret')demarrer();else if(etat==='enr'){ins.st.enPause=!ins.st.enPause;sonVoix(ins.st.enPause?'pause':'reprise');dessiner();majActions()}};
   $i('#i-mots').onclick=fenetreMotsCles;
   majMode();majActions();dessiner();
   if(o.auto)setTimeout(()=>{if(etat==='pret')demarrer().catch(()=>{})},400);
+}
+// L'aide-mémoire des commandes vocales, avec le mot déclencheur et les mots clés réglés.
+function commandesVoixHtml(){
+  const p=D.prefs.motsVoix||{},decl=majuscule1(String(D.prefs.declencheur||DECLENCHEUR_DEFAUT).split(',')[0].trim());
+  const mots=k=>Array.isArray(p[k])&&p[k].length?p[k]:MOTS_VOIX[k].mots,m1=k=>mots(k)[0];
+  const ex=t=>`<li>« ${esc(decl)}, ${esc(t)} »</li>`;
+  const puces=ks=>`<li class="i-puces">${ks.map(k=>`<span>${esc(mots(k).join(' / '))}</span>`).join('')}</li>`;
+  return `<h3>🎙️ Mes commandes</h3><p class="i-cmd-intro">« ${esc(decl)} », puis la consigne.</p>
+    <div class="i-cmd-g"><b>Parties</b><ul>${ex("c'était la partie accueil")}${ex('passe à une autre partie')}${ex('passe à la partie voyage')}</ul></div>
+    <div class="i-cmd-g"><b>Temps</b><ul>${ex(`crée un ${m1('silence')} d'une minute`)}${ex(`ajoute un ${m1('pluie')} en 5 s 5 s`)}${puces(['parole','ocean','flute','carillon','tambour','musique','transition','partage'])}</ul></div>
+    <div class="i-cmd-g"><b>Réglages</b><ul>${ex('titre voyage intérieur')}${ex('3 minutes')}${ex('durée libre')}${puces(['allonge','cote','assis','debout'])}</ul></div>
+    <div class="i-cmd-g"><b>Pendant l'écoute</b><ul>${['annule','pause','reprends','fin','aide'].map(k=>`<li>« ${esc(decl)}, ${esc(m1(k))} »<small>${esc(MOTS_VOIX[k].nom)}</small></li>`).join('')}</ul></div>`;
 }
 // Régler ses mots clés : plusieurs façons de dire la même chose, séparées par des virgules.
 function fenetreMotsCles(){
