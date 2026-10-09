@@ -776,6 +776,67 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .rl-total{text-align:right;font-size:14px;color:var(--muted)}
 .btn.relire.a-faire{border-color:var(--attente);color:var(--attente)}
 .chip.a-relire[data-relire]{cursor:pointer}
+/* ——— Relecture hypnotique et sur mesure ——— */
+.rl-hypno .hy-l{font-size:13px;line-height:1.55;color:var(--ink);margin:6px 0}
+.rl-hypno .hy-l.att{color:var(--attente)}.rl-hypno .hy-l.ok{color:var(--ok)}
+.rl-hypno ul{margin:4px 0 0;padding-left:18px;color:var(--ink);font-family:var(--serif);font-size:14.5px}
+.hy-sens{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:4px 14px;margin:8px 0}
+.hy-s{display:grid;grid-template-columns:62px minmax(0,1fr) 22px;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.hy-s i{height:7px;border-radius:4px;background:var(--plein);overflow:hidden}
+.hy-s u{display:block;height:100%;background:var(--peri-deep);border-radius:4px}
+.hy-s b{text-align:right;color:var(--ink)}
+.hy-sugg{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.hy-x{background:var(--plein);border-radius:12px;padding:8px 10px;font-family:var(--serif);font-size:15px;line-height:1.55}
+.hy-x small{display:block;font-family:var(--sans);font-size:12px;color:var(--muted);margin-top:2px}
+.hy-xa{display:flex;justify-content:flex-end;gap:6px;margin-top:6px}
+.hy-xa .btn{font-family:var(--sans)}
+.fenetre.sm-fen{text-align:left}
+.sm-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.sm-aide{font-size:13px;color:var(--muted);margin:0 0 12px}
+.md-sm{border-style:solid;border-color:var(--peri-deep);background:var(--violet-soft)}
+.chip.sm-client{background:var(--aqua-pale);color:var(--canard-dark)}
+/* ——— Carnet d'inspirations et modèles ——— */
+input[type=search]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--plein);font-size:14px;color:var(--ink)}
+@media(max-width:440px){.onglets{justify-content:space-between}.onglets button{padding:7px 6px;font-size:12.5px}}
+@media(max-width:380px){.onglets button{padding:6px 4px;font-size:12px}}
+@media(max-width:340px){.onglets button{padding:5px 3px;font-size:11px}}
+.cn-filtres{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.cn-filtres input{max-width:420px}
+.cn-themes{display:flex;flex-wrap:wrap;gap:6px}
+.cn-th{border:1px solid var(--line);background:var(--plein);border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer}
+.cn-th.on{border-color:var(--peri-deep);background:var(--violet-soft);color:var(--peri-darker)}
+.cn-liste{display:flex;flex-direction:column;gap:10px}
+.cn-idee{background:var(--carte);border:1px solid var(--line);border-radius:20px;padding:14px 16px;box-shadow:var(--ombre);text-align:left;color:var(--ink)}
+.cn-texte{font-family:var(--serif);font-size:17px;line-height:1.65;white-space:pre-wrap}
+.cn-pied{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.cn-date{font-size:12px;color:var(--muted)}
+.cn-act{display:flex;align-items:center;gap:4px;margin-left:auto}
+.cn-chip{background:var(--violet-soft);color:var(--peri-darker)}
+.cn-induction{background:var(--t-parole);color:var(--t-parole-f)}.cn-approfondissement{background:var(--t-instrument);color:var(--t-instrument-f)}
+.cn-metaphore{background:var(--t-musique);color:var(--t-musique-f)}.cn-suggestion{background:var(--t-transition);color:var(--t-transition-f)}
+.cn-ancrage{background:var(--t-partage);color:var(--t-partage-f)}.cn-retour{background:var(--t-silence);color:var(--t-silence-f)}
+.cn-fen{max-width:480px}
+.cn-saisie{position:relative}
+.cn-saisie textarea{font-family:var(--serif);font-size:17px;padding-right:56px;min-height:120px}
+.cn-micro{position:absolute;right:8px;bottom:10px;background:var(--peri-deep);border-color:var(--peri-deep);color:#fff}
+.cn-micro.on{background:var(--alerte);border-color:var(--alerte);animation:d-pouls 1.6s ease-in-out infinite}
+.cn-ecoute{min-height:18px;font-size:12.5px;color:var(--muted);font-style:italic;margin:4px 2px 8px}
+.cn-fen .cn-themes{margin-bottom:6px}
+.fenetre.cn-choix{text-align:left}
+.cn-choix .cn-themes{margin:10px 0}
+.cn-pick{display:flex;flex-direction:column;align-items:flex-start;gap:8px;width:100%;cursor:pointer}
+.cn-pick .cn-texte{font-size:15.5px}
+.voix-aide{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.fenetre.md-fen{text-align:left}
+.md-k{margin:16px 0 8px}
+.md-l{display:flex;align-items:center;gap:4px;margin-bottom:8px}
+.md-u,.md-vide{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;align-items:stretch;text-align:left;border:1px solid var(--line);background:var(--carte);border-radius:16px;padding:10px 12px;color:var(--ink);cursor:pointer}
+.md-u:hover,.md-vide:hover{border-color:var(--peri-deep)}
+.md-u b,.md-vide b{font-family:var(--serif);font-weight:400;font-size:17px;color:var(--peri-darker)}
+.md-u small,.md-vide small{font-size:12px;color:var(--muted)}
+.md-vide{flex-direction:row;align-items:center;gap:10px;width:100%;border-style:dashed;margin-top:8px}
+.md-vide span{display:flex;flex-direction:column}
+.md-aide{font-size:12.5px;color:var(--muted);margin:12px 0 0}
 /* ——— Égaliseur de son ——— */
 .egal-carte{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;border:1.5px dashed var(--line-bleu);background:transparent;border-radius:16px;padding:10px 12px;text-align:left;color:var(--ink);cursor:pointer}
 .egal-carte:hover{background:var(--aqua-pale)}
@@ -848,7 +909,7 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 <header class="haut" id="haut"><div class="in">
   <div class="marque"><img src="logo.png" alt=""><span>Régie de l’Être</span></div>
   <nav class="onglets" id="onglets">
-    <button data-v="seances">Séances</button><button data-v="blocs">Mes blocs</button><button data-v="musiques">Musiques</button><button data-v="bilans">Bilans</button>
+    <button data-v="seances">Séances</button><button data-v="carnet">Carnet</button><button data-v="blocs">Mes blocs</button><button data-v="musiques">Musiques</button><button data-v="bilans">Bilans</button>
   </nav>
   <div class="droite"><span class="etat-save" id="etat-save"></span><button class="sync" id="etat-sync" type="button"></button></div>
 </div></header>
@@ -957,7 +1018,7 @@ function contenuDepart(){
     nb('instrument','Cohérence cardiaque · bâton de pluie',5,{instrument:'pluie',rythme:5,expire:5,position:'allonge',texte:'À l’inspiration, le ventre se gonfle…\n\nÀ l’expiration, il redescend.'}),
     nb('transition','Retour en douceur',3,{position:'assis',texte:'Remettez un peu de mouvement…\n\nVenez sur le côté…\n\nPuis asseyez-vous à votre rythme.'}),
     nb('silence','Silence et carillon',10,{position:'assis',fin:'carillon'})
-  ],musiques:[],bilans:[],prefs:{}};
+  ],musiques:[],bilans:[],carnet:[],modeles:[],prefs:{}};
 }
 const PREFS={nuit:false,wpm:90,taille:30,autoBlocs:true,autoTexte:false};
 let D=lire();
@@ -969,6 +1030,8 @@ D.prefs=Object.assign({},PREFS,D.prefs||{});
 function boutonsDepart(){return Object.entries(TYPES).map(([k,t])=>({id:'bt-'+k,type:k,nom:t.nom,min:5}))}
 if(!Array.isArray(D.boutons)){D.boutons=boutonsDepart();D.boutonsVierges=true}
 if(!Array.isArray(D.mesBlocs))D.mesBlocs=[];
+if(!Array.isArray(D.carnet))D.carnet=[];
+if(!Array.isArray(D.modeles))D.modeles=[];
 // Ancien exemple de la première version : on reprend le nouveau titre.
 D.seances.forEach(s=>{if(s.titre==='Méditer ensemble')s.titre='Atelier du jeudi'});
 
@@ -998,7 +1061,7 @@ function aller(v,p){
   $('#onglets').classList.toggle('cache',v==='editer'||v==='relire');
   $$('#onglets button').forEach(b=>b.classList.toggle('on',b.dataset.v===(v==='montage'?'musiques':v)));
   if(v!=='montage')arreterEcoute();
-  ({seances:vueSeances,blocs:vueBlocs,musiques:vueMusiques,bilans:vueBilans,editer:vueEditer,relire:vueRelire,guider:vueGuider,bilan:vueBilan,montage:vueMontage})[v](p);
+  ({seances:vueSeances,carnet:vueCarnet,blocs:vueBlocs,musiques:vueMusiques,bilans:vueBilans,editer:vueEditer,relire:vueRelire,guider:vueGuider,bilan:vueBilan,montage:vueMontage})[v](p);
   window.scrollTo(0,0);
   if(SYN.differe&&!occupe()){SYN.differe=false;setTimeout(synchroniser,300)}
 }
@@ -1013,12 +1076,12 @@ function vueSeances(){
         <button id="b-sauve">${IC.sauve} Télécharger une sauvegarde</button><button id="b-restaure">${IC.restaure} Restaurer une sauvegarde</button>
         <button id="b-import">${IC.restaure} Reprendre l’ancienne régie</button></div></div></div></div>
     <div class="voix-boutons"><button class="nouvelle dicter inspi" id="b-inspi">✨ J’ai une inspiration</button><button class="nouvelle dicter" id="b-dicter">${IC.micro} Dicter une séance</button></div>
-    <div class="voix-aide"><button class="lien-cle" id="b-mots">Mes mots clés</button></div>
+    <div class="voix-aide"><button class="btn s" id="b-idee">💡 Noter une idée</button><button class="lien-cle" id="b-mots">Mes mots clés</button></div>
     ${dicteesHTML()}
     <div class="liste-seances">
       ${D.seances.map(s=>`<div class="ls">
         <div><h3 data-editer="${s.id}">${esc(s.titre)}</h3>
-          <div class="meta">${s.aRelire?`<span class="chip a-relire"${estInspiration(s)?` data-relire="${s.id}" role="button"`:''}>✨ À relire</span>`:''}<span>${KIND[s.genre]||'Séance'}</span><span>·</span><span>${s.blocs.length} temps · ${totalTxt(s)}</span>${s.debut?`<span>·</span><span>${s.debut.replace(':',' h ')} – ${s.finH.replace(':',' h ')}</span>`:''}</div>
+          <div class="meta">${s.aRelire?`<span class="chip a-relire"${estInspiration(s)?` data-relire="${s.id}" role="button"`:''}>✨ À relire</span>`:''}${REGIE_COMPLETE&&clientDe(s)?`<span class="chip sm-client">👤 ${esc(nomClient(clientDe(s)))}</span>`:''}<span>${KIND[s.genre]||'Séance'}</span><span>·</span><span>${s.blocs.length} temps · ${totalTxt(s)}</span>${s.debut?`<span>·</span><span>${s.debut.replace(':',' h ')} – ${s.finH.replace(':',' h ')}</span>`:''}</div>
           ${frise(s.blocs,{large:true})}</div>
         <div class="ls-actions">
           <button class="btn p" data-guider="${s.id}">${IC.play} Guider</button>
@@ -1026,7 +1089,7 @@ function vueSeances(){
           <button class="btn" data-editer="${s.id}">${IC.edit} Préparer</button>
           <button class="btn" data-visio="${s.id}" title="Guider cette séance dans la salle de visio">${IC_VISIO} En visio</button>
           <div class="menu"><button class="btn rond nu" title="Plus">${IC.points}</button><div class="menu-liste">
-            <button data-dupliquer="${s.id}">${IC.copie} Dupliquer</button><button data-supprimer="${s.id}" style="color:var(--alerte)">${IC.poubelle} Supprimer</button></div></div>
+            <button data-dupliquer="${s.id}">${IC.copie} Dupliquer</button><button data-modele="${s.id}">${IC.etoile} Garder comme modèle</button><button data-supprimer="${s.id}" style="color:var(--alerte)">${IC.poubelle} Supprimer</button></div></div>
         </div></div>`).join('')}
       <div class="nouvelles"><button class="nouvelle" id="b-nouvelle">${IC.plus} Nouvelle séance</button><button class="nouvelle" id="b-enr-libre">${IC.micro} Enregistrement libre</button></div>
     </div>${legende}
@@ -1034,14 +1097,15 @@ function vueSeances(){
   menus();
   $$('[data-guider]').forEach(b=>b.onclick=()=>aller('guider',b.dataset.guider));
   $('#b-dicter').onclick=()=>fenetreDictee();brancherDictees();
-  $('#b-inspi').onclick=()=>fenetreInspiration({auto:true});$('#b-mots').onclick=fenetreMotsCles;
+  $('#b-inspi').onclick=()=>fenetreInspiration({auto:true});$('#b-mots').onclick=fenetreMotsCles;$('#b-idee').onclick=()=>fenetreIdee();
+  $$('[data-modele]').forEach(b=>b.onclick=()=>garderCommeModele(trouverSeance(b.dataset.modele)));
   $('#b-enr-libre').onclick=()=>fenetreEnregistreur({titre:'Enregistrement libre',fond:true,nom:`Séance – ${new Date().toLocaleDateString('fr-FR')}`});
   $$('[data-editer]').forEach(b=>b.onclick=()=>aller('editer',b.dataset.editer));
   $$('[data-relire]').forEach(b=>b.onclick=()=>aller('relire',b.dataset.relire));
   $$('[data-visio]').forEach(b=>b.onclick=()=>fenetreSalle(b.dataset.visio));
   $$('[data-dupliquer]').forEach(b=>b.onclick=()=>{const s=clone(trouverSeance(b.dataset.dupliquer));s.id=uid();s.titre+=' (copie)';s.blocs.forEach(x=>x.id=uid());D.seances.push(s);sauver();vueSeances();toast('Séance dupliquée')});
   $$('[data-supprimer]').forEach(b=>b.onclick=()=>{const s=trouverSeance(b.dataset.supprimer);if(confirm(`Supprimer « ${s.titre} » ?`)){D.seances=D.seances.filter(x=>x!==s);sauver();vueSeances();toast('Séance supprimée')}});
-  $('#b-nouvelle').onclick=()=>{const s={id:uid(),titre:'Nouvelle séance',genre:'atelier',debut:'',finH:'',blocs:[nb('parole','Accueil',5)]};D.seances.push(s);sauver();aller('editer',s.id);setTimeout(()=>{const t=$('#e-titre');t.focus();t.select()},60)};
+  $('#b-nouvelle').onclick=fenetreNouvelleSeance;
   $('#b-son').onclick=fenetreSon;
   $('#b-sauve').onclick=exporter;$('#b-restaure').onclick=()=>$('#f-restaure').click();$('#b-import').onclick=fenetreImport;
 }
@@ -1056,6 +1120,8 @@ const RECO=window.SpeechRecognition||window.webkitSpeechRecognition;
 // par phrase : de chaque écoute on ne garde que le texte le plus complet, donné une seule fois, à la petite
 // pause qui la termine. Ailleurs, chaque phrase définitive est donnée tout de suite.
 const ANDROID=/Android/i.test(navigator.userAgent);
+// La régie d'Hélène garde l'essentiel : les outils liés aux fiches clients et les plus poussés n'y sont pas.
+const REGIE_COMPLETE=!location.pathname.startsWith('/regie-helene');
 const normReco=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
 function fusionReco(acc,t){
   t=String(t||'').trim();if(!t)return acc;if(!acc)return t;
@@ -1938,7 +2004,7 @@ function nouveauTempsRelire(c){
   if(INSTR[c])return nb('instrument',INSTR[c],5,{instrument:c,rythme:{pluie:5,ocean:8,tambour:60}[c]||null,expire:c==='pluie'?5:null});
   return nb(c,TYPES[c].nom,c==='transition'?3:c==='partage'?10:5,optionsType(c));
 }
-const insererHtml=(pid,k)=>`<div class="rl-ins"><div class="menu"><button class="btn s">${IC.plus} Insérer un temps</button><div class="menu-liste">${CHOIX_TEMPS.map(([c,t])=>`<button data-ins="${c}" data-pid="${pid}" data-k="${k}">${IC[INSTR[c]?'instrument':c]||''} ${t}</button>`).join('')}</div></div></div>`;
+const insererHtml=(pid,k)=>`<div class="rl-ins"><div class="menu"><button class="btn s">${IC.plus} Insérer un temps</button><div class="menu-liste"><button data-ins="carnet" data-pid="${pid}" data-k="${k}">💡 Depuis mon carnet…</button><div class="sep"></div>${CHOIX_TEMPS.map(([c,t])=>`<button data-ins="${c}" data-pid="${pid}" data-k="${k}">${IC[INSTR[c]?'instrument':c]||''} ${t}</button>`).join('')}</div></div></div>`;
 
 function partieHtml(p){
   const s=R.s,P=s.parties,i=P.indexOf(p),l=blocsDe(s,p.id),lect=l.reduce((t,b)=>t+(b.texte?lectureMin(b.texte):0),0),v=D.prefs.relireVitesse||.9;
@@ -1987,10 +2053,11 @@ function outilsHtml(b){
   const r=b.texte?repetitions(b.texte):{mots:0};
   return `${b.texte?`<button class="btn s" data-tt="ecouter">${IC.son} Écouter</button>`:''}
     ${r.mots?`<button class="btn s rl-rep" data-tt="repetitions">🧹 ${r.mots} mot${r.mots>1?'s':''} en double</button>`:''}
-    ${b.texte?`<button class="btn s" data-tt="ia">✨ Corriger</button><button class="btn s" data-tt="couper" title="Couper le texte en deux temps, là où est le curseur">${IC.ciseaux} Couper ici</button>`:''}
+    ${b.texte?`<button class="btn s" data-tt="ia">✨ Corriger</button>${REGIE_COMPLETE?'<button class="btn s" data-tt="hypno">🌀 Hypnotique</button>':''}<button class="btn s" data-tt="couper" title="Couper le texte en deux temps, là où est le curseur">${IC.ciseaux} Couper ici</button>`:''}
     ${b.texteDicte!=null&&b.texteDicte!==b.texte?`<button class="btn s nu" data-tt="dicte">↩ Texte dicté</button>`:''}`;
 }
 function propositionHtml(b,pr){
+  if(pr.type==='hypno')return hypnoHtml(b,pr);
   if(pr.type==='attente')return `<div class="rl-prop"><div class="rl-prop-t">✨ L’IA relit votre texte…</div></div>`;
   if(pr.type==='rep'){
     const r=pr.r,dans=new Map();r.runs.forEach(([a],k)=>dans.set(a,k));
@@ -2139,7 +2206,9 @@ function brancherRelire(){
     if(t.dataset.prop&&b){const pr=R.prop[b.id];delete R.prop[b.id];
       if(t.dataset.prop==='oui')modifierRelire(()=>{b.texte=pr.type==='rep'?texteSans(pr.r,pr.gardes):pr.apres});else dessinerRelire();return}
     // Insérer un temps
-    if(t.dataset.ins){const pid=t.dataset.pid,k=+t.dataset.k,x=nouveauTempsRelire(t.dataset.ins);x.partie=pid;
+    if(t.dataset.ins){const pid=t.dataset.pid,k=+t.dataset.k;let x;
+      if(t.dataset.ins==='carnet'){const idee=await choisirIdee();if(!idee)return;x=tempsDepuisIdee(idee)}else x=nouveauTempsRelire(t.dataset.ins);
+      x.partie=pid;
       modifierRelire(s2=>{const l=blocsDe(s2,pid);const at=k<0?(l.length?s2.blocs.indexOf(l[0]):s2.blocs.length):s2.blocs.indexOf(l[k])+1;s2.blocs.splice(at,0,x)},false);
       return dessinerRelire({focus:`[data-b="${x.id}"] .rl-texte`})}
     // La partie
@@ -2168,12 +2237,19 @@ function brancherRelire(){
       if(q==='suppr'){modifierRelire(()=>s.blocs.splice(s.blocs.indexOf(b),1));return toast(`« ${esc(b.nom)} » supprimé · « Annuler » pour revenir en arrière`)}
     }
     if(t.dataset.min&&b){modifierRelire(()=>{b.min=clamp((+b.min||0)+ +t.dataset.min,1,180)});return}
+    // La relecture hypnotique : reformulations à prendre ou à laisser
+    if(t.dataset.hy&&b){const pr=R.prop[b.id];if(!pr)return;
+      if(t.dataset.hy==='ia')return reformulerHypno(b);
+      const s2=pr.sugg[+t.dataset.i];pr.sugg.splice(+t.dataset.i,1);
+      if(t.dataset.hy==='ok'&&s2){retenirRelire();b.texte=b.texte.replace(s2.avant,s2.apres);pr.a=analyseHypno(b.texte);sauver()}
+      return dessinerRelire()}
     // Les outils du texte
     if(t.dataset.tt&&b){
       const q=t.dataset.tt,zone=a.querySelector('.rl-texte');
       if(q==='ecouter')return lireTexte('b:'+b.id,b.texte);
       if(q==='repetitions'){R.prop[b.id]={type:'rep',r:repetitions(b.texte),gardes:new Set()};return dessinerRelire()}
       if(q==='ia')return corrigerIA(b);
+      if(q==='hypno'){R.prop[b.id]={type:'hypno',a:analyseHypno(b.texte)};return dessinerRelire()}
       if(q==='dicte'){modifierRelire(()=>{b.texte=b.texteDicte});return toast('Texte dicté remis · « Annuler » pour revenir en arrière')}
       if(q==='ajuster'){modifierRelire(()=>{b.min=clamp(+t.dataset.v,1,180)});return}
       if(q==='couper'){
@@ -2285,6 +2361,308 @@ function fenetreEgaliseur(){
   };
   $e('#eg-on').onchange=e=>{S.egaliser=e.target.checked?undefined:false;if(S.egaliser===undefined)delete S.egaliser;sauverBientot();dessiner();majEgalCarte()};
   dessiner();mesurer();
+}
+
+/* =============================== CARNET D'INSPIRATIONS =============================== */
+// Les idées notées au vol (une phrase, une métaphore, une suggestion), rangées par thème, à glisser
+// ensuite dans une séance. D.carnet : [{id, texte, theme, date}] (synchronisé comme les séances).
+const THEMES_CARNET={induction:'Induction',approfondissement:'Approfondissement',metaphore:'Métaphore',suggestion:'Suggestion',ancrage:'Ancrage',retour:'Retour',autre:'Autre'};
+let CF={theme:'',q:''};
+function vueCarnet(){
+  const l=D.carnet.slice().sort((a,b)=>b.date-a.date),q=normReco(CF.q);
+  const vus=l.filter(x=>(!CF.theme||x.theme===CF.theme)&&(!q||normReco(x.texte).includes(q)));
+  const compte=t=>l.filter(x=>x.theme===t).length;
+  $('#vue').innerHTML=`<div class="filigrane" aria-hidden="true"></div><div class="page">
+    <div class="tete-page"><div><h1 class="titre">Mon carnet</h1><p class="sous">Vos idées, phrases et métaphores, à glisser dans vos séances.</p></div>
+      <button class="btn p" id="cn-noter">💡 Noter une idée</button></div>
+    ${l.length?`<div class="cn-filtres">
+      <input type="search" id="cn-q" placeholder="Chercher un mot…" value="${esc(CF.q)}" aria-label="Chercher">
+      <div class="cn-themes"><button class="cn-th${CF.theme?'':' on'}" data-th="">Toutes · ${l.length}</button>${Object.entries(THEMES_CARNET).filter(([k])=>compte(k)).map(([k,v])=>`<button class="cn-th${CF.theme===k?' on':''}" data-th="${k}">${v} · ${compte(k)}</button>`).join('')}</div>
+    </div>`:''}
+    <div class="cn-liste">${vus.map(x=>`<article class="cn-idee" data-id="${x.id}">
+      <div class="cn-texte">${esc(x.texte)}</div>
+      <div class="cn-pied"><span class="chip cn-chip cn-${x.theme||'autre'}">${THEMES_CARNET[x.theme]||'Autre'}</span><span class="cn-date">${new Date(x.date).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})}</span>
+        <span class="cn-act"><button class="btn s" data-cn="seance">${IC.plus} Dans une séance</button><button class="btn rond nu" data-cn="modif" title="Modifier">${IC.edit}</button><button class="btn rond nu danger" data-cn="suppr" title="Supprimer">${IC.poubelle}</button></span></div>
+    </article>`).join('')||`<div class="vide">${l.length?'Aucune idée ne correspond.':'Votre carnet est vide. Touchez « Noter une idée » : dictez ou écrivez une phrase, une image, une métaphore… elle vous attendra ici.'}</div>`}</div>
+  </div>`;
+  $('#cn-noter').onclick=()=>fenetreIdee();
+  const q2=$('#cn-q');if(q2)q2.oninput=e=>{CF.q=e.target.value;const p=e.target.selectionStart;vueCarnet();const n=$('#cn-q');n.focus();n.setSelectionRange(p,p)};
+  $$('[data-th]').forEach(b=>b.onclick=()=>{CF.theme=b.dataset.th;vueCarnet()});
+  $$('[data-cn]').forEach(b=>b.onclick=()=>{
+    const x=D.carnet.find(i=>i.id===b.closest('[data-id]').dataset.id);if(!x)return;
+    if(b.dataset.cn==='modif')fenetreIdee(x);
+    else if(b.dataset.cn==='seance')ideeVersSeance(x);
+    else if(confirm('Supprimer cette idée ?')){D.carnet=D.carnet.filter(i=>i!==x);sauver();vueCarnet();toast('Idée supprimée')}
+  });
+}
+// Noter (ou modifier) une idée : écrite, ou dictée avec le micro.
+function fenetreIdee(x,surFin){
+  const v=document.createElement('div');v.className='voile';v.style.zIndex='90';let ecoute=null,theme=x?x.theme:'';
+  v.innerHTML=`<div class="fenetre cn-fen">
+    <h2>💡 ${x?'Modifier l’idée':'Une idée'}</h2>
+    <div class="cn-saisie"><textarea id="cn-t" rows="4" placeholder="Une phrase, une image, une métaphore…">${esc(x?x.texte:'')}</textarea>
+      ${RECO?`<button class="btn rond cn-micro" id="cn-micro" title="Dicter">${IC.micro}</button>`:''}</div>
+    <div class="cn-ecoute" id="cn-ecoute"></div>
+    <div class="cn-themes" id="cn-ths">${Object.entries(THEMES_CARNET).map(([k,t])=>`<button class="cn-th${theme===k?' on':''}" data-t="${k}">${t}</button>`).join('')}</div>
+    <div class="d-actions"><button class="btn" data-f="non">Annuler</button><button class="btn p" data-f="oui">${IC.check} Garder</button></div>
+  </div>`;
+  document.body.appendChild(v);
+  const t=v.querySelector('#cn-t');setTimeout(()=>t.focus(),50);
+  const stop=()=>{if(ecoute){const e=ecoute;ecoute=null;e.arreter();v.querySelector('#cn-micro')?.classList.remove('on');v.querySelector('#cn-ecoute').textContent=''}};
+  const fermer=()=>{if(ecoute){ecoute.abandonner();ecoute=null}v.remove()};
+  const m=v.querySelector('#cn-micro');
+  if(m)m.onclick=()=>{
+    if(ecoute)return stop();
+    m.classList.add('on');const base=()=>t.value.replace(/\s+$/,'');
+    ecoute=ecouteDirecte({phrase:p=>{t.value=(base()?base()+' ':'')+p.trim().replace(/^./,c=>base()?c:c.toUpperCase());v.querySelector('#cn-ecoute').textContent=''},
+      provisoire:p=>{v.querySelector('#cn-ecoute').textContent=p},erreur:e=>{if(['not-allowed','service-not-allowed','audio-capture'].includes(e.error)){toast('Le micro n’est pas accessible');stop()}},actif:()=>!!ecoute});
+  };
+  v.onclick=e=>{
+    if(e.target===v)return fermer();
+    const b=e.target.closest('button');if(!b)return;
+    if(b.dataset.t){theme=theme===b.dataset.t?'':b.dataset.t;v.querySelectorAll('[data-t]').forEach(z=>z.classList.toggle('on',z.dataset.t===theme));return}
+    if(b.dataset.f==='non')return fermer();
+    if(b.dataset.f==='oui'){
+      const txt=t.value.trim();if(!txt){t.focus();return toast('Écrivez ou dictez votre idée')}
+      if(ecoute){ecoute.abandonner();ecoute=null}
+      if(x){x.texte=txt;x.theme=theme||'autre'}else D.carnet.push({id:uid(),texte:txt,theme:theme||'autre',date:Date.now()});
+      sauver();v.remove();toast(x?'Idée modifiée':'💡 Idée gardée dans votre carnet');
+      if(surFin)surFin();else if(vue==='carnet')vueCarnet();
+    }
+  };
+}
+// Une idée devient un temps de parole dans une séance (à la fin de la partie choisie).
+const tempsDepuisIdee=x=>nb('parole',x.texte.split(/\s+/).slice(0,5).join(' ').replace(/[,.;:!?…]+$/,''),Math.max(1,Math.ceil(lectureMin(x.texte))),{texte:x.texte});
+async function ideeVersSeance(x){
+  if(!D.seances.length)return toast('Créez d’abord une séance');
+  const id=await choisir('💡 Dans quelle séance ?','L’idée devient un temps de parole, à la fin de la séance (ou de la partie choisie).',[...D.seances.map(s=>[s.id,esc(s.titre)]),['','Annuler']]);
+  const s=id&&trouverSeance(id);if(!s)return;
+  let pid=null;
+  if(Array.isArray(s.parties)&&s.parties.length>1){pid=await choisir('Dans quelle partie ?',esc(s.titre),[...s.parties.map((p,i)=>[p.id,esc(nomPartie(p,i))]),['','Annuler']]);if(!pid)return}
+  else if(Array.isArray(s.parties)&&s.parties.length)pid=s.parties[0].id;
+  const b=tempsDepuisIdee(x);if(pid){b.partie=pid;s.blocs.push(b);rangerParties(s)}else s.blocs.push(b);
+  sauver();toast(`Ajoutée à « ${esc(s.titre)} »`);
+}
+// Choisir une idée du carnet (pour l'insérer dans Relire) : renvoie l'idée, ou null.
+function choisirIdee(){return new Promise(ok=>{
+  if(!D.carnet.length){toast('Votre carnet est vide : notez d’abord une idée (onglet Carnet)');return ok(null)}
+  const v=document.createElement('div');v.className='voile';v.style.zIndex='90';let th='',q='';
+  v.innerHTML=`<div class="fenetre dictee-fen cn-choix"><h2>💡 Depuis mon carnet</h2>
+    <input type="search" id="cc-q" placeholder="Chercher un mot…" aria-label="Chercher">
+    <div class="cn-themes" id="cc-th"></div><div class="cn-liste" id="cc-l"></div>
+    <div class="d-actions"><button class="btn" data-x>Annuler</button></div></div>`;
+  document.body.appendChild(v);
+  const dessiner=()=>{
+    const l=D.carnet.slice().sort((a,b)=>b.date-a.date),n=normReco(q),vus=l.filter(x=>(!th||x.theme===th)&&(!n||normReco(x.texte).includes(n)));
+    v.querySelector('#cc-th').innerHTML=`<button class="cn-th${th?'':' on'}" data-th="">Toutes</button>`+Object.entries(THEMES_CARNET).filter(([k])=>l.some(x=>x.theme===k)).map(([k,t])=>`<button class="cn-th${th===k?' on':''}" data-th="${k}">${t}</button>`).join('');
+    v.querySelector('#cc-l').innerHTML=vus.map(x=>`<button class="cn-idee cn-pick" data-pick="${x.id}"><span class="cn-texte">${esc(x.texte)}</span><span class="chip cn-chip cn-${x.theme||'autre'}">${THEMES_CARNET[x.theme]||'Autre'}</span></button>`).join('')||'<div class="vide">Aucune idée ne correspond.</div>';
+  };
+  v.querySelector('#cc-q').oninput=e=>{q=e.target.value;dessiner()};
+  v.onclick=e=>{
+    if(e.target===v||e.target.closest('[data-x]')){v.remove();return ok(null)}
+    const t=e.target.closest('[data-th]');if(t){th=t.dataset.th;return dessiner()}
+    const p=e.target.closest('[data-pick]');if(p){v.remove();ok(D.carnet.find(x=>x.id===p.dataset.pick)||null)}
+  };
+  dessiner();
+})}
+
+/* =============================== MODÈLES DE SÉANCE =============================== */
+// Une séance gardée comme modèle (D.modeles, synchronisé), et trois structures de départ.
+// Une nouvelle séance repart d'un modèle : mêmes parties et mêmes temps, avec de nouveaux identifiants.
+function structuresDepart(){
+  const P=(nom,blocs)=>({nom,blocs});
+  const t=(type,nom,min,o={})=>Object.assign({type,nom,min},o);
+  return [
+    {id:'dep-detente',titre:'Détente profonde',genre:'atelier',depart:true,parts:[
+      P('Accueil',[t('parole','Accueil',5,{position:'assis',repere:'Accueillir, présenter le déroulé, rassurer.'})]),
+      P('Installation',[t('transition','Installation',3,{position:'allonge'})]),
+      P('Induction',[t('instrument','Respiration au bâton de pluie',5,{instrument:'pluie',rythme:5,expire:5,position:'allonge'}),t('parole','Induction',7,{repere:'Attention au souffle, au corps qui se pose.'})]),
+      P('Approfondissement',[t('parole','Descente',8,{repere:'Escalier, comptage, relâchement progressif.'})]),
+      P('Voyage',[t('parole','Lieu ressource',10,{repere:'Un lieu sûr, tous les sens.'}),t('musique','Musique',5,{souple:true})]),
+      P('Retour',[t('parole','Retour',4,{position:'assis'})]),
+      P('Partage',[t('partage','Partage',8,{souple:true,position:'assis'})])]},
+    {id:'dep-sommeil',titre:'Sommeil apaisé',genre:'individuel',depart:true,parts:[
+      P('Accueil',[t('parole','Accueil',3,{position:'allonge'})]),
+      P('Respiration',[t('instrument','Respiration lente',5,{instrument:'pluie',rythme:4,expire:6,position:'allonge'})]),
+      P('Relâchement',[t('parole','Relâchement du corps',8,{repere:'Des pieds à la tête, lentement.'})]),
+      P('Visualisation',[t('parole','Image apaisante',8)]),
+      P('Vers le sommeil',[t('silence','Glisser vers le sommeil',6,{fin:'',repere:'Pas de retour : laisser la personne s’endormir.'})])]},
+    {id:'dep-confiance',titre:'Confiance en soi',genre:'individuel',depart:true,parts:[
+      P('Accueil',[t('parole','Accueil et objectif',8,{position:'assis',repere:'Préciser l’objectif avec la personne.'})]),
+      P('Induction',[t('parole','Induction',8,{position:'allonge'})]),
+      P('Approfondissement',[t('parole','Approfondissement',7)]),
+      P('Ressource',[t('parole','Souvenir ressource',10,{repere:'Un moment de réussite, de fierté.'})]),
+      P('Ancrage',[t('parole','Ancrage',7,{repere:'Un geste, un mot, une image pour retrouver cet état.'})]),
+      P('Projection',[t('parole','Projection dans l’avenir',8)]),
+      P('Retour',[t('parole','Retour',4,{position:'assis'})]),
+      P('Partage',[t('partage','Échange',8,{souple:true,position:'assis'})])]}
+  ];
+}
+// Une structure de départ → un modèle au même format que ceux de la personne.
+function modeleDepuisStructure(d){
+  const parties=d.parts.map(p=>({id:uid(),nom:p.nom,note:'',relue:false}));
+  const blocs=[];d.parts.forEach((p,i)=>p.blocs.forEach(b=>{const o=Object.assign({},b);delete o.type;delete o.nom;delete o.min;blocs.push(nb(b.type,b.nom,b.min,Object.assign(b.type==='instrument'?{}:optionsType(b.type),o,{partie:parties[i].id})))}));
+  return {id:d.id,titre:d.titre,genre:d.genre,blocs,parties,depart:true};
+}
+// Une copie toute neuve (nouveaux identifiants de temps et de parties).
+function copieSeance(m,titre){
+  const s=clone(m),ids=new Map();s.id=uid();s.titre=titre||m.titre;delete s.depart;delete s.aRelire;delete s.inspiration;delete s.clientId;
+  if(Array.isArray(s.parties))s.parties.forEach(p=>{const n=uid();ids.set(p.id,n);p.id=n;p.relue=false});
+  s.blocs.forEach(b=>{b.id=uid();if(b.partie)b.partie=ids.get(b.partie)||b.partie;delete b.texteDicte});
+  return Object.assign({genre:'atelier',debut:'',finH:''},s);
+}
+function garderCommeModele(s){
+  const nom=prompt('Nom du modèle :',s.titre);if(nom===null)return;
+  const m=copieSeance(s,nom.trim()||s.titre);m.debut='';m.finH='';
+  D.modeles.push(m);sauver();toast(`⭐ Modèle « ${esc(m.titre)} » gardé`);
+}
+function fenetreNouvelleSeance(){
+  const v=document.createElement('div');v.className='voile';
+  const dessiner=()=>{
+    const ligne=(m,miens)=>`<div class="md-l"><button class="md-u" data-u="${m.id}"><b>${esc(m.titre)}</b><small>${m.parties&&m.parties.length?m.parties.length+' parties · ':''}${m.blocs.length} temps · ${totalTxt(m)}</small>${frise(m.blocs)}</button>
+      ${miens?`<button class="btn rond nu" data-ren="${m.id}" title="Renommer">${IC.edit}</button><button class="btn rond nu danger" data-del="${m.id}" title="Supprimer le modèle">${IC.poubelle}</button>`:''}</div>`;
+    v.innerHTML=`<div class="fenetre dictee-fen md-fen"><h2>${IC.plus} Nouvelle séance</h2>
+      <button class="md-vide" data-u="vide">${IC.edit} <span><b>Séance vide</b><small>Je pars de zéro</small></span></button>
+      ${REGIE_COMPLETE?'<button class="md-vide md-sm" data-sm>✨ <span><b>Sur mesure</b><small>Pour un client ou un besoin précis, avec vos textes</small></span></button>':''}
+      ${D.modeles.length?`<div class="kicker md-k">⭐ Mes modèles</div>${D.modeles.map(m=>ligne(m,true)).join('')}`:'<p class="md-aide">Astuce : le menu ⋯ d’une séance permet de la garder comme modèle.</p>'}
+      <div class="kicker md-k">Structures de départ</div>${structuresDepart().map(d=>ligne(modeleDepuisStructure(d),false)).join('')}
+      <div class="d-actions"><button class="btn" data-x>Annuler</button></div></div>`;
+  };
+  dessiner();document.body.appendChild(v);
+  v.onclick=e=>{
+    if(e.target===v||e.target.closest('[data-x]'))return v.remove();
+    if(e.target.closest('[data-sm]')){v.remove();return fenetreSurMesure()}
+    const r=e.target.closest('[data-ren]');if(r){const m=D.modeles.find(x=>x.id===r.dataset.ren);const n=prompt('Nom du modèle :',m.titre);if(n&&n.trim()){m.titre=n.trim();sauver();dessiner()}return}
+    const d=e.target.closest('[data-del]');if(d){const m=D.modeles.find(x=>x.id===d.dataset.del);if(confirm(`Supprimer le modèle « ${m.titre} » ? (les séances déjà créées ne bougent pas)`)){D.modeles=D.modeles.filter(x=>x!==m);sauver();dessiner()}return}
+    const u=e.target.closest('[data-u]');if(!u)return;
+    let s;
+    if(u.dataset.u==='vide')s={id:uid(),titre:'Nouvelle séance',genre:'atelier',debut:'',finH:'',blocs:[nb('parole','Accueil',5)]};
+    else{const dep=structuresDepart().find(x=>x.id===u.dataset.u),m=dep?modeleDepuisStructure(dep):D.modeles.find(x=>x.id===u.dataset.u);if(!m)return;s=copieSeance(m)}
+    D.seances.push(s);sauver();v.remove();
+    if(Array.isArray(s.parties)&&s.parties.length)aller('relire',s.id);
+    else{aller('editer',s.id);setTimeout(()=>{const t=$('#e-titre');if(t){t.focus();t.select()}},60)}
+  };
+}
+
+/* =============================== RELECTURE HYPNOTIQUE =============================== */
+// Ce qu'un superviseur relèverait : tournures négatives, « essayer », mots chargés, sens sollicités
+// (vue, ouïe, toucher, odorat, goût), phrases trop longues. L'IA propose ensuite des reformulations,
+// passage par passage, à accepter ou non.
+const SENS_HYPNO={
+  vue:{nom:'Vue',mots:'voir vois voyez regard regarde regardez image images couleur couleurs lumiere lumineux lumineuse clair claire briller brille brillant observer observez visualiser visualisez paysage ciel horizon reflet reflets eclat dore doree bleu vert blanc scintille'},
+  ouie:{nom:'Ouïe',mots:'entendre entendez ecouter ecoutez ecoute son sons bruit bruits voix musique silence murmure murmures chant resonne resonner echo rythme vibration clapotis bruissement'},
+  toucher:{nom:'Toucher',mots:'sentir sentez ressentir ressentez toucher chaleur chaud chaude froid frais fraiche lourd lourde lourdeur leger legere legerete poids detente detendre detendez relacher relachez respiration respirez souffle peau corps contact doux douce douceur appui appuis tiede enveloppe berce bercer'},
+  odorat:{nom:'Odorat',mots:'odeur odeurs parfum parfums senteur senteurs arome aromes embaume humer'},
+  gout:{nom:'Goût',mots:'gout gouts saveur saveurs sucre sucree sale salee bouche langue savourer savourez'}
+};
+const MOTS_CHARGES='peur peurs angoisse angoisses stress stresse stressee douleur douleurs mal probleme problemes difficile difficulte inquiet inquiete inquietude panique tension tensions'.split(' ');
+function analyseHypno(texte){
+  const t=String(texte||''),phrases=t.split(/(?<=[.!?…])\s+|\n+/).map(x=>x.trim()).filter(Boolean);
+  const mots=normReco(t).split(' ').filter(Boolean);
+  const neg=/\b(ne|n['’])\s*(?:\S+\s+){0,3}?(pas|plus|jamais|rien|aucun|aucune|personne)\b|\bpas\s+(de|d['’])/i;
+  const negatives=phrases.filter(p=>neg.test(p.toLowerCase()));
+  const essayer=phrases.filter(p=>/\bessa(y|i)/i.test(p));
+  const sens=Object.fromEntries(Object.entries(SENS_HYPNO).map(([k,v])=>{const l=new Set(v.mots.split(' '));return [k,mots.filter(m=>l.has(m)).length]}));
+  const charges=[...new Set(mots.filter(m=>MOTS_CHARGES.includes(m)))];
+  const longues=phrases.filter(p=>p.split(/\s+/).length>28);
+  return {phrases:phrases.length,moyenne:phrases.length?Math.round(mots.length/phrases.length):0,negatives,essayer,sens,charges,longues};
+}
+function hypnoHtml(b,pr){
+  const a=pr.a,max=Math.max(1,...Object.values(a.sens)),absents=['vue','ouie','toucher'].filter(k=>!a.sens[k]);
+  const cite=l=>l.slice(0,4).map(p=>`<li>« ${esc(p.length>140?p.slice(0,140)+'…':p)} »</li>`).join('');
+  return `<div class="rl-prop rl-hypno"><div class="rl-prop-t">🌀 Relecture hypnotique</div>
+    <div class="hy-l ${a.negatives.length?'att':'ok'}">${a.negatives.length?`⚠ ${a.negatives.length} tournure${a.negatives.length>1?'s':''} négative${a.negatives.length>1?'s':''} : l’inconscient entend surtout ce qui suit « ne… pas ».<ul>${cite(a.negatives)}</ul>`:'✓ Aucune tournure négative.'}</div>
+    ${a.essayer.length?`<div class="hy-l att">⚠ « Essayer » sous-entend la difficulté : préférez « laissez », « vous pouvez ».<ul>${cite(a.essayer)}</ul></div>`:''}
+    ${a.charges.length?`<div class="hy-l att">⚠ Mots chargés : ${a.charges.map(esc).join(', ')}. Ils attirent l’attention sur ce que la personne veut quitter.</div>`:''}
+    <div class="hy-sens">${Object.entries(SENS_HYPNO).map(([k,v])=>`<div class="hy-s"><span>${v.nom}</span><i><u style="width:${Math.round(a.sens[k]/max*100)}%"></u></i><b>${a.sens[k]}</b></div>`).join('')}</div>
+    ${absents.length&&Object.values(a.sens).some(Boolean)?`<div class="hy-l">💡 ${absents.map(k=>SENS_HYPNO[k].nom.toLowerCase()).join(' et ')} : un détail de ce sens enrichirait l’expérience.</div>`:''}
+    <div class="hy-l">${a.phrases} phrase${a.phrases>1?'s':''} · ${a.moyenne} mots en moyenne${a.longues.length?` · <b>${a.longues.length} très longue${a.longues.length>1?'s':''}</b> (plus de 28 mots) : à couper pour respirer.`:''}</div>
+    ${pr.attente?'<div class="hy-l">✨ L’IA cherche des reformulations…</div>':''}
+    ${pr.sugg?pr.sugg.length?`<div class="hy-sugg">${pr.sugg.map((s,i)=>`<div class="hy-x"><div><del>${esc(s.avant)}</del> → <ins>${esc(s.apres)}</ins>${s.pourquoi?`<small>${esc(s.pourquoi)}</small>`:''}</div><div class="hy-xa"><button class="btn s" data-hy="ign" data-i="${i}">Ignorer</button><button class="btn p s" data-hy="ok" data-i="${i}">${IC.check} Remplacer</button></div></div>`).join('')}</div>`:'<div class="hy-l ok">✓ Rien à reformuler.</div>':''}
+    <div class="d-actions">${pr.sugg||pr.attente?'':`<button class="btn s" data-hy="ia">✨ Proposer des reformulations</button>`}<button class="btn s" data-prop="non">Fermer</button></div>
+  </div>`;
+}
+async function reformulerHypno(b){
+  const cle=await cleGemini(true);if(!cle)return;
+  const pr=R.prop[b.id];pr.attente=true;dessinerRelire();
+  try{
+    const r=lireJSON(await gemini([{text:`Tu es superviseur en hypnose ericksonienne, sophrologie et relaxation. Voici le texte d’un temps de séance. Propose au plus 6 améliorations ciblées, en gardant le style de l’auteur et le vouvoiement ou le tutoiement : transformer les tournures négatives en formulations positives (« ne pensez pas au stress » → « laissez venir le calme »), remplacer « essayez » par une invitation (« vous pouvez », « laissez »), adoucir les mots chargés, couper les phrases trop longues, et ajouter ponctuellement un détail d’un sens peu présent (ouïe, odorat…). Chaque amélioration remplace un passage copié EXACTEMENT du texte. Réponds en JSON : {"suggestions":[{"avant":"passage exact du texte","apres":"nouvelle formulation","pourquoi":"raison courte"}]}.\n\nTexte :\n${b.texte}`}],cle,true));
+    pr.sugg=((r&&r.suggestions)||[]).filter(s=>s&&s.avant&&s.apres&&b.texte.includes(s.avant)&&s.avant!==s.apres).slice(0,6).map(s=>({avant:String(s.avant),apres:String(s.apres),pourquoi:String(s.pourquoi||'')}));
+  }catch(e){toast(e&&e.reseau?'Pas de connexion internet pour l’instant.':[429,500,503].includes(e&&e.status)?'L’IA est très demandée en ce moment : réessayez dans un instant.':esc(messageGemini(e)))}
+  pr.attente=false;dessinerRelire();
+}
+
+/* =============================== SÉANCE SUR MESURE POUR UN CLIENT =============================== */
+// Les fiches de Suivi de l'Être sont sur la même adresse : on les lit sur cet appareil, sans les copier.
+// À l'IA ne part que le besoin, relu et modifiable (jamais le nom), avec les textes du praticien
+// (carnet, blocs, séances) pour qu'elle compose dans son style.
+let clientsMemo=null,clientsT=0;
+function clientsSuivi(){if(clientsMemo&&Date.now()-clientsT<2000)return clientsMemo;let l=[];try{l=JSON.parse(localStorage.getItem('mac_clients')||'[]')}catch(e){}clientsMemo=Array.isArray(l)?l.filter(c=>c&&c.id!=null):[];clientsT=Date.now();return clientsMemo}
+function notesSuivi(id){try{return (JSON.parse(localStorage.getItem('mac_notes')||'[]')||[]).filter(n=>n&&String(n.clientId)===String(id)).sort((a,b)=>String(b.date).localeCompare(String(a.date)))}catch(e){return []}}
+const nomClient=c=>c?[c.prenom,c.nom?String(c.nom).charAt(0)+'.':''].filter(Boolean).join(' '):'';
+const clientDe=s=>s&&s.clientId!=null?clientsSuivi().find(c=>String(c.id)===String(s.clientId)):null;
+// Les textes du praticien, pour que l'IA reprenne ses mots (au plus ~7000 caractères).
+function matiereAuteur(){
+  const l=[];
+  D.carnet.forEach(x=>l.push('• '+x.texte));
+  D.mesBlocs.forEach(b=>{if(b.texte)l.push(`• [${b.nom}] ${b.texte}`)});
+  D.seances.slice().reverse().forEach(s=>s.blocs.forEach(b=>{if(b.texte&&b.texte.length>40)l.push(`• [${b.nom}] ${b.texte}`)}));
+  let t='';for(const x of l){if(t.length+x.length>7000)break;t+=x.replace(/\n+/g,' ')+'\n'}
+  return t;
+}
+function fenetreSurMesure(){
+  const clients=clientsSuivi();let choisi=null,duree=45,vous=true,base='';
+  const v=document.createElement('div');v.className='voile';
+  const dessiner=()=>{
+    v.innerHTML=`<div class="fenetre dictee-fen sm-fen"><h2>✨ Sur mesure</h2>
+      <p class="sous" style="margin:0 0 12px">La régie compose une séance avec <b>vos</b> textes et votre style, pour un besoin précis. Vous la relisez ensuite.</p>
+      ${clients.length?`<label class="champ">Pour qui ?<select id="sm-client"><option value="">Personne en particulier</option>${clients.map(c=>`<option value="${esc(c.id)}" ${choisi&&String(choisi.id)===String(c.id)?'selected':''}>${esc([c.prenom,c.nom].filter(Boolean).join(' '))}</option>`).join('')}</select></label>`
+        :'<p class="sm-aide">Vos fiches clients de Suivi de l’Être ne sont pas sur cet appareil : décrivez simplement le besoin.</p>'}
+      <label class="champ">Le besoin<textarea id="sm-besoin" rows="4" placeholder="Ex. : apaiser l’anxiété avant les examens, retrouver un sommeil profond…">${esc(v.dataset.besoin||'')}</textarea><span class="aide">Ce texte part à l’IA : n’y mettez ni nom ni détail qui permette de reconnaître la personne.</span></label>
+      <div class="champ">Durée<div class="sm-chips">${[20,30,45,60].map(d=>`<button class="cn-th${duree===d?' on':''}" data-d="${d}">${d} min</button>`).join('')}</div></div>
+      <div class="champ">On s’adresse à la personne<div class="sm-chips"><button class="cn-th${vous?' on':''}" data-v="1">en la vouvoyant</button><button class="cn-th${vous?'':' on'}" data-v="0">en la tutoyant</button></div></div>
+      <label class="champ">À partir de<select id="sm-base"><option value="">La structure que l’IA juge la meilleure</option>${[...D.modeles,...structuresDepart().map(modeleDepuisStructure)].map(m=>`<option value="${m.id}" ${base===m.id?'selected':''}>${esc(m.titre)}</option>`).join('')}</select></label>
+      <div class="d-actions"><button class="btn" data-x>Annuler</button><button class="btn p" data-ok>✨ Composer la séance</button></div></div>`;
+    const sc=v.querySelector('#sm-client');
+    if(sc)sc.onchange=e=>{choisi=clients.find(c=>String(c.id)===e.target.value)||null;
+      if(choisi){const n=notesSuivi(choisi.id),suite=n.find(x=>x.suite)?.suite||'';v.dataset.besoin=[choisi.motif,suite?'Piste notée après la dernière séance : '+suite:''].filter(Boolean).join('\n');if(choisi.profil==='enfant')vous=false}
+      dessiner()};
+    v.querySelector('#sm-besoin').oninput=e=>{v.dataset.besoin=e.target.value};
+    v.querySelector('#sm-base').onchange=e=>{base=e.target.value};
+  };
+  dessiner();document.body.appendChild(v);
+  v.onclick=async e=>{
+    if(e.target===v||e.target.closest('[data-x]'))return v.remove();
+    const d=e.target.closest('[data-d]');if(d){duree=+d.dataset.d;return dessiner()}
+    const w=e.target.closest('[data-v]');if(w){vous=w.dataset.v==='1';return dessiner()}
+    if(!e.target.closest('[data-ok]'))return;
+    const besoin=(v.dataset.besoin||'').trim();if(!besoin)return toast('Décrivez le besoin en quelques mots');
+    const cle=await cleGemini(true);if(!cle)return;
+    const m=base?[...D.modeles,...structuresDepart().map(modeleDepuisStructure)].find(x=>x.id===base):null;
+    const struct=m?(Array.isArray(m.parties)&&m.parties.length?m.parties.map((p,i)=>`${i+1}. ${nomPartie(p,i)} : ${blocsDe(m,p.id).map(b=>`${TYPES[b.type].nom} « ${b.nom} » ${b.min} min`).join(', ')}`).join('\n'):m.blocs.map(b=>`${TYPES[b.type].nom} « ${b.nom} » ${b.min} min`).join(', ')):'';
+    const a=v.querySelector('.d-actions');a.innerHTML='<div class="d-attente">✨ La régie compose votre séance…</div>';
+    try{
+      const r=lireJSON(await gemini([{text:`Tu aides un praticien (hypnose, sophrologie, relaxation, méditation) à composer une séance guidée sur mesure, dans SON style.
+Besoin : ${besoin}
+Durée totale : ${duree} minutes (la somme des "min" doit faire ${duree}).
+${choisi&&choisi.profil==='enfant'?'Public : un enfant (phrases simples, images concrètes, ludiques).\n':choisi&&choisi.profil==='senior'?'Public : une personne âgée (rythme lent, confort physique).\n':''}Adresse : ${vous?'vouvoiement':'tutoiement'}.
+${struct?`Suis cette structure (adapte les textes au besoin) :\n${struct}\n`:'Choisis la structure la plus juste (accueil, induction, approfondissement, travail sur le besoin, retour…).\n'}
+Reprends autant que possible SES formulations, images et métaphores ci-dessous, adaptées au besoin ; écris le reste dans le même style. Rythme lent, une idée par ligne, une ligne vide entre deux passages, formulations positives (pas de « ne… pas »).
+Ses textes :
+"""
+${matiereAuteur()||'(aucun texte pour l’instant)'}
+"""
+Réponds en JSON : {"titre":"court","parties":[{"nom":"Accueil","temps":[{"type":"parole|instrument|musique|silence|transition|partage","nom":"titre court","min":5,"texte":"le texte à dire","repere":"note pour le praticien","position":"allonge|cote|assis|debout|null","instrument":"pluie|ocean|flute|carillon|tambour (si instrument)","fin":"carillon|bol|flute| (si silence)"}]}]}`}],cle,true));
+      const parties=(r&&Array.isArray(r.parties)?r.parties:[]).filter(p=>p&&Array.isArray(p.temps)&&p.temps.length);
+      if(!parties.length)throw new Error('La réponse de l’IA n’a pas pu être lue. Réessayez.');
+      const s={id:uid(),titre:String(r.titre||'Séance sur mesure').slice(0,80),genre:'individuel',debut:'',finH:'',blocs:[],parties:[],aRelire:true,surMesure:true};
+      parties.forEach(p=>{const pid=uid();s.parties.push({id:pid,nom:String(p.nom||'').slice(0,60),note:'',relue:false});seanceDepuisIA({temps:p.temps}).blocs.forEach(b=>{b.partie=pid;s.blocs.push(b)})});
+      // L'IA se trompe parfois sur la durée : on la ramène à celle demandée.
+      const tot=total(s);if(tot&&Math.abs(tot-duree)>duree*.1){const k=duree/tot;s.blocs.forEach(b=>{if(!b.libre)b.min=Math.max(1,Math.round(b.min*k))})}
+      if(choisi)s.clientId=choisi.id;
+      D.seances.push(s);sauver();v.remove();aller('relire',s.id);toast('✨ Séance composée : relisez-la partie par partie');
+    }catch(err){toast(err&&err.reseau?'Pas de connexion internet pour l’instant.':[429,500,503].includes(err&&err.status)?'L’IA est très demandée en ce moment : réessayez dans un instant.':esc(err.message||messageGemini(err)));dessiner()}
+  };
 }
 
 /* =============================== PRÉPARER =============================== */
@@ -3999,7 +4377,7 @@ $('#f-restaure').onchange=async e=>{
    ce qui arrive d'ailleurs attend la sortie de l'écran. */
 const SB_URL='https://issedanlnadbhidlymnc.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
-const COLL=['seances','mesBlocs','bilans','musiques','boutons'];
+const COLL=['seances','mesBlocs','bilans','musiques','boutons','carnet','modeles'];
 const CLE_BASE='regieEtre.base';
 const SYN={etat:'',enCours:false,encore:false,differe:false,t:null,derniere:null};
 const occupe=()=>vue==='guider'||vue==='editer'||vue==='relire';
@@ -4158,7 +4536,7 @@ async function synchroniser(){
 // Après une mise à jour venue d'un autre appareil : on redessine l'écran (jamais en séance).
 function rafraichirApresSync(){
   if(occupe())return;
-  const f={seances:vueSeances,blocs:()=>vueBlocs(MB),musiques:vueMusiques,bilans:vueBilans}[vue];
+  const f={seances:vueSeances,carnet:vueCarnet,blocs:()=>vueBlocs(MB),musiques:vueMusiques,bilans:vueBilans}[vue];
   if(f){const y=window.scrollY;f();window.scrollTo(0,y)}
 }
 
