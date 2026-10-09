@@ -659,7 +659,6 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .inspi-fen .sous{margin:0 0 4px}
 .inspi-fen.ecoute .d-micro{width:64px;height:64px;margin:6px auto 6px}
 .inspi-fen.ecoute .d-micro svg{width:28px;height:28px}
-.inspi-fen.cmd-ouvert{overflow:hidden}
 .i-temps{text-align:left;margin:4px 0 8px}
 .i-parties{display:flex;flex-direction:column;gap:8px;margin-top:10px;max-height:44vh;overflow-y:auto;padding:2px}
 .i-partie{border:1px solid var(--line);border-radius:14px;padding:8px 10px;background:var(--carte)}
@@ -682,18 +681,15 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .i-bas{display:flex;justify-content:center;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px}
 .i-bas .d-bascule{margin-top:0}
 .i-bas .btn{padding:7px 14px;font-size:13px}
-.i-cmd{position:absolute;inset:0;z-index:3;background:var(--plein);border-radius:22px;padding:20px 22px;overflow-y:auto;text-align:left}
-.i-cmd.cache{display:none}
-.i-cmd h3{font-family:var(--serif);font-weight:400;font-size:21px;color:var(--peri-darker);margin:0 0 2px}
+.fenetre.i-cmd-fen{text-align:left}
+.i-cmd-fen h3{font-family:var(--serif);font-weight:400;font-size:21px;color:var(--peri-darker);margin:0 0 2px}
 .i-cmd-intro{font-size:13px;color:var(--muted);margin:0 0 10px}
-.i-cmd-g{border-top:1px solid var(--line);padding:8px 0 4px}
-.i-cmd-g b{display:block;font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--peri-deep);margin-bottom:4px}
-.i-cmd-g ul{list-style:none;margin:0;padding:0;font-size:14px}
-.i-cmd-g li{padding:3px 0}
-.i-cmd-g li small{display:block;font-size:12px;color:var(--muted)}
-.i-cmd-g .i-puces{display:flex;flex-wrap:wrap;gap:5px;padding-top:5px}
-.i-cmd-g .i-puces span{background:var(--violet-soft);color:var(--peri-darker);border-radius:999px;padding:3px 10px;font-size:12.5px;font-weight:700}
-.i-cmd .d-actions{position:sticky;bottom:-20px;background:var(--plein);padding:10px 0 6px;margin-top:6px}
+.i-cmd-fen table{width:100%;border-collapse:collapse;font-size:13.5px;line-height:1.4}
+.i-cmd-fen thead th{position:sticky;top:-24px;background:var(--plein);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px;border-bottom:1.5px solid var(--line)}
+.i-cmd-fen tr.g th{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--peri-deep);text-align:left;padding:14px 6px 4px}
+.i-cmd-fen td{padding:7px 6px;vertical-align:top;border-bottom:1px solid var(--line)}
+.i-cmd-fen td:first-child{width:56%;font-weight:700;color:var(--peri-darker)}
+.i-cmd-fen .d-actions{position:sticky;bottom:-24px;background:var(--plein);padding:10px 0 6px;margin-top:6px}
 .i-titre{font-family:var(--serif);font-size:19px;color:var(--peri-darker);margin-bottom:6px}
 .i-txt{font-size:12.5px;color:var(--muted);margin-top:2px}
 .i-ecoute{min-height:20px;font-size:13px;color:var(--muted);font-style:italic;text-align:left}
@@ -1473,7 +1469,6 @@ function fenetreInspiration(o={}){
     <div class="i-ecoute" id="i-ecoute"></div>
     <div class="d-actions" id="i-actions"></div>
     <div class="i-bas"><button class="btn" id="i-cmd-b">🎙️ Commandes</button><button class="d-bascule" id="i-mots">Mots clés</button></div>
-    <div class="i-cmd cache" id="i-cmd"></div>
   </div>`;
   document.body.appendChild(v);
   const $i=s=>v.querySelector(s);
@@ -1491,10 +1486,14 @@ function fenetreInspiration(o={}){
     const l=$i('.i-partie.courante')||$i('.i-seul');if(l)(l.querySelector('.i-t:last-child')||l).scrollIntoView({block:'nearest'});
   };
   // L'aide-mémoire des commandes (bouton, ou « Régie, aide ») : l'écoute continue derrière.
+  let aide=null;
   const commandes=ouvrir=>{
-    const c=$i('#i-cmd'),f=$i('.inspi-fen');
-    if(ouvrir){c.innerHTML=commandesVoixHtml()+`<div class="d-actions"><button class="btn p" data-i="cmd-fermer">Fermer</button></div>`;f.scrollTop=0}
-    c.classList.toggle('cache',!ouvrir);f.classList.toggle('cmd-ouvert',ouvrir);
+    if(aide){aide.remove();aide=null}
+    if(!ouvrir)return;
+    aide=document.createElement('div');aide.className='voile';aide.style.zIndex='90';
+    aide.innerHTML=`<div class="fenetre dictee-fen i-cmd-fen">${commandesVoixHtml()}<div class="d-actions"><button class="btn p" data-cmd-fermer>Fermer</button></div></div>`;
+    aide.onclick=e=>{if(e.target===aide||e.target.closest('[data-cmd-fermer]'))commandes(false)};
+    document.body.appendChild(aide);
   };
   const decl=majuscule1(String(D.prefs.declencheur||DECLENCHEUR_DEFAUT).split(',')[0].trim());
   const motAide=((D.prefs.motsVoix||{}).aide||MOTS_VOIX.aide.mots)[0];
@@ -1532,7 +1531,7 @@ function fenetreInspiration(o={}){
       if(dicta){if(n>.06)silenceDepuis=Date.now();if(Date.now()-silenceDepuis>60000||Date.now()-t0>1800000)terminer()}
     },250);
   };
-  const fermer=()=>{clearInterval(tick);garderEcran(false);if(reco){const r=reco;reco=null;try{r.abort()}catch(e){}}v.remove();if(vue==='seances')vueSeances()};
+  const fermer=()=>{clearInterval(tick);garderEcran(false);if(reco){const r=reco;reco=null;try{r.abort()}catch(e){}}v.remove();commandes(false);if(vue==='seances')vueSeances()};
   const terminer=async()=>{
     if(etat==='fini')return;
     etat='fini';clearInterval(tick);garderEcran(false);$i('#i-niveau').style.width='0';majActions();
@@ -1560,7 +1559,6 @@ function fenetreInspiration(o={}){
     if(q==='fermer')fermer();
     else if(q==='annuler'){if(confirm('Abandonner cette inspiration ?')){etat='fini';if(dicta)dicta.annuler();oublierDictee(id);fermer()}}
     else if(q==='fin')terminer();
-    else if(q==='cmd-fermer')commandes(false);
     else if(q==='voir'){const sid=b.dataset.s;fermer();aller('editer',sid)}
   });
   $i('#i-cmd-b').onclick=()=>commandes(true);
@@ -1573,13 +1571,16 @@ function fenetreInspiration(o={}){
 function commandesVoixHtml(){
   const p=D.prefs.motsVoix||{},decl=majuscule1(String(D.prefs.declencheur||DECLENCHEUR_DEFAUT).split(',')[0].trim());
   const mots=k=>Array.isArray(p[k])&&p[k].length?p[k]:MOTS_VOIX[k].mots,m1=k=>mots(k)[0];
-  const ex=t=>`<li>« ${esc(decl)}, ${esc(t)} »</li>`;
-  const puces=ks=>`<li class="i-puces">${ks.map(k=>`<span>${esc(mots(k).join(' / '))}</span>`).join('')}</li>`;
+  const nb=s=>esc(s).replace(/« /g,'«\u00a0').replace(/ »/g,'\u00a0»').replace(/(\d) (min|s)\b/g,'$1\u00a0$2');
+  const L=(dit,fait)=>`<tr><td>${nb(`« ${decl}, ${dit} »`)}</td><td>${nb(fait)}</td></tr>`,G=t=>`<tr class="g"><th colspan="2">${t}</th></tr>`;
   return `<h3>🎙️ Mes commandes</h3><p class="i-cmd-intro">« ${esc(decl)} », puis la consigne.</p>
-    <div class="i-cmd-g"><b>Parties</b><ul>${ex("c'était la partie accueil")}${ex('passe à une autre partie')}${ex('passe à la partie voyage')}</ul></div>
-    <div class="i-cmd-g"><b>Temps</b><ul>${ex(`crée un ${m1('silence')} d'une minute`)}${ex(`ajoute un ${m1('pluie')} en 5 s 5 s`)}${puces(['parole','ocean','flute','carillon','tambour','musique','transition','partage'])}</ul></div>
-    <div class="i-cmd-g"><b>Réglages</b><ul>${ex('titre voyage intérieur')}${ex('3 minutes')}${ex('durée libre')}${puces(['allonge','cote','assis','debout'])}</ul></div>
-    <div class="i-cmd-g"><b>Pendant l'écoute</b><ul>${['annule','pause','reprends','fin','aide'].map(k=>`<li>« ${esc(decl)}, ${esc(m1(k))} »<small>${esc(MOTS_VOIX[k].nom)}</small></li>`).join('')}</ul></div>`;
+    <table><thead><tr><th>Vous dites</th><th>La régie fait</th></tr></thead><tbody>
+    ${G('Parties')}${L("c'était la partie accueil",'nomme la partie en cours « Accueil »')}${L('passe à une autre partie','commence une nouvelle partie')}${L('passe à la partie voyage','commence la partie « Voyage »')}
+    ${G('Temps')}${L(`crée un ${m1('silence')} d'une minute`,"un Silence d'1 min")}${L(`${m1('silence')} de 2 minutes avec le bol`,'un Silence fini par un coup de bol')}${L(`ajoute un ${m1('pluie')} en 5 s 5 s`,'un Bâton de pluie, inspire 5 s, expire 5 s')}${L(`${m1('ocean')}, 4 minutes`,'un Tambour océan de 4 min')}
+    ${['flute','carillon','tambour','musique','transition','partage'].map(k=>L(m1(k),'un temps '+MOTS_VOIX[k].nom)).join('')}${L(m1('parole'),'un nouveau temps de parole')}
+    ${G('Réglages')}${L('titre voyage intérieur','le titre de la séance')}${L('3 minutes','la durée du temps en cours')}${L('durée libre','le temps en cours, sans durée fixe')}${L(['allonge','assis','debout','cote'].map(m1).join(' / '),'la position du temps en cours')}
+    ${G("Pendant l'écoute")}${L(m1('annule'),'retire le dernier temps')}${L(m1('pause'),"met l'écoute en pause")}${L(m1('reprends'),"reprend l'écoute")}${L(m1('aide'),'affiche ces commandes')}${L(m1('fin'),'crée la séance, « à relire »')}
+    </tbody></table>`;
 }
 // Régler ses mots clés : plusieurs façons de dire la même chose, séparées par des virgules.
 function fenetreMotsCles(){
