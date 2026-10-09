@@ -933,6 +933,48 @@ function vueSeances(){
 // sinon, ou sans réseau, la voix est enregistrée (même en zone blanche) et Gemini la transcrit dès que
 // le réseau revient. Ensuite Gemini range la dictée en temps : on relit avant de créer la séance.
 const RECO=window.SpeechRecognition||window.webkitSpeechRecognition;
+// Android (Chrome) dicte mal en continu : il renvoie plusieurs fois le début de la phrase (« bonjour »,
+// « bonjour je », « bonjour je m'appelle »…), parfois comme définitif. Sur Android on écoute donc phrase
+// par phrase : de chaque écoute on ne garde que le texte le plus complet, donné une seule fois, à la petite
+// pause qui la termine. Ailleurs, chaque phrase définitive est donnée tout de suite.
+const ANDROID=/Android/i.test(navigator.userAgent);
+const normReco=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+function fusionReco(acc,t){
+  t=String(t||'').trim();if(!t)return acc;if(!acc)return t;
+  const a=normReco(acc),b=normReco(t);
+  if(!b||a===b||a.startsWith(b+' '))return acc;   // déjà dit
+  if(b.startsWith(a))return t;                     // la suite de la même phrase
+  return acc+' '+t;                                // une autre phrase
+}
+// o.phrase(texte) : une phrase finie · o.provisoire(texte) : ce qui s'entend en ce moment ·
+// o.erreur(e) · o.actif() : faut-il relancer l'écoute quand elle s'arrête d'elle-même.
+function ecouteDirecte(o){
+  const r=new RECO();r.lang='fr-FR';r.continuous=!ANDROID;r.interimResults=true;
+  let enCours=false,arrete=false,ecoute='';
+  const donner=()=>{const t=ecoute;ecoute='';if(t)o.phrase(t)};
+  const lancer=()=>{try{r.start();enCours=true}catch(e){}};
+  r.onresult=e=>{
+    let inter='';
+    if(ANDROID){
+      for(let i=0;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)ecoute=fusionReco(ecoute,t);else inter=t}
+      return o.provisoire(fusionReco(ecoute,inter));
+    }
+    for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)o.phrase(t);else inter+=t}
+    o.provisoire(inter);
+  };
+  r.onerror=e=>{if(o.erreur)o.erreur(e)};
+  r.onend=()=>{enCours=false;donner();if(!arrete&&o.actif())lancer()};
+  lancer();
+  return {
+    // Arrêter en gardant la fin de la phrase en cours (on attend la fin de l'écoute, 1,5 s au plus).
+    arreter:()=>new Promise(ok=>{
+      arrete=true;if(!enCours){donner();return ok()}
+      const fini=()=>{clearTimeout(t);r.onend=null;enCours=false;donner();ok()},t=setTimeout(fini,1500);
+      r.onend=fini;try{r.stop()}catch(e){fini()}
+    }),
+    abandonner:()=>{arrete=true;r.onend=null;try{r.abort()}catch(e){}}
+  };
+}
 const K_DICTEES=CLE+'.dictees';
 const dictees=()=>{try{return JSON.parse(localStorage.getItem(K_DICTEES)||'[]')}catch(e){return []}};
 const garderDictees=l=>{try{localStorage.setItem(K_DICTEES,JSON.stringify(l))}catch(e){}};
@@ -1118,15 +1160,16 @@ function fenetreDictee(o={}){
   };
   const afficherTexte=inter=>{const t=$d('#d-texte');t.value=final+(inter?(final?' ':'')+inter:'');t.scrollTop=t.scrollHeight};
   const demarrerDirect=()=>{
-    reco=new RECO();reco.lang='fr-FR';reco.continuous=true;reco.interimResults=true;
-    reco.onresult=e=>{let inter='';for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)final=(final?final.replace(/\s+$/,'')+' ':'')+t.trim();else inter+=t}afficherTexte(inter)};
-    reco.onerror=e=>{
-      if(['not-allowed','service-not-allowed','network','audio-capture','language-not-supported'].includes(e.error)&&etat==='enr'&&!final){
-        try{reco.onend=null;reco.abort()}catch(x){}reco=null;mode='enr';majMode();toast('La dictée en direct n’est pas possible ici : la voix est enregistrée à la place');demarrerEnr();
-      }
-    };
-    reco.onend=()=>{if(etat==='enr'&&reco)try{reco.start()}catch(e){}};
-    reco.start();
+    reco=ecouteDirecte({
+      phrase:t=>{final=(final?final.replace(/\s+$/,'')+' ':'')+t.trim();afficherTexte('')},
+      provisoire:t=>afficherTexte(t),
+      erreur:e=>{
+        if(['not-allowed','service-not-allowed','network','audio-capture','language-not-supported'].includes(e.error)&&etat==='enr'&&!final&&reco){
+          reco.abandonner();reco=null;mode='enr';majMode();toast('La dictée en direct n’est pas possible ici : la voix est enregistrée à la place');demarrerEnr();
+        }
+      },
+      actif:()=>etat==='enr'&&!!reco
+    });
   };
   const demarrerEnr=async()=>{
     try{dicta=await creerDictaphone(id)}catch(e){etat='pret';garderEcran(false);majActions();majMode();return toast(esc(e.message||'Le micro n’est pas accessible : autorisez-le, puis réessayez.'))}
@@ -1141,16 +1184,16 @@ function fenetreDictee(o={}){
       const n=dicta&&etat==='enr'?dicta.niveau():etat==='enr'?.35+Math.random()*.2:0;$d('#d-niveau').style.width=Math.round(n*100)+'%'},250);
   };
   const pause=()=>{
-    if(etat==='enr'){cumul+=Date.now()-t0;etat='pause';if(reco){const r=reco;reco=null;try{r.stop()}catch(e){}}if(dicta)dicta.pause()}
+    if(etat==='enr'){cumul+=Date.now()-t0;etat='pause';if(reco){const r=reco;reco=null;r.arreter()}if(dicta)dicta.pause()}
     else if(etat==='pause'){t0=Date.now();etat='enr';if(mode==='direct')demarrerDirect();if(dicta)dicta.reprendre()}
     majActions();
   };
-  const fermer=()=>{clearInterval(tick);garderEcran(false);if(reco){const r=reco;reco=null;try{r.abort()}catch(e){}}v.remove()};
+  const fermer=()=>{clearInterval(tick);garderEcran(false);if(reco){const r=reco;reco=null;r.abandonner()}v.remove()};
   const terminer=async()=>{
     if(etat==='enr')cumul+=Date.now()-t0;
     etat='fini';clearInterval(tick);garderEcran(false);$d('#d-niveau').style.width='0';
     $d('#d-chrono').textContent='Dictée terminée';
-    if(reco){const r=reco;reco=null;try{r.stop()}catch(e){}await new Promise(r=>setTimeout(r,600))}
+    if(reco){const r=reco;reco=null;await r.arreter()}
     if(mode==='direct'){$d('#d-texte').readOnly=false;majActions();$d('#d-mode').textContent='Relisez et corrigez si besoin.';return}
     // Enregistrement : on transcrit (et range) tout de suite si possible, sinon on garde pour plus tard.
     const blob=dicta?await dicta.arreter():null;
@@ -1345,7 +1388,8 @@ function nouvelleInspiration(){
     const t=motsDe(brut).map(normMot).filter(Boolean),txt=propre(motsDe(brut));
     if(!t.length)return null;
     // Fin, pause, reprise : même en pause.
-    if(mv.fin.some(s=>chercher(t,s)>-1)||contient(t,'termine','terminé','c\'est fini','enregistre la séance')||(t.length===1&&t[0]==='fin'))return {r:'fin',dit:'Fin de l’inspiration'};
+    const finCourte=t.length<=3&&t.some(w=>['fin','fini','finie','finir','termine','terminer','terminee'].includes(w));
+    if(mv.fin.some(s=>chercher(t,s)>-1)||finCourte||contient(t,"c'est fini","c'est termine","j'ai fini","j'ai termine",'on a fini','on a termine','enregistre la séance'))return {r:'fin',dit:'Fin de l’inspiration'};
     if(mv.pause.some(s=>chercher(t,s)>-1)){st.enPause=true;return {r:'pause',dit:'Pause'}}
     if(mv.reprends.some(s=>chercher(t,s)>-1)||contient(t,'continue','on reprend')){st.enPause=false;return {r:'reprise',dit:'On reprend'}}
     if(mv.aide.some(s=>chercher(t,s)>-1)&&t.length<=4)return {r:'aide',dit:'Mes commandes'};
@@ -1448,7 +1492,7 @@ function sonVoix(q){
 }
 function consigneMotsCles(){
   const mv=D.prefs.motsVoix||{},decl=String(D.prefs.declencheur||DECLENCHEUR_DEFAUT);
-  return `\n\nIl donne ses consignes à la régie avec le mot « ${decl} » (le téléphone peut l'avoir écrit « Régis » ou « régi ») : tout ce qui suit ce mot jusqu'à la fin de la phrase est une consigne, pas du texte à dire ; tout le reste est le texte du temps en cours. Exemples : « ${decl}, crée un silence d'une minute » (nouveau temps silence d'1 min) ; « ${decl}, ajoute un temps de bâton de pluie en 5 s 5 s » (instrument pluie, inspire 5 s, expire 5 s) ; « ${decl}, là c'était la partie induction, passe à une autre partie » (les temps de parole de ce passage s'appellent « Induction », la suite commence un nouveau temps) ; « ${decl}, annule » (retire le temps précédent) ; « ${decl}, pause » / « reprends » (ignore ce qui est dit entre les deux) ; « ${decl}, fin de l'inspiration » (fin). Son vocabulaire : `+Object.entries(MOTS_VOIX).filter(([k])=>k!=='aide').map(([k,v])=>`${(Array.isArray(mv[k])&&mv[k].length?mv[k]:v.mots).map(m=>'« '+m+' »').join(' ou ')} = ${v.nom}`).join(' ; ')+'. Respecte ses consignes dans l’ordre. Pour un bâton de pluie, mets le rythme dans "repere" (ex. « inspire 5 s · expire 5 s »).';
+  return `\n\nIl donne ses consignes à la régie avec le mot « ${decl} » (le téléphone peut l'avoir écrit « Régis » ou « régi ») : tout ce qui suit ce mot jusqu'à la fin de la phrase est une consigne, pas du texte à dire ; tout le reste est le texte du temps en cours. Exemples : « ${decl}, crée un silence d'une minute » (nouveau temps silence d'1 min) ; « ${decl}, ajoute un temps de bâton de pluie en 5 s 5 s » (instrument pluie, inspire 5 s, expire 5 s) ; « ${decl}, là c'était la partie induction, passe à une autre partie » (les temps de parole de ce passage s'appellent « Induction », la suite commence un nouveau temps) ; « ${decl}, annule » (retire le temps précédent) ; « ${decl}, pause » / « reprends » (ignore ce qui est dit entre les deux) ; « ${decl}, fin de l'inspiration », « ${decl}, terminé » ou « ${decl}, j'ai fini » (fin). Son vocabulaire : `+Object.entries(MOTS_VOIX).filter(([k])=>k!=='aide').map(([k,v])=>`${(Array.isArray(mv[k])&&mv[k].length?mv[k]:v.mots).map(m=>'« '+m+' »').join(' ou ')} = ${v.nom}`).join(' ; ')+'. Respecte ses consignes dans l’ordre. Pour un bâton de pluie, mets le rythme dans "repere" (ex. « inspire 5 s · expire 5 s »).';
 }
 function creerSeanceInspiration(s){D.seances.push(s);sauver();return s}
 
@@ -1510,11 +1554,12 @@ function fenetreInspiration(o={}){
     dessiner();majActions();if(actions.includes('fin'))terminer();
   };
   const demarrerDirect=()=>{
-    reco=new RECO();reco.lang='fr-FR';reco.continuous=true;reco.interimResults=true;
-    reco.onresult=e=>{interim='';const acts=[];for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)acts.push(...ins.phrase(t));else interim+=t}reagir(acts)};
-    reco.onerror=e=>{if(['not-allowed','service-not-allowed','network','audio-capture','language-not-supported'].includes(e.error)&&etat==='enr'&&!ins.st.blocs.length){try{reco.onend=null;reco.abort()}catch(x){}reco=null;mode='enr';majMode();demarrerEnr()}};
-    reco.onend=()=>{if(etat==='enr'&&reco)try{reco.start()}catch(e){}};
-    reco.start();
+    reco=ecouteDirecte({
+      phrase:t=>{interim='';reagir(ins.phrase(t))},
+      provisoire:t=>{interim=t;dessiner()},
+      erreur:e=>{if(['not-allowed','service-not-allowed','network','audio-capture','language-not-supported'].includes(e.error)&&etat==='enr'&&!ins.st.blocs.length&&reco){reco.abandonner();reco=null;mode='enr';majMode();demarrerEnr()}},
+      actif:()=>etat==='enr'&&!!reco
+    });
   };
   const demarrerEnr=async()=>{
     try{dicta=await creerDictaphone(id)}catch(e){etat='pret';garderEcran(false);majActions();return toast(esc(e.message||'Le micro n’est pas accessible : autorisez-le, puis réessayez.'))}
@@ -1531,11 +1576,11 @@ function fenetreInspiration(o={}){
       if(dicta){if(n>.06)silenceDepuis=Date.now();if(Date.now()-silenceDepuis>60000||Date.now()-t0>1800000)terminer()}
     },250);
   };
-  const fermer=()=>{clearInterval(tick);garderEcran(false);if(reco){const r=reco;reco=null;try{r.abort()}catch(e){}}v.remove();commandes(false);if(vue==='seances')vueSeances()};
+  const fermer=()=>{clearInterval(tick);garderEcran(false);if(reco){const r=reco;reco=null;r.abandonner()}v.remove();commandes(false);if(vue==='seances')vueSeances()};
   const terminer=async()=>{
     if(etat==='fini')return;
     etat='fini';clearInterval(tick);garderEcran(false);$i('#i-niveau').style.width='0';majActions();
-    if(reco){const r=reco;reco=null;try{r.stop()}catch(e){}}
+    if(reco){const r=reco;reco=null;await r.arreter();interim=''}
     if(mode==='direct'){
       if(!ins.st.blocs.length){$i('#i-chrono').textContent='Rien n’a été entendu';$i('#i-actions').innerHTML=`<button class="btn" data-i="fermer">Fermer</button>`;return}
       const s=creerSeanceInspiration(ins.seance());sonVoix('fin');
@@ -1579,7 +1624,7 @@ function commandesVoixHtml(){
     ${G('Temps')}${L(`crée un ${m1('silence')} d'une minute`,"un Silence d'1 min")}${L(`${m1('silence')} de 2 minutes avec le bol`,'un Silence fini par un coup de bol')}${L(`ajoute un ${m1('pluie')} en 5 s 5 s`,'un Bâton de pluie, inspire 5 s, expire 5 s')}${L(`${m1('ocean')}, 4 minutes`,'un Tambour océan de 4 min')}
     ${['flute','carillon','tambour','musique','transition','partage'].map(k=>L(m1(k),'un temps '+MOTS_VOIX[k].nom)).join('')}${L(m1('parole'),'un nouveau temps de parole')}
     ${G('Réglages')}${L('titre voyage intérieur','le titre de la séance')}${L('3 minutes','la durée du temps en cours')}${L('durée libre','le temps en cours, sans durée fixe')}${L(['allonge','assis','debout','cote'].map(m1).join(' / '),'la position du temps en cours')}
-    ${G("Pendant l'écoute")}${L(m1('annule'),'retire le dernier temps')}${L(m1('pause'),"met l'écoute en pause")}${L(m1('reprends'),"reprend l'écoute")}${L(m1('aide'),'affiche ces commandes')}${L(m1('fin'),'crée la séance, « à relire »')}
+    ${G("Pendant l'écoute")}${L(m1('annule'),'retire le dernier temps')}${L(m1('pause'),"met l'écoute en pause")}${L(m1('reprends'),"reprend l'écoute")}${L(m1('aide'),'affiche ces commandes')}${L(`terminé / j'ai fini / ${m1('fin')}`,'crée la séance, « à relire »')}
     </tbody></table>`;
 }
 // Régler ses mots clés : plusieurs façons de dire la même chose, séparées par des virgules.
