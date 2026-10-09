@@ -4343,21 +4343,13 @@ function signal(){try{navigator.vibrate&&navigator.vibrate([90,60,90])}catch(e){
 function majHoraire(){
   const restant=Math.max(0,dureeMs(G.i)-G.bloc)+G.blocs.slice(G.i+1).reduce((a,_,k)=>a+dureeMs(G.i+1+k),0);
   const fin=new Date(Date.now()+restant);
-  let h,sug='';
+  // Seulement l'information (fin prévue, retard, avance) : c'est la praticienne qui mène la séance.
+  let h;
   if(G.objectif){
     const e=fin.getTime()-G.objectif,m=Math.round(Math.abs(e)/60000);
     h=`<span>Fin prévue <b>${heureTxt(fin)}</b></span>`+(Math.abs(e)<90000?`<span class="chip ecart-ok">à l’heure</span>`:e>0?`<span class="chip ecart-retard">${m} min de retard</span>`:`<span class="chip ecart-avance">${m} min d’avance</span>`);
-    if(G.run&&e>=120000){
-      const j=G.blocs.findIndex((x,k)=>k>G.i&&x.souple&&x.min>1&&!G.ignore[k]);
-      if(j>0){const moins=Math.min(Math.ceil(e/60000),G.blocs[j].min-1);
-        sug=`<div class="suggestion">${IC.info}<span>${m} min de retard. Raccourcir <b>« ${esc(G.blocs[j].nom)} »</b> de ${moins} min (${G.blocs[j].min} → ${G.blocs[j].min-moins} min) ?</span><button class="btn s c" data-rac="${j}" data-moins="${moins}">Raccourcir</button><button class="btn s" data-ign="${j}">Non merci</button></div>`}
-    }
   }else h=`<span class="obj">Durée prévue <b>${totalTxt(G.s)}</b></span>`;
   $('#g-horaire').innerHTML=h;
-  const zone=$('#g-suggest');
-  if(zone.dataset.v!=='fin'&&zone.dataset.v!==sug){zone.dataset.v=sug;zone.innerHTML=sug;
-    zone.querySelectorAll('[data-rac]').forEach(x=>x.onclick=()=>{const j=+x.dataset.rac;G.blocs[j].min-=+x.dataset.moins;G.ignore[j]=true;rendreListeGuide();$('#g-prog').innerHTML=frise(G.blocs,{i:G.i});toast(`« ${esc(G.blocs[j].nom)} » raccourci à ${G.blocs[j].min} min`)});
-    zone.querySelectorAll('[data-ign]').forEach(x=>x.onclick=()=>{G.ignore[+x.dataset.ign]=true})}
 }
 function finDeSeance(){
   if(A.joue)sortie(4);
