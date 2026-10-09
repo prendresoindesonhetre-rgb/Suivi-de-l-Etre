@@ -776,6 +776,8 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .rl-total{text-align:right;font-size:14px;color:var(--muted)}
 .btn.relire.a-faire{border-color:var(--attente);color:var(--attente)}
 .chip.a-relire[data-relire]{cursor:pointer}
+.g-voix.on{background:var(--alerte);border-color:var(--alerte);color:#fff;animation:d-pouls 2.4s ease-in-out infinite}
+.chip.tempo-auto{background:var(--aqua-pale);color:var(--canard-dark)}
 /* ——— Relecture hypnotique et sur mesure ——— */
 .rl-hypno .hy-l{font-size:13px;line-height:1.55;color:var(--ink);margin:6px 0}
 .rl-hypno .hy-l.att{color:var(--attente)}.rl-hypno .hy-l.ok{color:var(--ok)}
@@ -2665,6 +2667,104 @@ Réponds en JSON : {"titre":"court","parties":[{"nom":"Accueil","temps":[{"type"
   };
 }
 
+/* ——— Guider : tempo qui s'adapte, pilotage à la voix, ambiance automatique ——— */
+// Tempo : en retard, les temps « souples » qui restent raccourcissent (jusqu'à moitié de leur durée) ;
+// en avance de plus de 3 min, ils s'allongent un peu (jusqu'à moitié en plus). Seule la séance en cours
+// change : le bilan propose ensuite de garder les durées réelles.
+const tempoAuto=()=>D.prefs.tempoAuto!==false;
+function ajusterTempo(e){
+  if(!G||!G.run||Date.now()-(G.tempoT||0)<60000)return false;
+  const souples=G.blocs.map((b,k)=>({b,k})).filter(({b,k})=>k>G.i&&b.souple&&!b.libre).reverse();
+  if(!souples.length)return false;
+  G.orig=G.orig||{};const faits=[];
+  let reste=e>=90000?Math.ceil(e/60000):e<=-180000?-Math.floor(-e/60000):0;
+  for(const {b,k} of souples){
+    if(!reste)break;
+    const o=G.orig[k]??(G.orig[k]=+b.min||1);
+    const m=reste>0?Math.min(reste,b.min-Math.max(1,Math.ceil(o/2))):-Math.min(-reste,Math.ceil(o*1.5)-b.min);
+    if(m<=0&&reste>0||m>=0&&reste<0)continue;
+    faits.push(`« ${esc(b.nom)} » ${b.min} → ${b.min-m} min`);b.min-=m;reste-=m;
+  }
+  if(!faits.length)return false;
+  G.tempoT=Date.now();rendreListeGuide();$('#g-prog').innerHTML=frise(G.blocs,{i:G.i});
+  toast('⏱ Pour finir à l’heure : '+faits.join(' · '));
+  return true;
+}
+
+// Pilotage à la voix : seules les phrases qui commencent par le mot déclencheur (« Régie, … ») comptent.
+const COMMANDES_GUIDE=[
+  [/^(temps )?suivant|^passe au (temps )?suivant|^on continue|^continue$/,'suivant'],
+  [/^(temps )?precedent|^reviens|^retour en arriere/,'precedent'],
+  [/^(fin de la seance|termine la seance)/,'fin'],
+  [/(coupe|arrete|stop).*(musique)|^plus de musique/,'musique-stop'],
+  [/(monte|plus fort|augmente).*(musique|son)|^musique plus fort/,'musique-plus'],
+  [/(baisse|moins fort|diminue).*(musique|son)|^musique moins fort/,'musique-moins'],
+  [/(lance|mets|joue).*(musique)/,'musique'],
+  [/^(pause|stop|arrete|attends)/,'pause'],
+  [/^(demarre|reprends|reprend|commence|on y va|go)\b/,'demarrer'],
+  [/(plus long|prolonge|ajoute|rajoute)/,'plus'],
+  [/(plus court|raccourcis|enleve|retire)/,'moins'],
+  [/^(passe|va|aller|saute) (a|au|aux|vers) (la partie |le temps )?(.+)/,'aller']
+];
+function commandeGuide(texte){
+  if(!G)return;
+  const n=normReco(texte).split(' ').filter(Boolean),decl=declencheurs();
+  let i=-1,l=0;for(let k=0;k<n.length&&i<0;k++)for(const d of decl)if(d.every((w,j)=>n[k+j]===w)){i=k;l=d.length;break}
+  if(i<0)return;
+  const t=n.slice(i+l).join(' ');if(!t)return;
+  const c=COMMANDES_GUIDE.find(([re])=>re.test(t));if(!c)return toast(`🎙️ Pas compris : « ${esc(t)} »`);
+  const q=c[1],nbm=(t.match(/\b(\d+|une?|deux|trois|quatre|cinq|dix)\b/)||[])[1],mins=nbm?(nombre(nbm)||1):1,b=G.blocs[G.i];
+  const dit=x=>toast('🎙️ '+x);
+  if(q==='suivant'){if(G.i<G.blocs.length-1){allerTemps(G.i+1);dit('Temps suivant')}}
+  else if(q==='precedent'){if(G.i>0){allerTemps(G.i-1);dit('Temps précédent')}}
+  else if(q==='pause'){if(G.run){basculerRun();dit('Pause')}}
+  else if(q==='demarrer'){if(!G.run){basculerRun();dit('C’est parti')}}
+  else if(q==='plus'||q==='moins'){if(b.libre)return dit('Ce temps est libre');b.min=clamp((+b.min||1)+(q==='plus'?mins:-mins),1,180);rendreListeGuide();$('#g-prog').innerHTML=frise(G.blocs,{i:G.i});dit(`« ${esc(b.nom)} » : ${b.min} min`)}
+  else if(q==='musique'){lancerAudioTemps(b,false);dit('Musique')}
+  else if(q==='musique-stop'){if(A.joue)sortie(2);dit('Musique coupée')}
+  else if(q==='musique-plus'||q==='musique-moins'){if(A.joue){fondu(clamp(A.gain.gain.value+(q==='musique-plus'?.15:-.15),.05,1),.8);dit(q==='musique-plus'?'Musique plus forte':'Musique moins forte')}}
+  else if(q==='fin'){if(confirm('Terminer la séance et voir le bilan ?'))terminer()}
+  else if(q==='aller'){
+    const nom=t.match(c[0])[4],P=G.s.parties||[];
+    const p=P.find(x=>normReco(x.nom)&&normReco(x.nom).includes(nom));
+    let j=p?G.blocs.findIndex(x=>x.partie===p.id):G.blocs.findIndex(x=>normReco(x.nom).includes(nom));
+    if(j<0)return dit(`Je ne trouve pas « ${esc(nom)} »`);allerTemps(j);dit(`→ ${esc(p?nomPartie(p,P.indexOf(p)):G.blocs[j].nom)}`);
+  }
+}
+function basculerVoixGuide(){
+  if(!G)return;const bt=$('#g-voix');
+  if(G.voix){G.voix.abandonner();G.voix=null;bt&&bt.classList.remove('on');return toast('🎙️ Pilotage à la voix arrêté')}
+  if(!RECO)return toast('La reconnaissance de la voix n’est pas disponible sur cet appareil');
+  G.voix=ecouteDirecte({phrase:commandeGuide,provisoire:()=>{},erreur:e=>{if(['not-allowed','service-not-allowed','audio-capture'].includes(e.error)&&G&&G.voix){G.voix.abandonner();G.voix=null;bt&&bt.classList.remove('on');toast('Le micro n’est pas accessible')}},actif:()=>!!(G&&G.voix)});
+  bt&&bt.classList.add('on');
+  const d=majuscule1(String(D.prefs.declencheur||DECLENCHEUR_DEFAUT).split(',')[0].trim());
+  toast(`🎙️ À l’écoute : « ${esc(d)}, suivant », « ${esc(d)}, pause », « ${esc(d)}, plus long »…`);
+}
+
+// Ambiance : la musique baisse quand le micro entend parler, puis remonte doucement dans les silences.
+let AMB=null;
+function rampe(node,v,s){if(!node||!A.ctx)return;const g=node.gain,t=A.ctx.currentTime;g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(v,t+s)}
+async function demarrerAmbiance(){
+  if(AMB||!audioInit()||!navigator.mediaDevices)return;
+  AMB={en:true};
+  try{
+    const flux=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:false}});
+    if(!AMB){flux.getTracks().forEach(x=>x.stop());return}
+    const ctx=A.ctx,src=ctx.createMediaStreamSource(flux),bp=ctx.createBiquadFilter(),ana=ctx.createAnalyser();
+    bp.type='bandpass';bp.frequency.value=1000;bp.Q.value=.7;ana.fftSize=1024;src.connect(bp).connect(ana);
+    const d=new Float32Array(ana.fftSize);let fond=null,parle=0,calme=0,baisse=false;
+    const t=setInterval(()=>{
+      ana.getFloatTimeDomainData(d);let q=0;for(let i=0;i<d.length;i++)q+=d[i]*d[i];const rms=Math.sqrt(q/d.length);
+      fond=fond==null?rms:Math.min(rms,fond*1.004+1e-6);
+      if(rms>Math.max(.006,fond*3.2)){parle++;calme=0}else{calme++;parle=0}
+      if(!baisse&&parle>=2&&A.joue){baisse=true;rampe(A.duck,.35,.35)}
+      else if(baisse&&calme>=15){baisse=false;rampe(A.duck,1,1.5)}
+    },100);
+    Object.assign(AMB,{flux,t,src});
+  }catch(e){AMB=null;D.prefs.ambianceAuto=false;sauverBientot();toast('Le micro n’est pas accessible : la musique ne baissera pas toute seule');if(vue==='guider')rendreReglagesGuide()}
+}
+function arreterAmbiance(){if(!AMB)return;const a=AMB;AMB=null;clearInterval(a.t);if(a.flux)a.flux.getTracks().forEach(x=>x.stop());try{a.src&&a.src.disconnect()}catch(e){}rampe(A.duck,1,.5)}
+
 /* =============================== PRÉPARER =============================== */
 let S=null,selId=null,dragI=null;
 function vueEditer(id){
@@ -3075,7 +3175,7 @@ const A={ctx:null,el:null,gain:null,url:null,id:null,joue:false,stopT:null};
 function audioInit(){
   if(A.ctx)return true;
   try{A.ctx=new (window.AudioContext||window.webkitAudioContext)();A.el=new Audio();A.el.preload='auto';
-    const src=A.ctx.createMediaElementSource(A.el);A.gain=A.ctx.createGain();A.gain.gain.value=0;A.egal=A.ctx.createGain();src.connect(A.gain).connect(A.egal).connect(A.ctx.destination);
+    const src=A.ctx.createMediaElementSource(A.el);A.gain=A.ctx.createGain();A.gain.gain.value=0;A.egal=A.ctx.createGain();A.duck=A.ctx.createGain();src.connect(A.gain).connect(A.egal).connect(A.duck).connect(A.ctx.destination);
     A.el.onended=()=>{A.joue=false;majMusique()};appliquerSortie();return true}catch(e){return false}
 }
 async function charger(id){if(A.id===id&&A.el.src)return true;const blob=await idbGet(id);if(!blob)return false;if(A.url)URL.revokeObjectURL(A.url);A.url=URL.createObjectURL(blob);A.el.src=A.url;A.id=id;return true}
@@ -3917,6 +4017,7 @@ function vueGuider(id){
       <div class="t">${esc(s.titre)}</div>
       <span class="g-souris cache" id="g-souris" title="Mode souris : clic sur la roulette pour l’arrêter"></span>
       <div class="g-horaire" id="g-horaire"></div>
+      ${REGIE_COMPLETE&&RECO?`<button class="btn rond nu g-voix" id="g-voix" title="Pilotage à la voix : « Régie, suivant », « Régie, pause », « Régie, plus long »…">${IC.micro}</button>`:''}
       <button class="btn rond nu" id="g-nuit" title="Mode nuit (touche N)">${IC.lune}</button>
       <div class="menu"><button class="btn rond nu" title="Réglages">${IC.reglages}</button><div class="menu-liste" id="g-reglages"></div></div>
       <button class="btn s g-enr" id="g-enr"></button>
@@ -3951,6 +4052,7 @@ function vueGuider(id){
   </div>`;
   $('#g-quitter').onclick=()=>{if(SALLE.actif?!confirm('Fermer la salle ? Les participants verront « L’atelier est terminé ».'):(G.run&&!confirm('Quitter la séance en cours ?')))return;aller('seances')};
   $('#g-nuit').onclick=()=>nuit(!D.prefs.nuit);
+  const gv=$('#g-voix');if(gv)gv.onclick=basculerVoixGuide;
   $('#g-enr').onclick=()=>{if(!ENR)return fenetreLancerEnr();if(confirm('Arrêter l’enregistrement ? Vous pourrez l’écouter, le télécharger ou l’envoyer.'))arreterEnrSeance()};
   rendreBoutonEnr();
   $('#g-tiroir').onclick=()=>$('#guide').classList.toggle('tiroir');
@@ -4034,6 +4136,8 @@ function rendreReglagesGuide(){
     <div class="bloc-reglage">Taille du texte<div class="pas"><button class="btn" data-r="taille:-2">A−</button><b>${p.taille}</b><button class="btn" data-r="taille:2">A+</button></div></div>
     <div class="sep"></div>
     <div class="bloc-reglage"><label class="bascule"><input type="checkbox" id="r-blocs" ${p.autoBlocs?'checked':''}>Passer au temps suivant tout seul</label></div>
+    <div class="bloc-reglage"><label class="bascule"><input type="checkbox" id="r-tempo" ${tempoAuto()?'checked':''}>Finir à l’heure : ajuster les temps souples</label></div>
+    ${REGIE_COMPLETE?`<div class="bloc-reglage"><label class="bascule"><input type="checkbox" id="r-ambiance" ${p.ambianceAuto?'checked':''}>La musique baisse quand je parle</label></div>`:''}
     <div class="sep"></div>
     <button id="r-son">${IC.casque} Micro et son…</button>
     <div class="sep"></div>
@@ -4045,7 +4149,9 @@ function rendreReglagesGuide(){
     <div class="rap"><span>Vitesse de lecture</span><div class="pas"><button class="btn" data-rr="wpm:-5">−</button><b>${p.wpm}</b><button class="btn" data-rr="wpm:5">+</button></div></div>
     <div class="rap"><span>Taille du texte</span><div class="pas"><button class="btn" data-rr="taille:-2">A−</button><b>${p.taille}</b><button class="btn" data-rr="taille:2">A+</button></div></div>
     <label class="bascule petit"><input type="checkbox" id="rr-auto" ${p.autoTexte?'checked':''}>Le texte défile tout seul</label>
-    <label class="bascule petit"><input type="checkbox" id="rr-blocs" ${p.autoBlocs?'checked':''}>Passer au temps suivant tout seul</label></details>`;
+    <label class="bascule petit"><input type="checkbox" id="rr-blocs" ${p.autoBlocs?'checked':''}>Passer au temps suivant tout seul</label>
+    <label class="bascule petit"><input type="checkbox" id="rr-tempo" ${tempoAuto()?'checked':''}>Finir à l’heure : ajuster les temps souples</label>
+    ${REGIE_COMPLETE?`<label class="bascule petit"><input type="checkbox" id="rr-ambiance" ${p.ambianceAuto?'checked':''}>La musique baisse quand je parle</label>`:''}</details>`;
   if(rapide){
     $('#rr-volet').ontoggle=e=>{if(p.reglagesOuverts!==e.target.open){p.reglagesOuverts=e.target.open;sauverBientot()}};
     $('#rr-auto').onchange=e=>{p.autoTexte=e.target.checked;sauverBientot();rendreReglagesGuide()};
@@ -4053,11 +4159,13 @@ function rendreReglagesGuide(){
     $$('#g-rapide [data-rr]').forEach(x=>x.onclick=()=>{if(G)G.vitesse=null;const [k,d]=x.dataset.rr.split(':');p[k]=k==='wpm'?clamp(p.wpm+ +d,40,180):clamp(p.taille+ +d,18,52);if(k==='wpm')p.autoTexte=true;document.documentElement.style.setProperty('--taille',p.taille+'px');sauverBientot();rendreReglagesGuide()});
   }
   $('#r-son').onclick=fenetreSon;
+  $$('#r-tempo,#rr-tempo').forEach(x=>x.onchange=e=>{p.tempoAuto=e.target.checked;sauverBientot();rendreReglagesGuide()});
+  $$('#r-ambiance,#rr-ambiance').forEach(x=>x.onchange=e=>{p.ambianceAuto=e.target.checked;sauverBientot();if(e.target.checked){if(G&&G.run)demarrerAmbiance()}else arreterAmbiance();rendreReglagesGuide()});
   $('#r-auto').onchange=e=>{p.autoTexte=e.target.checked;sauverBientot();rendreReglagesGuide()};
   $('#r-blocs').onchange=e=>{p.autoBlocs=e.target.checked;sauverBientot();rendreReglagesGuide()};
   $$('#g-reglages [data-r]').forEach(x=>x.onclick=e=>{if(G)G.vitesse=null;e.stopPropagation();const [k,d]=x.dataset.r.split(':');p[k]=k==='wpm'?clamp(p.wpm+ +d,40,180):clamp(p.taille+ +d,18,52);if(k==='wpm')p.autoTexte=true;document.documentElement.style.setProperty('--taille',p.taille+'px');sauverBientot();rendreReglagesGuide()});
 }
-function quitterGuide(){arreterEnrSeance();fermerSalle();fermerMenuTuile();clearInterval(tickH);if(A.joue)sortie(1.5);libererEveil();G=null}
+function quitterGuide(){arreterAmbiance();if(G&&G.voix){G.voix.abandonner();G.voix=null}arreterEnrSeance();fermerSalle();fermerMenuTuile();clearInterval(tickH);if(A.joue)sortie(1.5);libererEveil();G=null}
 async function garderEveil(){try{if('wakeLock' in navigator&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null})}}catch(e){}}
 function libererEveil(){try{wakeLock&&wakeLock.release()}catch(e){}wakeLock=null}
 document.addEventListener('visibilitychange',()=>{if(vue==='guider'&&G&&G.run&&document.visibilityState==='visible')garderEveil()});
@@ -4084,6 +4192,7 @@ function basculerRun(){
   if(G.run){
     if(!G.debut){G.debut=Date.now();G.objectif=calculerObjectif(G.s)}
     garderEveil();
+    if(REGIE_COMPLETE&&D.prefs.ambianceAuto)demarrerAmbiance();
     const b=G.blocs[G.i];
     lancerAudioTemps(b,true);
   }else if(A.joue){const b=G.blocs[G.i];
@@ -4235,7 +4344,8 @@ function majHoraire(){
   if(G.objectif){
     const e=fin.getTime()-G.objectif,m=Math.round(Math.abs(e)/60000);
     h=`<span>Fin prévue <b>${heureTxt(fin)}</b></span>`+(Math.abs(e)<90000?`<span class="chip ecart-ok">à l’heure</span>`:e>0?`<span class="chip ecart-retard">${m} min de retard</span>`:`<span class="chip ecart-avance">${m} min d’avance</span>`);
-    if(G.run&&e>=120000){
+    if(tempoAuto()){if(G.run)ajusterTempo(e);if(G.blocs.some((x,k)=>k>G.i&&x.souple&&!x.libre))h+=`<span class="chip tempo-auto" title="Les temps souples s’ajustent pour finir à l’heure">⏱ auto</span>`}
+    else if(G.run&&e>=120000){
       const j=G.blocs.findIndex((x,k)=>k>G.i&&x.souple&&x.min>1&&!G.ignore[k]);
       if(j>0){const moins=Math.min(Math.ceil(e/60000),G.blocs[j].min-1);
         sug=`<div class="suggestion">${IC.info}<span>${m} min de retard. Raccourcir <b>« ${esc(G.blocs[j].nom)} »</b> de ${moins} min (${G.blocs[j].min} → ${G.blocs[j].min-moins} min) ?</span><button class="btn s c" data-rac="${j}" data-moins="${moins}">Raccourcir</button><button class="btn s" data-ign="${j}">Non merci</button></div>`}
