@@ -656,7 +656,7 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .voix-aide{text-align:right;margin:4px 2px 12px}
 .inspi-fen .d-micro{background:var(--peri-deep)}
 .inspi-fen{position:relative}
-.inspi-fen.ecoute .sous{display:none}
+.inspi-fen .sous{margin:0 0 4px}
 .inspi-fen.ecoute .d-micro{width:64px;height:64px;margin:6px auto 6px}
 .inspi-fen.ecoute .d-micro svg{width:28px;height:28px}
 .inspi-fen.cmd-ouvert{overflow:hidden}
@@ -1497,7 +1497,8 @@ function fenetreInspiration(o={}){
     c.classList.toggle('cache',!ouvrir);f.classList.toggle('cmd-ouvert',ouvrir);
   };
   const decl=majuscule1(String(D.prefs.declencheur||DECLENCHEUR_DEFAUT).split(',')[0].trim());
-  const majMode=()=>{$i('#i-mode').textContent=mode==='direct'?`Parlez librement : c’est le texte. Pour une consigne, dites « ${decl} » puis ce que vous voulez (« ${decl}, crée un silence d’une minute »). « ${decl}, fin de l’inspiration » pour terminer.`:`Enregistrement (pas de reconnaissance en direct ici) : parlez avec vos consignes « ${decl}, … », l’IA rangera la séance. Elle s’arrête seule après une minute de silence.`};
+  const motAide=((D.prefs.motsVoix||{}).aide||MOTS_VOIX.aide.mots)[0];
+  const majMode=()=>{$i('#i-mode').textContent=mode==='direct'?`Parlez librement. « ${decl}, ${motAide} » pour vos commandes.`:'Enregistrement : la séance sera rangée après.'};
   const majActions=()=>{
     const a=$i('#i-actions');
     a.innerHTML=etat==='pret'?`<button class="btn" data-i="fermer">Fermer</button>`:etat==='fini'?'':`<button class="btn" data-i="annuler">Annuler</button><button class="btn p" data-i="fin">${IC.check} Terminer</button>`;
