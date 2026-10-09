@@ -776,6 +776,11 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .rl-total{text-align:right;font-size:14px;color:var(--muted)}
 .btn.relire.a-faire{border-color:var(--attente);color:var(--attente)}
 .chip.a-relire[data-relire]{cursor:pointer}
+.bi-dicte{position:relative}
+.bi-dicte textarea{padding-right:54px}
+.bi-dicte .cn-micro{bottom:10px}
+.bi-client{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.bi-client .bascule{font-weight:600}
 .g-voix.on{background:var(--alerte);border-color:var(--alerte);color:#fff;animation:d-pouls 2.4s ease-in-out infinite}
 .chip.tempo-auto{background:var(--aqua-pale);color:var(--canard-dark)}
 /* ——— Relecture hypnotique et sur mesure ——— */
@@ -2612,7 +2617,7 @@ function matiereAuteur(){
   let t='';for(const x of l){if(t.length+x.length>7000)break;t+=x.replace(/\n+/g,' ')+'\n'}
   return t;
 }
-function fenetreSurMesure(){
+function fenetreSurMesure(idClient){
   const clients=clientsSuivi();let choisi=null,duree=45,vous=true,base='';
   const v=document.createElement('div');v.className='voile';
   const dessiner=()=>{
@@ -2633,6 +2638,7 @@ function fenetreSurMesure(){
     v.querySelector('#sm-base').onchange=e=>{base=e.target.value};
   };
   dessiner();document.body.appendChild(v);
+  if(idClient!=null){const sc=v.querySelector('#sm-client');if(sc&&clients.some(c=>String(c.id)===String(idClient))){sc.value=String(idClient);sc.dispatchEvent(new Event('change'))}}
   v.onclick=async e=>{
     if(e.target===v||e.target.closest('[data-x]'))return v.remove();
     const d=e.target.closest('[data-d]');if(d){duree=+d.dataset.d;return dessiner()}
@@ -3175,7 +3181,7 @@ const A={ctx:null,el:null,gain:null,url:null,id:null,joue:false,stopT:null};
 function audioInit(){
   if(A.ctx)return true;
   try{A.ctx=new (window.AudioContext||window.webkitAudioContext)();A.el=new Audio();A.el.preload='auto';
-    const src=A.ctx.createMediaElementSource(A.el);A.gain=A.ctx.createGain();A.gain.gain.value=0;A.egal=A.ctx.createGain();A.duck=A.ctx.createGain();src.connect(A.gain).connect(A.egal).connect(A.duck).connect(A.ctx.destination);
+    const src=A.ctx.createMediaElementSource(A.el);A.gain=A.ctx.createGain();A.gain.gain.value=0;A.egal=A.ctx.createGain();A.duck=A.ctx.createGain();A.fin=A.duck;src.connect(A.gain).connect(A.egal).connect(A.duck).connect(A.ctx.destination);
     A.el.onended=()=>{A.joue=false;majMusique()};appliquerSortie();return true}catch(e){return false}
 }
 async function charger(id){if(A.id===id&&A.el.src)return true;const blob=await idbGet(id);if(!blob)return false;if(A.url)URL.revokeObjectURL(A.url);A.url=URL.createObjectURL(blob);A.el.src=A.url;A.id=id;return true}
@@ -3538,7 +3544,7 @@ async function creerEnregistreur(o={}){
   const brut=ctx.createAnalyser();brut.fftSize=2048;mic.connect(brut);
   const db=new Float32Array(brut.fftSize);let satur=0,saturRecent=0;
   const tSat=setInterval(()=>{if(etat!=='enr')return;brut.getFloatTimeDomainData(db);let n=0;for(let i=0;i<db.length;i++)if(db[i]>.985||db[i]<-.985)n++;
-    if(n>=3){satur++;saturRecent=performance.now()}},50);if(o.musique&&A.gain)A.gain.connect(mix);
+    if(n>=3){satur++;saturRecent=performance.now()}},50);if(o.musique&&A.gain)(A.fin||A.gain).connect(mix);
   mix.connect(ana);
   const enc=new lamejs.Mp3Encoder(2,ctx.sampleRate,96),blocs=[];let parts=[],ms=0,etat='pret',pic=0;
   const pcm=f=>{const r=new Int16Array(f.length);for(let i=0;i<f.length;i++){const v=plafondDoux(f[i]);r[i]=v<0?v*32768:v*32767}return r};
@@ -3558,7 +3564,7 @@ async function creerEnregistreur(o={}){
   const tout=()=>{if(parts.length){blocs.push(new Blob(parts));parts=[]}return new Blob(blocs,{type:'audio/mpeg'})};
   const deCote=()=>{idbPut(ID_ENR,tout());try{localStorage.setItem(CLE_ENR,JSON.stringify({nom:o.nom||'Enregistrement',ms}))}catch(e){}};
   const tg=setInterval(()=>{if(etat==='enr')deCote()},20000);
-  const fermer=()=>{clearInterval(tg);clearInterval(tSat);try{brut.disconnect()}catch(e){}proc.arreter();flux.getTracks().forEach(t=>t.stop());voix.stop();[mic,mix,proc,muet].forEach(n=>{try{n.disconnect()}catch(e){}});if(o.musique&&A.gain){try{A.gain.disconnect(mix)}catch(e){}}};
+  const fermer=()=>{clearInterval(tg);clearInterval(tSat);try{brut.disconnect()}catch(e){}proc.arreter();flux.getTracks().forEach(t=>t.stop());voix.stop();[mic,mix,proc,muet].forEach(n=>{try{n.disconnect()}catch(e){}});if(o.musique&&A.gain){try{(A.fin||A.gain).disconnect(mix)}catch(e){}}};
   return {
     nom:o.nom,musique:!!o.musique,get etat(){return etat},duree:()=>ms,
     demarrer(){etat='enr'},pause(){if(etat==='enr')etat='pause'},reprendre(){if(etat==='pause')etat='enr'},
@@ -4419,7 +4425,7 @@ document.addEventListener('keydown',e=>{
 });
 
 /* =============================== BILAN =============================== */
-let bilanEnCours=null;
+let bilanEnCours=null,ecouteBilan=null;
 function terminer(){
   if(!G)return;
   bilanEnCours={seanceId:G.s.id,titre:G.s.titre,date:Date.now(),duree:G.glob,
@@ -4438,16 +4444,33 @@ function vueBilan(){
         return `<div class="bi"><span class="b f-${l.type}"></span><span>${esc(l.nom)}</span><span>${dureeTxt(l.prevu)}</span><span>${pas?'—':dureeTxt(Math.max(1,l.reel))}</span><span class="ecart ${cls}">${pas?'sauté':Math.abs(d)<1?'juste':(d>0?'+':'−')+dureeTxt(Math.abs(d))}</span><input type="checkbox" data-maj="${k}" ${!pas&&Math.abs(d)>=1?'checked':''} ${pas?'disabled':''} title="Mettre à jour la durée prévue"></div>`}).join('')}
       <p style="font-size:12.5px;color:var(--muted);margin:12px 0 0">Les cases cochées ↻ remplacent la durée prévue par la durée réelle, pour la prochaine fois.</p>
     </div>
-    <div class="carte"><label class="champ" style="margin:0">Comment ça s’est passé ?<textarea id="bi-note" placeholder="Le groupe, l’énergie, ce que vous garderiez ou changeriez…" style="min-height:110px"></textarea></label></div>
+    ${REGIE_COMPLETE&&clientsSuivi().length?`<div class="carte bi-client">
+      <label class="champ" style="margin:0">Pour qui ?<select id="bi-client"><option value="">Personne en particulier (groupe…)</option>${clientsSuivi().map(c=>`<option value="${esc(c.id)}" ${String(c.id)===String((trouverSeance(B.seanceId)||{}).clientId)?'selected':''}>${esc([c.prenom,c.nom].filter(Boolean).join(' '))}</option>`).join('')}</select></label>
+      <label class="bascule"><input type="checkbox" id="bi-suivi" checked> Ajouter à sa fiche dans Suivi de l’Être</label>
+      <label class="champ" style="margin:0">Piste pour la prochaine séance<input type="text" id="bi-piste" placeholder="Ex. : travailler l’ancrage, revoir l’endormissement…"></label></div>`:''}
+    <div class="carte"><div class="bi-dicte"><label class="champ" style="margin:0">Comment ça s’est passé ?<textarea id="bi-note" placeholder="Le groupe, l’énergie, ce que vous garderiez ou changeriez…" style="min-height:110px"></textarea></label>${REGIE_COMPLETE&&RECO?`<button class="btn rond cn-micro" id="bi-micro" title="Dicter" type="button">${IC.micro}</button>`:''}</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="btn p" id="bi-ok">Enregistrer le bilan</button><button class="btn" id="bi-non">Ne pas enregistrer</button></div>
   </div>`;
   $('#bi-ok').onclick=()=>{
     const s=trouverSeance(B.seanceId);let n=0;
     $$('[data-maj]').forEach(c=>{if(c.checked&&s){const l=B.lignes[+c.dataset.maj],b=s.blocs.find(x=>x.id===l.id);if(b){b.min=Math.max(1,Math.round(l.reel));n++}}});
-    B.note=$('#bi-note').value.trim();B.id=uid();D.bilans.unshift(B);bilanEnCours=null;sauver();
+    B.note=$('#bi-note').value.trim();B.id=uid();
+    // Le bilan rejoint la fiche du client dans Suivi de l'Être (même adresse) : une boîte d'attente qu'il range.
+    const bc=$('#bi-client');
+    if(bc&&bc.value){B.clientId=bc.value;const piste=($('#bi-piste')||{}).value||'';
+      if($('#bi-suivi').checked&&(B.note||piste.trim())){let q=[];try{q=JSON.parse(localStorage.getItem('mac_depuis_regie')||'[]')}catch(e){}
+        const d=new Date(B.date);q.push({id:B.id,clientId:B.clientId,date:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,type:'Séance guidée',contenu:[`« ${B.titre} » · ${dureeTxt(B.duree/60000)}`,B.note].filter(Boolean).join('\n\n'),suite:piste.trim()});
+        try{localStorage.setItem('mac_depuis_regie',JSON.stringify(q))}catch(e){}}}
+    if(ecouteBilan){ecouteBilan.abandonner();ecouteBilan=null}
+    D.bilans.unshift(B);bilanEnCours=null;sauver();
     toast(n?`Bilan enregistré · ${n} durée${n>1?'s':''} mise${n>1?'s':''} à jour`:'Bilan enregistré');aller('bilans');
   };
-  $('#bi-non').onclick=()=>{bilanEnCours=null;aller('seances')};
+  $('#bi-non').onclick=()=>{if(ecouteBilan){ecouteBilan.abandonner();ecouteBilan=null}bilanEnCours=null;aller('seances')};
+  const bm=$('#bi-micro');if(bm)bm.onclick=()=>{
+    const t=$('#bi-note');if(ecouteBilan){ecouteBilan.arreter();ecouteBilan=null;bm.classList.remove('on');return}
+    bm.classList.add('on');const base=()=>t.value.replace(/\s+$/,'');
+    ecouteBilan=ecouteDirecte({phrase:p=>{t.value=(base()?base()+' ':'')+p.trim()},provisoire:()=>{},erreur:e=>{if(['not-allowed','service-not-allowed','audio-capture'].includes(e.error)){toast('Le micro n’est pas accessible');ecouteBilan=null;bm.classList.remove('on')}},actif:()=>!!ecouteBilan});
+  };
 }
 function vueBilans(){
   $('#vue').innerHTML=`<div class="page"><h1 class="titre">Mes bilans</h1><p class="sous">Après chaque séance guidée : le temps réel de chaque temps, et vos notes.</p>
@@ -4914,7 +4937,7 @@ async function ouvrirSalle(atelier,seanceId){
   audioInit();try{await A.ctx.resume()}catch(e){}
   if(A.ctx&&A.gain){
     A.dest=A.dest||A.ctx.createMediaStreamDestination();
-    try{A.gain.connect(A.dest)}catch(e){}
+    try{(A.fin||A.gain).connect(A.dest)}catch(e){}
     ecouteMusique(SALLE.ecoute);
     try{SALLE.pubMusique=await room.localParticipant.publishTrack(A.dest.stream.getAudioTracks()[0],{name:'musique',source:Track.Source.ScreenShareAudio,audioPreset:AudioPresets.musicHighQualityStereo,dtx:false,red:false,forceStereo:true})}catch(e){}
   }
@@ -4926,15 +4949,16 @@ function avantDeFermer(e){if(SALLE.actif){e.preventDefault();e.returnValue=''}}
 // Musique : chez eux toujours ; chez vous seulement si vous avez un casque.
 function ecouteMusique(oui){
   SALLE.ecoute=oui;if(!A.ctx||!A.gain)return;
-  try{A.gain.disconnect(A.ctx.destination)}catch(e){}
-  if(oui)A.gain.connect(A.ctx.destination);
+  // La sortie de la chaîne (volume → égaliseur → ambiance), jamais le volume seul : sinon la musique partirait deux fois.
+  try{(A.fin||A.gain).disconnect(A.ctx.destination)}catch(e){}
+  if(oui)(A.fin||A.gain).connect(A.ctx.destination);
 }
 function fermerSalle(){
   if(!SALLE.actif)return;
   const r=SALLE.room;
   envoyerSalle({t:'fin'});
   setTimeout(()=>{try{r&&r.disconnect()}catch(e){}},400);
-  if(A.ctx&&A.gain){try{A.gain.disconnect(A.dest)}catch(e){}ecouteMusique(true)}
+  if(A.ctx&&A.gain){try{(A.fin||A.gain).disconnect(A.dest)}catch(e){}ecouteMusique(true)}
   Object.assign(SALLE,{actif:false,room:null,atelier:null,aparte:null,alertes:[],pubMusique:null,etat:''});
   window.removeEventListener('beforeunload',avantDeFermer);
 }
@@ -5348,6 +5372,8 @@ if(raccourci&&s0){const n=Math.max(0,(+raccourci[2]||1)-1);
 else aller('seances');
 // #inspiration (raccourci de l'icône) : l'écoute s'ouvre tout de suite.
 if(location.hash==='#inspiration'){history.replaceState(null,'',location.pathname);setTimeout(()=>fenetreInspiration({auto:true}),500)}
+// Depuis la fiche d'un client dans Suivi de l'Être : préparer sa prochaine séance, ou relire une séance.
+{const m=location.hash.match(/^#(surmesure|relire)=(.+)$/);if(m&&REGIE_COMPLETE){history.replaceState(null,'',location.pathname);const id=decodeURIComponent(m[2]);setTimeout(()=>{if(m[1]==='relire'){if(trouverSeance(id))aller('relire',id)}else fenetreSurMesure(id)},500)}}
 demarrerSync();
 setTimeout(retrouverEnr,800);
 const visioDirect=location.hash.match(/^#visio(?:-(\d+))?$/);
