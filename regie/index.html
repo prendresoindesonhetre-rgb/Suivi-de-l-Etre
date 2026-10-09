@@ -782,7 +782,6 @@ body.nuit .vague svg{background:linear-gradient(#18222b,#1d1a2a)}
 .bi-client{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
 .bi-client .bascule{font-weight:600}
 .g-voix.on{background:var(--alerte);border-color:var(--alerte);color:#fff;animation:d-pouls 2.4s ease-in-out infinite}
-.chip.tempo-auto{background:var(--aqua-pale);color:var(--canard-dark)}
 /* ——— Relecture hypnotique et sur mesure ——— */
 .rl-hypno .hy-l{font-size:13px;line-height:1.55;color:var(--ink);margin:6px 0}
 .rl-hypno .hy-l.att{color:var(--attente)}.rl-hypno .hy-l.ok{color:var(--ok)}
@@ -2673,30 +2672,7 @@ Réponds en JSON : {"titre":"court","parties":[{"nom":"Accueil","temps":[{"type"
   };
 }
 
-/* ——— Guider : tempo qui s'adapte, pilotage à la voix, ambiance automatique ——— */
-// Tempo : en retard, les temps « souples » qui restent raccourcissent (jusqu'à moitié de leur durée) ;
-// en avance de plus de 3 min, ils s'allongent un peu (jusqu'à moitié en plus). Seule la séance en cours
-// change : le bilan propose ensuite de garder les durées réelles.
-const tempoAuto=()=>D.prefs.tempoAuto!==false;
-function ajusterTempo(e){
-  if(!G||!G.run||Date.now()-(G.tempoT||0)<60000)return false;
-  const souples=G.blocs.map((b,k)=>({b,k})).filter(({b,k})=>k>G.i&&b.souple&&!b.libre).reverse();
-  if(!souples.length)return false;
-  G.orig=G.orig||{};const faits=[];
-  let reste=e>=90000?Math.ceil(e/60000):e<=-180000?-Math.floor(-e/60000):0;
-  for(const {b,k} of souples){
-    if(!reste)break;
-    const o=G.orig[k]??(G.orig[k]=+b.min||1);
-    const m=reste>0?Math.min(reste,b.min-Math.max(1,Math.ceil(o/2))):-Math.min(-reste,Math.ceil(o*1.5)-b.min);
-    if(m<=0&&reste>0||m>=0&&reste<0)continue;
-    faits.push(`« ${esc(b.nom)} » ${b.min} → ${b.min-m} min`);b.min-=m;reste-=m;
-  }
-  if(!faits.length)return false;
-  G.tempoT=Date.now();rendreListeGuide();$('#g-prog').innerHTML=frise(G.blocs,{i:G.i});
-  toast('⏱ Pour finir à l’heure : '+faits.join(' · '));
-  return true;
-}
-
+/* ——— Guider : pilotage à la voix, ambiance automatique ——— */
 // Pilotage à la voix : seules les phrases qui commencent par le mot déclencheur (« Régie, … ») comptent.
 const COMMANDES_GUIDE=[
   [/^(temps )?suivant|^passe au (temps )?suivant|^on continue|^continue$/,'suivant'],
@@ -4158,7 +4134,6 @@ function rendreReglagesGuide(){
     <div class="bloc-reglage">Taille du texte<div class="pas"><button class="btn" data-r="taille:-2">A−</button><b>${p.taille}</b><button class="btn" data-r="taille:2">A+</button></div></div>
     <div class="sep"></div>
     <div class="bloc-reglage"><label class="bascule"><input type="checkbox" id="r-blocs" ${p.autoBlocs?'checked':''}>Passer au temps suivant tout seul</label></div>
-    <div class="bloc-reglage"><label class="bascule"><input type="checkbox" id="r-tempo" ${tempoAuto()?'checked':''}>Finir à l’heure : ajuster les temps souples</label></div>
     ${REGIE_COMPLETE?`<div class="bloc-reglage"><label class="bascule"><input type="checkbox" id="r-ambiance" ${p.ambianceAuto?'checked':''}>La musique baisse quand je parle</label></div>`:''}
     <div class="sep"></div>
     <button id="r-son">${IC.casque} Micro et son…</button>
@@ -4172,7 +4147,6 @@ function rendreReglagesGuide(){
     <div class="rap"><span>Taille du texte</span><div class="pas"><button class="btn" data-rr="taille:-2">A−</button><b>${p.taille}</b><button class="btn" data-rr="taille:2">A+</button></div></div>
     <label class="bascule petit"><input type="checkbox" id="rr-auto" ${p.autoTexte?'checked':''}>Le texte défile tout seul</label>
     <label class="bascule petit"><input type="checkbox" id="rr-blocs" ${p.autoBlocs?'checked':''}>Passer au temps suivant tout seul</label>
-    <label class="bascule petit"><input type="checkbox" id="rr-tempo" ${tempoAuto()?'checked':''}>Finir à l’heure : ajuster les temps souples</label>
     ${REGIE_COMPLETE?`<label class="bascule petit"><input type="checkbox" id="rr-ambiance" ${p.ambianceAuto?'checked':''}>La musique baisse quand je parle</label>`:''}</details>`;
   if(rapide){
     $('#rr-volet').ontoggle=e=>{if(p.reglagesOuverts!==e.target.open){p.reglagesOuverts=e.target.open;sauverBientot()}};
@@ -4181,7 +4155,6 @@ function rendreReglagesGuide(){
     $$('#g-rapide [data-rr]').forEach(x=>x.onclick=()=>{if(G)G.vitesse=null;const [k,d]=x.dataset.rr.split(':');p[k]=k==='wpm'?clamp(p.wpm+ +d,40,180):clamp(p.taille+ +d,18,52);if(k==='wpm')p.autoTexte=true;document.documentElement.style.setProperty('--taille',p.taille+'px');sauverBientot();rendreReglagesGuide()});
   }
   $('#r-son').onclick=fenetreSon;
-  $$('#r-tempo,#rr-tempo').forEach(x=>x.onchange=e=>{p.tempoAuto=e.target.checked;sauverBientot();rendreReglagesGuide()});
   $$('#r-ambiance,#rr-ambiance').forEach(x=>x.onchange=e=>{p.ambianceAuto=e.target.checked;sauverBientot();if(e.target.checked){if(G&&G.run)demarrerAmbiance()}else arreterAmbiance();rendreReglagesGuide()});
   $('#r-auto').onchange=e=>{p.autoTexte=e.target.checked;sauverBientot();rendreReglagesGuide()};
   $('#r-blocs').onchange=e=>{p.autoBlocs=e.target.checked;sauverBientot();rendreReglagesGuide()};
@@ -4366,8 +4339,7 @@ function majHoraire(){
   if(G.objectif){
     const e=fin.getTime()-G.objectif,m=Math.round(Math.abs(e)/60000);
     h=`<span>Fin prévue <b>${heureTxt(fin)}</b></span>`+(Math.abs(e)<90000?`<span class="chip ecart-ok">à l’heure</span>`:e>0?`<span class="chip ecart-retard">${m} min de retard</span>`:`<span class="chip ecart-avance">${m} min d’avance</span>`);
-    if(tempoAuto()){if(G.run)ajusterTempo(e);if(G.blocs.some((x,k)=>k>G.i&&x.souple&&!x.libre))h+=`<span class="chip tempo-auto" title="Les temps souples s’ajustent pour finir à l’heure">⏱ auto</span>`}
-    else if(G.run&&e>=120000){
+    if(G.run&&e>=120000){
       const j=G.blocs.findIndex((x,k)=>k>G.i&&x.souple&&x.min>1&&!G.ignore[k]);
       if(j>0){const moins=Math.min(Math.ceil(e/60000),G.blocs[j].min-1);
         sug=`<div class="suggestion">${IC.info}<span>${m} min de retard. Raccourcir <b>« ${esc(G.blocs[j].nom)} »</b> de ${moins} min (${G.blocs[j].min} → ${G.blocs[j].min-moins} min) ?</span><button class="btn s c" data-rac="${j}" data-moins="${moins}">Raccourcir</button><button class="btn s" data-ign="${j}">Non merci</button></div>`}
