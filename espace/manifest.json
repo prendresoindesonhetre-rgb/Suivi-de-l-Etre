@@ -1,0 +1,15 @@
+{
+  "name": "Mon espace",
+  "short_name": "Mon espace",
+  "description": "Mes audios de séance, mes exercices et mon journal",
+  "id": "/espace/",
+  "scope": "/espace/",
+  "start_url": "/espace/",
+  "display": "standalone",
+  "background_color": "#f2f7f6",
+  "theme_color": "#f2f7f6",
+  "icons": [
+    { "src": "../icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "../icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; media-src 'self' blob: https://issedanlnadbhidlymnc.supabase.co; connect-src 'self' https://issedanlnadbhidlymnc.supabase.co">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f2f7f6">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="../icon-192.png">
+<link rel="icon" type="image/png" href="../icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mon espace">
+<title>Mon espace</title>
+<link rel="stylesheet" href="../polices/polices.css">
+<style>
+:root {
+  --teal: #1a7a7a; --teal-fonce: #145f5f; --teal-pale: #e8f5f5; --mauve: #7a6a9a; --mauve-pale: #f0eaf8;
+  --fond: #f2f7f6; --carte: #fdfefe; --texte: #1e3a3a; --doux: #5a7575; --discret: #9ab0b0;
+  --bord: rgba(26,122,122,0.14); --bord-md: rgba(26,122,122,0.26); --rayon: 16px; --alerte: #c05070;
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; background: radial-gradient(60% 40% at 90% 0%, #e7f2ef 0%, transparent 70%), radial-gradient(50% 35% at 0% 20%, var(--mauve-pale) 0%, transparent 70%), var(--fond); color: var(--texte); font-family: 'Nunito', system-ui, sans-serif; -webkit-text-size-adjust: 100%; }
+.page { max-width: 600px; margin: 0 auto; padding: calc(18px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
+.tete { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.tete img { width: 38px; height: 38px; border-radius: 50%; }
+.tete span { font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--teal); }
+h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 34px; font-weight: 600; color: var(--teal-fonce); margin: 6px 0 4px; }
+.mot { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; line-height: 1.6; color: var(--texte); white-space: pre-wrap; margin: 0 0 14px; }
+section { background: var(--carte); border: 0.5px solid var(--bord); border-radius: var(--rayon); padding: 16px; margin: 14px 0; box-shadow: 0 2px 14px rgba(26,122,122,0.06); }
+h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 23px; font-weight: 600; color: var(--teal); margin: 0 0 10px; }
+.audio { padding: 10px 0; border-top: 0.5px solid var(--bord); }
+.audio:first-of-type { border-top: none; padding-top: 0; }
+.audio b { display: block; font-size: 15.5px; }
+.audio small, .ex small, .j small { display: block; font-size: 12px; color: var(--discret); margin: 2px 0 6px; }
+audio { width: 100%; height: 40px; }
+.ex { padding: 10px 0; border-top: 0.5px solid var(--bord); }
+.ex:first-of-type { border-top: none; padding-top: 0; }
+.ex b { font-size: 15.5px; }
+.ex div { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 17.5px; line-height: 1.65; white-space: pre-wrap; }
+.humeurs { display: flex; gap: 6px; margin: 4px 0 10px; }
+.humeurs button { flex: 1; font-size: 26px; padding: 8px 0; border: 1px solid var(--bord-md); background: #fff; border-radius: 12px; cursor: pointer; filter: grayscale(.6); opacity: .75; }
+.humeurs button.on { background: var(--teal-pale); border-color: var(--teal); filter: none; opacity: 1; }
+textarea { width: 100%; min-height: 96px; padding: 11px 12px; font-size: 16px; line-height: 1.5; border: 1px solid var(--bord-md); border-radius: 12px; background: #fff; color: var(--texte); font-family: inherit; resize: vertical; }
+textarea:focus { outline: 2px solid var(--teal-pale); border-color: var(--teal); }
+.actions { display: flex; justify-content: flex-end; margin-top: 10px; }
+.btn { border: 1px solid var(--teal); background: var(--teal); color: #fff; border-radius: 999px; padding: 10px 18px; font-size: 14.5px; font-weight: 800; font-family: inherit; cursor: pointer; }
+.btn:disabled { opacity: .5; cursor: default; }
+.j { padding: 10px 0; border-top: 0.5px solid var(--bord); position: relative; }
+.j .t { white-space: pre-wrap; font-size: 15px; line-height: 1.5; }
+.j .h { font-size: 20px; margin-right: 4px; }
+.j button { position: absolute; right: 0; top: 8px; background: none; border: none; color: var(--discret); font-size: 13px; cursor: pointer; font-family: inherit; }
+.vide { font-size: 13.5px; color: var(--doux); font-style: italic; }
+.etat { font-size: 12px; color: var(--doux); min-height: 16px; }
+.message { text-align: center; padding: 40px 16px; color: var(--doux); font-size: 15px; line-height: 1.6; }
+.message div { font-size: 42px; margin-bottom: 8px; }
+.pied { font-size: 11.5px; color: var(--discret); text-align: center; line-height: 1.6; margin-top: 18px; }
+</style>
+</head>
+<body>
+<div class="page" id="page"><div class="message"><div>🌿</div>Ouverture de votre espace…</div></div>
+<script>
+// L'espace d'un client : ses audios de séance, ses exercices, et son journal.
+// Le lien contient une clé secrète (après #c=) : elle ne part jamais dans l'adresse
+// envoyée au serveur ; elle reste sur cet appareil pour rouvrir l'espace.
+const SB_URL = 'https://issedanlnadbhidlymnc.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzc2VkYW5sbmFkYmhpZGx5bW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTAzNjUsImV4cCI6MjA5Njc2NjM2NX0.vTpXYfaMOt1BUAXKgQdq0rWP4AMLMPdnux41SLeSXF4';
+const lire = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+const ecrire = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const HUMEURS = ['😣', '😕', '😐', '🙂', '😊'];
+const jour = d => new Date(d).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+let cle = (location.hash.match(/[#&]c=([A-Za-z0-9_-]{32,})/) || [])[1] || lire('es_cle', '');
+if (location.hash) history.replaceState(null, '', location.pathname);
+if (cle) ecrire('es_cle', cle);
+let espace = lire('es_espace', null), humeur = null, etat = '';
+
+async function rpc(fn, args) {
+  const res = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(args),
+  });
+  if (!res.ok) throw new Error('rpc ' + res.status);
+  const t = await res.text();
+  return t ? JSON.parse(t) : null;
+}
+const urlAudio = chemin => `${SB_URL}/storage/v1/object/public/espaces/${chemin.split('/').map(encodeURIComponent).join('/')}`;
+
+function dessiner() {
+  const p = document.getElementById('page');
+  if (!cle) { p.innerHTML = `<div class="message"><div>🔒</div>Ouvrez cet espace avec le lien que votre praticienne vous a envoyé.</div>`; return; }
+  if (espace === false) { p.innerHTML = `<div class="message"><div>🔒</div>Ce lien n’est plus valable.<br>Demandez un nouveau lien à votre praticienne.</div>`; return; }
+  if (!espace) { p.innerHTML = `<div class="message"><div>🌿</div>${etat || 'Ouverture de votre espace…'}</div>`; return; }
+  const c = espace.contenu || {}, audios = (c.audios || []).slice().reverse(), ex = (c.exercices || []).slice().reverse();
+  const journal = (espace.journal || []).slice().reverse();
+  p.innerHTML = `<div class="tete"><img src="../icon-192.png" alt=""><span>Mon espace</span></div>
+    <h1>Bonjour ${esc(espace.prenom || '')} 🌿</h1>
+    ${c.message ? `<p class="mot">${esc(c.message)}</p>` : ''}
+    <div class="etat" id="etat">${esc(etat)}</div>
+    ${audios.length ? `<section><h2>🎧 Mes séances</h2>${audios.map(a => `<div class="audio"><b>${esc(a.titre || 'Séance')}</b><small>${a.date ? esc(jour(a.date)) : ''}${a.duree ? ' · ' + esc(a.duree) : ''}</small><audio controls preload="none" src="${esc(urlAudio(a.chemin || ''))}"></audio></div>`).join('')}</section>` : ''}
+    ${ex.length ? `<section><h2>📝 Mes exercices</h2>${ex.map(x => `<div class="ex"><b>${esc(x.titre || 'Exercice')}</b><small>${x.date ? esc(jour(x.date)) : ''}</small><div>${esc(x.texte || '')}</div></div>`).join('')}</section>` : ''}
+    <section><h2>🌿 Mon journal</h2>
+      <div style="font-size:14px;color:var(--doux)">Comment vous sentez-vous aujourd’hui ?</div>
+      <div class="humeurs">${HUMEURS.map((h, i) => `<button type="button" data-h="${i + 1}" class="${humeur === i + 1 ? 'on' : ''}" aria-label="Humeur ${i + 1} sur 5">${h}</button>`).join('')}</div>
+      <textarea id="texte" placeholder="Ce que vous avez ressenti, remarqué, essayé depuis la séance…">${esc(lire('es_brouillon', ''))}</textarea>
+      <div class="actions"><button class="btn" id="envoyer">Garder dans mon journal</button></div>
+      ${journal.length ? journal.map(e => `<div class="j"><small>${esc(jour(e.date))}</small>${e.humeur ? `<span class="h">${HUMEURS[e.humeur - 1] || ''}</span>` : ''}<span class="t">${esc(e.texte || '')}</span><button data-eff="${esc(e.id)}">Effacer</button></div>`).join('') : '<div class="vide" style="margin-top:12px">Votre journal est vide pour l’instant.</div>'}
+    </section>
+    <div class="pied">Cet espace est personnel : gardez ce lien pour vous.<br>Votre praticienne peut lire votre journal pour préparer vos séances.</div>`;
+  p.querySelectorAll('[data-h]').forEach(b => b.onclick = () => { humeur = humeur === +b.dataset.h ? null : +b.dataset.h; p.querySelectorAll('[data-h]').forEach(x => x.classList.toggle('on', +x.dataset.h === humeur)); });
+  const t = document.getElementById('texte');
+  t.oninput = () => ecrire('es_brouillon', t.value);
+  document.getElementById('envoyer').onclick = envoyer;
+  p.querySelectorAll('[data-eff]').forEach(b => b.onclick = () => effacer(b.dataset.eff));
+}
+function majEtat(t) { etat = t; const e = document.getElementById('etat'); if (e) e.textContent = t; }
+
+async function charger() {
+  if (!cle) return dessiner();
+  try {
+    const r = await rpc('espace_lire', { p_cle: cle });
+    espace = r || false; if (r) ecrire('es_espace', r); else localStorage.removeItem('es_espace');
+    etat = '';
+  } catch (e) { etat = espace ? 'Hors connexion : voici votre espace tel qu’il était.' : 'Pas de connexion pour l’instant. Réessayez dans un moment.'; }
+  dessiner();
+}
+async function envoyer() {
+  const t = document.getElementById('texte'), texte = t.value.trim(), b = document.getElementById('envoyer');
+  if (!texte && !humeur) { t.focus(); return; }
+  b.disabled = true; majEtat('Envoi…');
+  try {
+    const j = await rpc('espace_ecrire_journal', { p_cle: cle, p_humeur: humeur, p_texte: texte });
+    if (j === null) { espace = false; return dessiner(); }
+    espace.journal = j; ecrire('es_espace', espace); localStorage.removeItem('es_brouillon'); humeur = null; etat = '✓ Gardé dans votre journal';
+    dessiner();
+  } catch (e) { b.disabled = false; majEtat('Pas envoyé : vérifiez la connexion et réessayez. Votre texte est gardé ici.'); }
+}
+async function effacer(id) {
+  if (!confirm('Effacer ce passage de votre journal ?')) return;
+  try { const j = await rpc('espace_effacer_journal', { p_cle: cle, p_id: id }); if (j) { espace.journal = j; ecrire('es_espace', espace); dessiner(); } }
+  catch (e) { majEtat('Pas effacé : vérifiez la connexion et réessayez.'); }
+}
+dessiner();
+charger();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') charger(); });
+</script>
+</body>
+</html>

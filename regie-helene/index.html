@@ -3594,6 +3594,18 @@ async function partager(blob,nom){
 const peutPartager=blob=>{try{return !!(navigator.canShare&&navigator.canShare({files:[new File([blob],'a.mp3',{type:'audio/mpeg'})]}))}catch(e){return false}};
 async function garderMorceau(blob,ms,nom,avecMusique){const id=uid();await idbPut(id,blob);const m={id,nom:nom||'Enregistrement',duree:ms/1000,taille:blob.size,enr:true};if(avecMusique)m.avecMusique=true;D.musiques.push(m);sauver();return m}
 // L'enregistrement terminé : l'écouter, le nommer, le télécharger, l'envoyer, le garder.
+// L'enregistrement d'une séance part dans l'espace du client (créé dans Suivi de l'Être) :
+// déposé sous un nom tiré au hasard dans le dossier « espaces », puis ajouté à ses audios.
+const clientAvecEspace=id=>{const c=REGIE_COMPLETE&&id!=null?clientsSuivi().find(x=>String(x.id)===String(id)):null;return c&&c.espaceCle?c:null};
+async function versEspaceClient(blob,titre,ms,client){
+  const jeton=await jetonValide();if(!jeton)throw Object.assign(new Error('Connectez-vous d’abord (« Synchroniser mes appareils »).'),{connexion:true});
+  let uid='';try{uid=JSON.parse(atob(jeton.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).sub||''}catch(e){}
+  const chemin=`${uid}/${[...crypto.getRandomValues(new Uint8Array(24))].map(b=>b.toString(16).padStart(2,'0')).join('')}.mp3`;
+  const d=await fetch(`${SB_URL}/storage/v1/object/espaces/${chemin}`,{method:'POST',headers:{apikey:SB_KEY,Authorization:`Bearer ${jeton}`,'Content-Type':'audio/mpeg','x-upsert':'false'},body:blob});
+  if(!d.ok)throw new Error(d.status===404||d.status===400?'Les espaces ne sont pas encore activés : collez le script « espace-client.sql » dans Supabase.':'Le fichier n’a pas pu être envoyé ('+d.status+').');
+  const r=await fetch(`${SB_URL}/rest/v1/rpc/espace_ajouter_audio`,{method:'POST',headers:{apikey:SB_KEY,Authorization:`Bearer ${jeton}`,'Content-Type':'application/json'},body:JSON.stringify({p_client_ref:String(client.id),p_audio:{id:uid.slice(0,4)+Date.now(),titre,chemin,date:new Date().toISOString(),duree:mmss(ms)}})});
+  if(!r.ok||(await r.json())!==true)throw new Error('L’espace de '+(client.prenom||'ce client')+' est introuvable : ouvrez sa fiche dans Suivi de l’Être.');
+}
 function fenetreResultat(blob,ms,nom,o={}){
   const v=document.createElement('div');v.className='voile';const u=URL.createObjectURL(blob);let fait=false,garde=null;
   v.innerHTML=`<div class="fenetre enr-fen">
@@ -3609,6 +3621,7 @@ function fenetreResultat(blob,ms,nom,o={}){
       ${o.utiliser?`<button class="btn p" id="er-utiliser">${IC.check} ${esc(o.utiliser.label)}</button>`:''}
       <button class="btn ${o.utiliser?'':'p'}" id="er-dl">${IC.sauve} Télécharger</button>
       ${peutPartager(blob)?`<button class="btn" id="er-partage">${IC.partager} Envoyer…</button>`:''}
+      ${clientAvecEspace(o.clientId)?`<button class="btn p" id="er-espace">🌿 Dans l’espace de ${esc(clientAvecEspace(o.clientId).prenom||'mon client')}</button>`:''}
       ${o.utiliser?'':`<button class="btn" id="er-garde">${IC.musique} Garder dans mes morceaux</button><button class="btn" id="er-retr" title="Musique de fond, volumes, bruit de fond">${IC.ciseaux} Retravailler</button>`}
     </div>
     <span class="aide" style="display:block;margin:10px 0 4px">Le fichier MP3 s’ouvre sur tous les téléphones et ordinateurs : vous pouvez l’envoyer par e-mail, WhatsApp, WeTransfer…</span>
@@ -3630,6 +3643,9 @@ function fenetreResultat(blob,ms,nom,o={}){
   const fin=()=>{URL.revokeObjectURL(u);v.remove();oublierEnr()};
   $('#er-dl').onclick=()=>{telecharger(blob,nomF());fait=true;toast('Fichier téléchargé : il est dans vos Téléchargements')};
   const pa=$('#er-partage');if(pa)pa.onclick=async()=>{if(await partager(blob,nomF()))fait=true};
+  const es=$('#er-espace');if(es)es.onclick=async()=>{const cl=clientAvecEspace(o.clientId);es.disabled=true;es.textContent='Envoi…';
+    try{await versEspaceClient(blob,nomF(),ms,cl);fait=true;es.innerHTML=`${IC.check} Dans son espace`;toast(`🌿 L’audio est dans l’espace de ${esc(cl.prenom||'votre client')}`)}
+    catch(e){es.disabled=false;es.textContent='🌿 Réessayer';toast(esc(e.message))}};
   const ga=$('#er-garde');if(ga)ga.onclick=async()=>{if(garde){toast('Déjà dans vos morceaux');return}garde=await garderMorceau(blob,ms,nomF(),o.avecMusique);fait=true;ga.disabled=true;ga.innerHTML=`${IC.check} Gardé dans mes morceaux`;if(vue==='musiques')vueMusiques()};
   const ut=$('#er-utiliser');if(ut)ut.onclick=async()=>{const m=garde||await garderMorceau(blob,ms,nomF(),o.avecMusique);o.utiliser.fn(m);fin()};
   const rt=$('#er-retr');if(rt)rt.onclick=async()=>{const m=garde||await garderMorceau(blob,ms,nomF(),o.avecMusique);garde=m;fait=true;URL.revokeObjectURL(u);v.remove();oublierEnr();retravailler(m.id)};
@@ -3745,7 +3761,7 @@ function arreterEnrSeance(){
   if(!ENR)return;const E=ENR;ENR=null;
   const r=E.arreter();rendreBoutonEnr();
   if(r.ms<1000){oublierEnr();toast('Enregistrement vide : rien n’a été gardé');return}
-  fenetreResultat(r.blob,r.ms,E.nom,{pic:r.pic,micro:E.micro,satur:r.satur,avecMusique:E.musique});
+  fenetreResultat(r.blob,r.ms,E.nom,{pic:r.pic,micro:E.micro,satur:r.satur,avecMusique:E.musique,clientId:G&&G.s?G.s.clientId:null});
 }
 
 /* =============================== MONTAGE ===============================
