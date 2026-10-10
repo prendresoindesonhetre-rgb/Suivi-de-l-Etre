@@ -6,7 +6,7 @@ const ICON = 'https://suivi.prendresoindesonhetre.fr/icon-notif.png';
 
 const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png', '/documents/tampon.png', '/documents/attestation-pcpe.jpg',
                 // Polices et icones servies par le site : l'app s'affiche entiere, meme hors connexion.
-                '/polices/polices.css', '/polices/tabler-icons.css', '/polices/tabler-icons.woff2'];
+                '/polices/polices.css', '/polices/ecriture.css', '/polices/ecriture.woff2', '/polices/tabler-icons.css', '/polices/tabler-icons.woff2'];
 
 // ─── Modèles de notifications éditables (registre dupliqué depuis index.html,
 // à garder en phase — voir NOTIF_TYPES_BUILTIN) ───────────────────────────────
